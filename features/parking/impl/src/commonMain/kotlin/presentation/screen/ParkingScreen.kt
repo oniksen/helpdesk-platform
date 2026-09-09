@@ -1,14 +1,7 @@
 package presentation.screen
 
 import AdaptiveLayoutWrapper
-import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.staticCompositionLocalOf
+import androidx.compose.runtime.*
 import domain.intent.ParkingScreenIntent
 import kotlinx.coroutines.flow.SharedFlow
 import presentation.actions.ParkingScreenActions

@@ -23,6 +23,7 @@ class ParkingModule : FeatureNavModule {
     ): NavEntry<out NavKey> = NavEntry(key = key as ParkingScreenRoute) {
         val parkingScreenViewModel = ParkingScreenViewModel(
             qrCodeScanner = koinInject(),
+            authorization = koinInject(),
         )
 
         ParkingScreen(

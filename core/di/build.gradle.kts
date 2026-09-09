@@ -13,6 +13,8 @@ kotlin {
         commonMain.dependencies {
             implementation(projects.core.navigation.api)
             implementation(projects.core.navigation.impl)
+            implementation(projects.core.authorization.api)
+            implementation(projects.core.authorization.impl)
             implementation(projects.features.parking.impl)
             implementation(projects.features.home.api)
             implementation(projects.features.home.impl)

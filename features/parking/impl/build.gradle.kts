@@ -16,6 +16,7 @@ kotlin {
         commonMain.dependencies {
             implementation(projects.core.navigation.api)
             implementation(projects.core.uiadaptive)
+            implementation(projects.core.authorization.api)
             implementation(projects.features.parking.api)
             implementation(projects.maxminiappapi.api)
 

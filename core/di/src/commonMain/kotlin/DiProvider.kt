@@ -10,6 +10,15 @@ import org.koin.dsl.module
 class DiProvider {
     private val maxMiniAppModule = module {
         single<QrCodeScanner> { createQrCodeScanner() }
+        single<MaxAuthorization> { createAuthorizationObject() }
+    }
+
+    private val authorizationModule = module {
+        single<Authorization> {
+            AuthorizationImpl(
+                maxAuthorization = get(),
+            )
+        }
     }
 
     // Создаем модуль навигации, где стэк предоставляется через Koin
@@ -26,7 +35,7 @@ class DiProvider {
         // это гарантирует, что граф Koin готов ДО начала работы Compose UI.
         remember {
             startKoin {
-                modules(maxMiniAppModule, navigationModule)
+                modules(maxMiniAppModule, navigationModule, authorizationModule)
             }
         }
 

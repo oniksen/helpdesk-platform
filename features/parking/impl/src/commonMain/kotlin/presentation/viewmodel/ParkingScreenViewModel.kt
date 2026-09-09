@@ -1,29 +1,25 @@
 package presentation.viewmodel
 
+import Authorization
+import MaxAuthorization
 import QrCodeScanner
 import QrCodeScannerResult
 import domain.intent.ParkingScreenIntent
 import domain.model.toPassNumber
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.BufferOverflow
-import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharedFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.update
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
+import kotlinx.coroutines.flow.*
 import max_helpdesk.features.parking.impl.generated.resources.Res
 import max_helpdesk.features.parking.impl.generated.resources.parking_scan_max_unavailable
 import org.jetbrains.compose.resources.getString
 import presentation.effect.ParkingScreenEffect
 import presentation.state.ParkingScreenState
 import presentation.state.PassInputState
+import kotlin.time.Duration.Companion.milliseconds
 
 class ParkingScreenViewModel(
-    private val qrCodeScanner: QrCodeScanner
+    private val qrCodeScanner: QrCodeScanner,
+    private val authorization: Authorization,
 ) {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
 
@@ -36,13 +32,22 @@ class ParkingScreenViewModel(
             onBufferOverflow = BufferOverflow.DROP_OLDEST,  // Если буфер забит, старое событие стирается, новое доставляется
         )
 
+    init {
+        scope.launch(Dispatchers.Default) {
+            val result = authorization.getMaxInitData()
+
+            delay(1_000.milliseconds)
+            updateState { copy(authSheetVisible = true, testAuthInfo = result) }
+        }
+    }
+
     fun sendIntent(intent: ParkingScreenIntent) {
         when (intent) {
             is ParkingScreenIntent.OpenScanner -> openScanner(fileSelect = true)
             is ParkingScreenIntent.ResetScannerResult -> resetScannerResult()
             is ParkingScreenIntent.OnNumberChanged -> updateInputNumber(intent.number)
             is ParkingScreenIntent.CheckPass -> checkInputPass()
-            ParkingScreenIntent.GetPassDetails -> openPassDetailsScreen()
+            is ParkingScreenIntent.GetPassDetails -> openPassDetailsScreen()
         }
     }
 

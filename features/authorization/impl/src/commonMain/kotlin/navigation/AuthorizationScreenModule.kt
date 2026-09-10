@@ -7,6 +7,7 @@ import androidx.navigation3.runtime.NavEntry
 import androidx.navigation3.runtime.NavKey
 import kotlinx.serialization.modules.SerializersModule
 import kotlinx.serialization.modules.polymorphic
+import org.koin.compose.koinInject
 import presentation.screen.AuthorizationScreen
 import presentation.viewmodel.AuthorizationScreenViewModel
 
@@ -23,7 +24,10 @@ class AuthorizationScreenModule : RootNavModule {
         key: NavKey,
         navigator: AppNavigator
     ): NavEntry<*> = NavEntry(key = key as AuthorizationScreenRoute) {
-        val viewModel = AuthorizationScreenViewModel(navigator)
+        val viewModel = AuthorizationScreenViewModel(
+            navigator = navigator,
+            authorizer = koinInject()
+        )
 
         AuthorizationScreen(
             viewModel = viewModel,

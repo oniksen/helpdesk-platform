@@ -1,7 +1,5 @@
 package presentation.viewmodel
 
-import Authorization
-import MaxAuthorization
 import QrCodeScanner
 import QrCodeScannerResult
 import domain.intent.ParkingScreenIntent
@@ -15,11 +13,9 @@ import org.jetbrains.compose.resources.getString
 import presentation.effect.ParkingScreenEffect
 import presentation.state.ParkingScreenState
 import presentation.state.PassInputState
-import kotlin.time.Duration.Companion.milliseconds
 
 class ParkingScreenViewModel(
     private val qrCodeScanner: QrCodeScanner,
-    private val authorization: Authorization,
 ) {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
 
@@ -31,15 +27,6 @@ class ParkingScreenViewModel(
             extraBufferCapacity = 1,    // Позволяет делать tryEmit() без блокировки потока
             onBufferOverflow = BufferOverflow.DROP_OLDEST,  // Если буфер забит, старое событие стирается, новое доставляется
         )
-
-    init {
-        scope.launch(Dispatchers.Default) {
-            val result = authorization.getMaxInitData()
-
-            delay(1_000.milliseconds)
-            updateState { copy(authSheetVisible = true, testAuthInfo = result) }
-        }
-    }
 
     fun sendIntent(intent: ParkingScreenIntent) {
         when (intent) {

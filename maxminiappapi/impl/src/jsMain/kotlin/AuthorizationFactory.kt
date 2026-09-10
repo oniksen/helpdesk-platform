@@ -4,34 +4,13 @@ import kotlin.js.Promise
 @OptIn(ExperimentalWasmJsInterop::class)
 @JsFun("""
     () => {
-        // Проверяем физическое наличие метода. 
-        // Дополнительно страхуемся: если мы в обычном браузере на localhost/обычном домене, 
-        // и у нас нет специфичных для MAX объектов в window, сразу возвращаем false.
-        if (typeof window === "undefined" || !window.WebApp || typeof window.WebApp.openCodeReader !== "function") {
-            return false;
-        }
-        
-        // Если поле не успело проинициализироваться (undefined), считаем мост недоступным.
-        const platform = window.WebApp.platform;
-        if (!platform) {
-            return false;
-        }
-        
-        return true;
-    }
-""")
-private external fun isMaxBridgeAvailable(): Boolean
-
-@OptIn(ExperimentalWasmJsInterop::class)
-@JsFun("""
-    () => {
         return new Promise((resolve, reject) => {
             try {
                 const webApp = window.WebApp;
                 
                 // 1. Проверяем, что объект WebApp вообще существует
                 if (!webApp) {
-                    reject(new Error("MAX Bridge (window.WebApp) is unavailable"));
+                    reject(new Error("MAX Bridge (window.WebApp) недоступен"));
                     return;
                 }
                 
@@ -42,9 +21,9 @@ private external fun isMaxBridgeAvailable(): Boolean
                 if (typeof initData === "string" && initData.trim() !== "") {
                     resolve(initData);
                 } else if (typeof initData === "function") {
-                    reject(new Error("initData is a function, expected a string. Check your SDK version."));
+                    reject(new Error("initData является функцией, ожидалась строка. Проверьте версию вашего SDK"));
                 } else {
-                    reject(new Error("initData is missing, null, or not a string"));
+                    reject(new Error("Параметр initData отсутствует, равен null или не является строкой"));
                 }
             } catch (error) {
                 // Ловим непредвиденные ошибки (например, SecurityError при доступе к window)

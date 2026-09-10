@@ -6,18 +6,13 @@ plugins {
 }
 
 kotlin {
+    js { browser() }
     jvm()
-
-    js {
-        browser()
-    }
 
     sourceSets {
         commonMain.dependencies {
-            implementation(projects.core.navigation.api)
-            implementation(projects.features.home.api)
-            implementation(projects.features.parking.api)
             implementation(projects.features.authorization.api)
+            implementation(projects.features.home.api)
 
             implementation(libs.bundles.compose)
             implementation(libs.bundles.composeResources)

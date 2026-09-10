@@ -1,7 +1,7 @@
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
+import navigation.AuthorizationScreenModule
 import navigation.HomePageModule
-import navigation.HomePageRoute
 import navigation.ParkingModule
 import org.koin.core.context.GlobalContext.startKoin
 import org.koin.dsl.bind
@@ -21,24 +21,31 @@ class DiProvider {
         }
     }
 
-    // Создаем модуль навигации, где стэк предоставляется через Koin
-    private val navigationModule = module {
-        // Регистрируем модули фич
-        // Инициализация должна проводиться таким образом, иначе следующий фича-модуль перезапишет предыдущий.
-        single { HomePageModule() } bind FeatureNavModule::class
+    // Модуль фич-навигации (внутренняя навигация MainNavigation)
+    private val featuresNavModule = module {
         single { ParkingModule() } bind FeatureNavModule::class
+        single { HomePageModule() } bind FeatureNavModule::class
+    }
+
+    // Модуль рутовой навигации (Auth ↔ Home)
+    private val rootNavModule = module {
+        single { AuthorizationScreenModule() } bind RootNavModule::class
+        single { HomePageContainerModule() } bind RootNavModule::class
     }
 
     @Composable
     fun MainKoinApplication() {
-        // Вместо KoinApplication лучше использовать стандартный старт,
-        // это гарантирует, что граф Koin готов ДО начала работы Compose UI.
         remember {
             startKoin {
-                modules(maxMiniAppModule, navigationModule, authorizationModule)
+                modules(
+                    maxMiniAppModule,
+                    featuresNavModule,
+                    authorizationModule,
+                    rootNavModule,
+                )
             }
         }
 
-        BasicDslContainer(startRoute = HomePageRoute)
+        RootNavigation(startRoute = AuthorizationScreenRoute)
     }
 }

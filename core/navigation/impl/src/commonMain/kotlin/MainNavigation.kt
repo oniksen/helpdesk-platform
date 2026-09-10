@@ -1,6 +1,8 @@
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.navigation3.runtime.NavEntry
 import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.rememberNavBackStack
@@ -12,16 +14,12 @@ import org.koin.compose.KoinContext
 import org.koin.compose.getKoin
 
 @Composable
-fun BasicDslContainer(
-    startRoute: NavKey
-) {
+fun MainNavigation(startRoute: NavKey) {
     KoinContext {
         val koin = getKoin()
 
-        // 1. Достаем ВСЕ зарегистрированные модули фич из Koin.
         val featureModules = remember { koin.getAll<FeatureNavModule>() }
 
-        // 2. Динамически собираем конфигурацию сериализации из всех фич.
         val appNavConfig = remember(featureModules) {
             val combinedSerializer = featureModules
                 .map { it.serializerModule }
@@ -30,45 +28,41 @@ fun BasicDslContainer(
             SavedStateConfiguration { serializersModule = combinedSerializer }
         }
 
-        // 3. Инициализируем стек навигации.
-        // Передаем конфигурацию и стартовый маршрут как vararg элементы.
-        val navBackStack = rememberNavBackStack(
-            appNavConfig,
-            startRoute // Передаем объект напрямую в vararg
-        )
+        val parkingBackStack = rememberNavBackStack(appNavConfig, AppDestination.PARKING.route)
+        val tasksBackStack = rememberNavBackStack(appNavConfig, AppDestination.TASKS.route)
 
-        // Инициализируем навигацию по страницам.
-        val navigator = remember(navBackStack) {
+        val initialTab = remember(startRoute) {
+            AppDestination.entries.firstOrNull { it.route == startRoute } ?: AppDestination.PARKING
+        }
+        var currentTab by remember { mutableStateOf(initialTab) }
+
+        val activeBackStack = when (currentTab) {
+            AppDestination.PARKING -> parkingBackStack
+            AppDestination.TASKS -> tasksBackStack
+        }
+
+        val navigator = remember(activeBackStack) {
             object : AppNavigator {
                 override fun navigate(route: NavKey) {
-                    navBackStack.add(route)
+                    activeBackStack.add(route)
                 }
 
                 override fun popBackStack() {
-                    if (navBackStack.size > 1) navBackStack.removeAt(navBackStack.lastIndex)
+                    if (activeBackStack.size > 1) activeBackStack.removeLast()
                 }
             }
         }
 
-        var currentDestination = remember { AppDestination.PARKING }
-
-        LaunchedEffect(currentDestination) {
-            navBackStack.add(currentDestination.route)
-            navBackStack.removeAll { it != currentDestination.route }
-        }
-
         AdaptiveNavigationContainer(
-            currentDestination = currentDestination,
-            onDestinationChanged = { destination -> currentDestination = destination  },
+            currentDestination = currentTab,
+            onDestinationChanged = { destination -> currentTab = destination },
         ) {
-            // 5. Рендерим граф.
             NavDisplay(
-                backStack = navBackStack,
+                backStack = activeBackStack,
             ) { key ->
                 val module = featureModules.firstOrNull { it.canResolve(key) }
                     ?: error("Не найден навигационный модуль для маршрута $key")
 
-                // Передаем управление внутрь модуля фичи
                 module.resolve(key = key, navigator = navigator) as NavEntry<NavKey>
             }
         }

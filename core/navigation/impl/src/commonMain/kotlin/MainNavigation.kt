@@ -18,6 +18,7 @@ fun MainNavigation(startRoute: NavKey) {
     KoinContext {
         val koin = getKoin()
 
+        // 1. Собираем все фича-модули.
         val featureModules = remember { koin.getAll<FeatureNavModule>() }
 
         val appNavConfig = remember(featureModules) {
@@ -32,7 +33,7 @@ fun MainNavigation(startRoute: NavKey) {
         val tasksBackStack = rememberNavBackStack(appNavConfig, AppDestination.TASKS.route)
 
         val initialTab = remember(startRoute) {
-            AppDestination.entries.firstOrNull { it.route == startRoute } ?: AppDestination.PARKING
+            AppDestination.entries.firstOrNull { it.route == startRoute } ?: AppDestination.TASKS
         }
         var currentTab by remember { mutableStateOf(initialTab) }
 

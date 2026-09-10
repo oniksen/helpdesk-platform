@@ -11,9 +11,11 @@ kotlin {
 
     sourceSets {
         commonMain.dependencies {
+            implementation(projects.core.authorization.api)
             implementation(projects.features.authorization.api)
             implementation(projects.features.home.api)
 
+            implementation(libs.bundles.koin)
             implementation(libs.bundles.compose)
             implementation(libs.bundles.composeResources)
         }

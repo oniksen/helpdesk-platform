@@ -6,10 +6,14 @@ import Authorization
 import MaxAuthorizationResult
 import domain.intent.AuthorizationScreenIntent
 import kotlinx.coroutines.*
+import kotlinx.coroutines.channels.BufferOverflow
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
 import navigation.HomePageRoute
+import presentation.AuthorizationScreenEffect
 import presentation.state.AuthorizationState
 import kotlin.time.Duration.Companion.milliseconds
 
@@ -21,14 +25,29 @@ internal class AuthorizationScreenViewModel(
 
     val state: StateFlow<AuthorizationState>
         field = MutableStateFlow(AuthorizationState())
+    val effect: SharedFlow<AuthorizationScreenEffect>
+        field = MutableSharedFlow<AuthorizationScreenEffect>(
+            replay = 1,
+            extraBufferCapacity = 0,
+            onBufferOverflow = BufferOverflow.DROP_OLDEST
+        )
 
     fun sendIntent(intent: AuthorizationScreenIntent) {
         when(intent) {
-            AuthorizationScreenIntent.OpenHomeScreen -> openHomeScreen()
+            AuthorizationScreenIntent.Authorize -> authUser()
         }
     }
 
     init {
+        authUser()
+    }
+
+    private fun authUser() {
+        updateState { copy(
+            inProgress = true,
+            authResultMessage = null,
+        ) }
+
         scope.launch(Dispatchers.Default) {
             delay(500.milliseconds)
             try {
@@ -47,27 +66,30 @@ internal class AuthorizationScreenViewModel(
     }
 
     private fun openHomeScreen() {
-        navigator.navigate(HomePageRoute)
+        updateState { copy(
+            authResultMessage = "Успешная авторизация",
+            inProgress = false,
+        ) }
+
+        scope.launch {
+            delay(1_000.milliseconds)
+            navigator.navigate(HomePageRoute)
+        }
     }
     private fun showAuthorizationError(message: String) {
+        effect.tryEmit(AuthorizationScreenEffect.ShowSnackBar(message))
+
         updateState { copy(
-            authResultMessage = message,
-            inProgress = false,
-            testBtnEnabled = false,
-        ) }
-    }
-    private fun makeTestBtnAvailable() {
-        updateState { copy(
-            testBtnEnabled = true,
-            authResultMessage = "Успешная авторизация на Helpdesk",
+            authResultMessage = null,
             inProgress = false,
         ) }
     }
     private fun notifyMaxAuthNotAvailable() {
+        effect.tryEmit(AuthorizationScreenEffect.ShowSnackBar("MAX авторизация не доступна"))
+
         updateState { copy(
-            authResultMessage = "MAX авторизация не доступна",
+            authResultMessage = null,
             inProgress = false,
-            testBtnEnabled = false,
         )}
     }
     private fun helpdeskAuth(initData: String) {
@@ -75,7 +97,7 @@ internal class AuthorizationScreenViewModel(
             try {
                 when (val result = authorizer.helpdeskAuth(initData)) {
                     is AuthResponse.Error -> showAuthorizationError(result.message)
-                    is AuthResponse.Success -> makeTestBtnAvailable()
+                    is AuthResponse.Success -> openHomeScreen()
                 }
             } catch (e: CancellationException) {
                 throw e

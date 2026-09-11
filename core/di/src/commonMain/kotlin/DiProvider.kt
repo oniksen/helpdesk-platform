@@ -1,5 +1,7 @@
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
+import data.network.KtorClient
+import data.repository.AuthorizationImpl
 import navigation.AuthorizationScreenModule
 import navigation.HomePageModule
 import navigation.ParkingModule
@@ -14,9 +16,11 @@ class DiProvider {
     }
 
     private val authorizationModule = module {
+        single<KtorClient> { KtorClient() }
         single<Authorization> {
             AuthorizationImpl(
                 maxAuthorization = get(),
+                client = get(),
             )
         }
     }

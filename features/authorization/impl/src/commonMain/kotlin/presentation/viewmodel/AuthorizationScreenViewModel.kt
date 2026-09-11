@@ -1,17 +1,15 @@
 package presentation.viewmodel
 
 import AppNavigator
+import AuthResponse
 import Authorization
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.launch
-import navigation.HomePageRoute
+import MaxAuthorizationResult
 import domain.intent.AuthorizationScreenIntent
-import kotlinx.coroutines.delay
+import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
+import navigation.HomePageRoute
 import presentation.state.AuthorizationState
 import kotlin.time.Duration.Companion.milliseconds
 
@@ -33,10 +31,17 @@ internal class AuthorizationScreenViewModel(
     init {
         scope.launch(Dispatchers.Default) {
             delay(500.milliseconds)
-            when(val result = authorizer.getMaxInitData()) {
-                is MaxAuthorizationResult.Error -> showAuthorizationError(error = result.error)
-                is MaxAuthorizationResult.Success -> makeTestBtnAvailable()
-                MaxAuthorizationResult.Unavailable -> notifyMaxAuthNotAvailable()
+            try {
+                when(val result = authorizer.getMaxInitData()) {
+                    is MaxAuthorizationResult.Error ->
+                        showAuthorizationError(message = result.error.message ?: "Ошибка авторизации")
+                    is MaxAuthorizationResult.Success -> helpdeskAuth(initData = result.initData)
+                    MaxAuthorizationResult.Unavailable -> notifyMaxAuthNotAvailable()
+                }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Throwable) {
+                showAuthorizationError(e.message ?: "Неизвестная ошибка")
             }
         }
     }
@@ -44,9 +49,9 @@ internal class AuthorizationScreenViewModel(
     private fun openHomeScreen() {
         navigator.navigate(HomePageRoute)
     }
-    private fun showAuthorizationError(error: Throwable) {
+    private fun showAuthorizationError(message: String) {
         updateState { copy(
-            authResultMessage = error.message ?: "Ошибка авторизации",
+            authResultMessage = message,
             inProgress = false,
             testBtnEnabled = false,
         ) }
@@ -54,7 +59,7 @@ internal class AuthorizationScreenViewModel(
     private fun makeTestBtnAvailable() {
         updateState { copy(
             testBtnEnabled = true,
-            authResultMessage = "Данные от Max получены",
+            authResultMessage = "Успешная авторизация на Helpdesk",
             inProgress = false,
         ) }
     }
@@ -65,8 +70,23 @@ internal class AuthorizationScreenViewModel(
             testBtnEnabled = false,
         )}
     }
+    private fun helpdeskAuth(initData: String) {
+        scope.launch(Dispatchers.Default) {
+            try {
+                when (val result = authorizer.helpdeskAuth(initData)) {
+                    is AuthResponse.Error -> showAuthorizationError(result.message)
+                    is AuthResponse.Success -> makeTestBtnAvailable()
+                }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Throwable) {
+                showAuthorizationError(e.message ?: "Неизвестная ошибка")
+            }
+        }
+    }
 
     private fun updateState(block: AuthorizationState.() -> AuthorizationState) {
+
         state.update { state -> block(state) }
     }
 }

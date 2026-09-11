@@ -1,5 +1,6 @@
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
+    alias(libs.plugins.kotlinSerialization)
 }
 
 kotlin {
@@ -11,6 +12,10 @@ kotlin {
             implementation(projects.maxminiappapi.api)
 
             implementation(libs.bundles.koin)
+            implementation(libs.bundles.ktor)
+        }
+        jsMain.dependencies {
+            implementation(libs.bundles.ktor)
         }
     }
 }

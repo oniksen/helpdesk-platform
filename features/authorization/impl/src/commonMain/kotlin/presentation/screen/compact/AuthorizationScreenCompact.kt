@@ -2,21 +2,8 @@ package presentation.screen.compact
 
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Button
-import androidx.compose.material3.CircularWavyProgressIndicator
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarDuration
-import androidx.compose.material3.SnackbarHost
-import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.SnackbarResult
-import androidx.compose.material3.Text
+import androidx.compose.foundation.layout.*
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
@@ -24,6 +11,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.flow.SharedFlow
+import max_helpdesk.features.authorization.impl.generated.resources.Res
+import max_helpdesk.features.authorization.impl.generated.resources.auth_repeat_action
+import max_helpdesk.features.authorization.impl.generated.resources.auth_screen_title
+import org.jetbrains.compose.resources.getString
+import org.jetbrains.compose.resources.stringResource
 import presentation.AuthorizationScreenEffect
 import presentation.screen.LocalAuthorizationActions
 import presentation.state.AuthorizationState
@@ -45,7 +37,7 @@ internal fun AuthorizationScreenCompact(
                         withDismissAction = false,
                         duration = SnackbarDuration.Indefinite,
                         message = effect.message,
-                        actionLabel = "Повторить"
+                        actionLabel = getString(resource = Res.string.auth_repeat_action)
                     )
                     when (result) {
                         SnackbarResult.Dismissed -> { }
@@ -62,18 +54,18 @@ internal fun AuthorizationScreenCompact(
         }
     ) { innerPadding ->
         AnimatedContent(
+            modifier = Modifier.padding(innerPadding),
             targetState = state,
         ) { currentState ->
             Column(
                 modifier = Modifier
-                    .fillMaxSize()
-                    .padding(innerPadding),
+                    .fillMaxSize(),
                 verticalArrangement = Arrangement.Center,
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 Text(
                     modifier = Modifier.padding(16.dp),
-                    text = "Авторизация",
+                    text = stringResource(resource = Res.string.auth_screen_title),
                     style = MaterialTheme.typography.headlineLarge,
                 )
                 Spacer(modifier = Modifier.height(16.dp))

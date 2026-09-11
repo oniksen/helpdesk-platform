@@ -14,6 +14,7 @@ kotlin {
             implementation(projects.core.authorization.api)
             implementation(projects.features.authorization.api)
             implementation(projects.features.home.api)
+            implementation(projects.core.uiadaptive)
 
             implementation(libs.bundles.koin)
             implementation(libs.bundles.compose)

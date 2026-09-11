@@ -1,18 +1,12 @@
 package presentation.screen
 
-import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.foundation.layout.*
-import androidx.compose.material3.Button
-import androidx.compose.material3.CircularWavyProgressIndicator
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
+import AdaptiveLayoutWrapper
 import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
 import domain.intent.AuthorizationScreenIntent
+import kotlinx.coroutines.flow.SharedFlow
+import presentation.AuthorizationScreenEffect
 import presentation.actions.AuthorizationScreenActions
+import presentation.screen.compact.AuthorizationScreenCompact
 import presentation.state.AuthorizationState
 import presentation.viewmodel.AuthorizationScreenViewModel
 
@@ -25,59 +19,27 @@ internal fun AuthorizationScreen(
     viewModel: AuthorizationScreenViewModel,
 ) {
     val state by viewModel.state.collectAsState()
+    val effect = viewModel.effect
     val actions = AuthorizationScreenActions(
-        openHomePage = { viewModel.sendIntent(AuthorizationScreenIntent.OpenHomeScreen) }
+        authorize = { viewModel.sendIntent(AuthorizationScreenIntent.Authorize) }
     )
 
     CompositionLocalProvider(LocalAuthorizationActions provides actions) {
-        AuthorizationScreenContent(
+        AuthorizationScreenShell(
             state = state,
+            effect = effect
         )
     }
 }
 
 @Composable
-private fun AuthorizationScreenContent(
+private fun AuthorizationScreenShell(
     state: AuthorizationState,
+    effect: SharedFlow<AuthorizationScreenEffect>,
 ) {
-    val actions = LocalAuthorizationActions.current
-
-    AnimatedContent(
-        targetState = state,
-    ) { currentState ->
-        Column(
-            modifier = Modifier.fillMaxSize(),
-            verticalArrangement = Arrangement.Center,
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
-            Text(
-                modifier = Modifier.padding(16.dp),
-                text = "Авторизация",
-                style = MaterialTheme.typography.headlineLarge,
-            )
-            Spacer(modifier = Modifier.height(16.dp))
-            AnimatedVisibility(
-                visible = currentState.inProgress
-            ) {
-                CircularWavyProgressIndicator()
-                Spacer(modifier = Modifier.height(4.dp))
-            }
-            AnimatedVisibility(
-                visible = currentState.authResultMessage != null,
-            ) {
-                Text(
-                    text = currentState.authResultMessage ?: "",
-                )
-                Spacer(modifier = Modifier.height(4.dp))
-            }
-            Button(
-                enabled = currentState.testBtnEnabled,
-                onClick = actions.openHomePage,
-            ) {
-                Text(
-                    text = "Продолжить"
-                )
-            }
-        }
-    }
+    AdaptiveLayoutWrapper(
+        state = state,
+        effect = effect,
+        compact = { state, effect -> AuthorizationScreenCompact(state, effect) }
+    )
 }

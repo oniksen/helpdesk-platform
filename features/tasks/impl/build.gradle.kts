@@ -1,11 +1,13 @@
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
-    alias(libs.plugins.kotlinSerialization)
     alias(libs.plugins.composeCompiler)
     alias(libs.plugins.composeMultiplatform)
+    alias(libs.plugins.kotlinSerialization)
 }
 
 kotlin {
+    jvm()
+
     js {
         browser()
     }
@@ -13,14 +15,15 @@ kotlin {
     sourceSets {
         commonMain.dependencies {
             implementation(projects.core.navigation.api)
-            implementation(projects.core.uiadaptive)
-            implementation(projects.features.parking.api)
             implementation(projects.features.tasks.api)
-            implementation(libs.jetbrains.navigation3.ui)
+            implementation(projects.features.parking.api)
+            implementation(projects.features.authorization.api)
 
-            implementation(libs.bundles.koin)
             implementation(libs.bundles.compose)
-            implementation(libs.bundles.composeIcons)
+            implementation(libs.bundles.composeResources)
+        }
+        jvmMain.dependencies {
+            implementation(libs.bundles.composePreview)
         }
     }
 }

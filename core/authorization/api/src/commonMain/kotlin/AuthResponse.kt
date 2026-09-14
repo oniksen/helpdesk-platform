@@ -1,10 +1,6 @@
-sealed class AuthResponse {
-    data class Success(
-        val cookie: String,
-        val bearerToken: String,
-    ) : AuthResponse()
-    data class Error(
-        val message: String,
-        val errorCode: String? = null
-    ) : AuthResponse()
-}
+data class AuthResponse(
+    val bearerToken: String,
+    val cookies: String?,
+    val userId: Int,
+    val email: String,
+)

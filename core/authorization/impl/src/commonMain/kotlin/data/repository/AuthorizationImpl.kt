@@ -4,21 +4,25 @@ import AuthResponse
 import Authorization
 import MaxAuthorization
 import MaxAuthorizationResult
-import data.dto.AuthBody
-import data.dto.response.AuthResponseDto
+import auth.AuthData
+import data.dto.auth.AuthBody
+import data.dto.auth.response.AuthResponseDto
+import data.dto.user.UserDataDto
+import data.mapper.toDomain
 import data.network.KtorClient
-import io.ktor.client.call.body
-import io.ktor.client.request.post
-import io.ktor.client.request.setBody
-import io.ktor.client.statement.bodyAsText
-import io.ktor.http.ContentType
-import io.ktor.http.contentType
-import io.ktor.http.isSuccess
+import io.ktor.client.call.*
+import io.ktor.client.request.*
+import io.ktor.client.statement.*
+import io.ktor.http.*
+import user.UserData
 
 class AuthorizationImpl(
     private val maxAuthorization: MaxAuthorization,
     private val client: KtorClient,
 ): Authorization {
+    private var userData: UserData? = null
+    private var authData: AuthData? = null
+
     override suspend fun getMaxInitData(): MaxAuthorizationResult
         = maxAuthorization.getInitUserData()
 
@@ -30,20 +34,35 @@ class AuthorizationImpl(
             setBody(AuthBody(maxInitData))
         }
 
-        if (response.status.isSuccess()) {
-            /* Тело успешной авторизации.
-            * {"cookies":"PHPSESSID=","bearer_token":"H4sIAAAAAAACAxXL2wqCMAAA0H\/Za0Fq6SToYcqcC7e8ZxGIKdFyJRFqGv27dd7PByRObnsU8zjniGGwBtey2l9MFzVlGLxSdB+C3nioXB9qoiSVzPpyyS1WiFhlGzD\/f5z5NMRRjuJfpxlDFqo1MlKsdbTgx2g1w0+\/vbmtT4TRjFt5Wii7wvPkmYhOQN2GQagd3g5UzFRW4DsB\/va6t5UAAAA=.561378ff843b1ade88740ba3ef10e177144208d8f4f608dadb2e10eac15e389e","user_id":2,"user_name":"\u0420\u043e\u043c\u0430\u043d","user_lastname":"\u0411\u0430\u0440\u0434\u0430\u043a\u043e\u0432","user_patronymic":"\u0412\u043b\u0430\u0434\u0438\u0441\u043b\u0430\u0432\u043e\u0432\u0438\u0447","services":[11,12,10,13,15,16,17,18],"buildings":[221,220,210,224,215,243,222,211,216,218,219,244,213,217,4844,223,214,212,228,1383]}
-            * */
+        if (!response.status.isSuccess())
+            error(response.bodyAsText().ifBlank { "Неизвестный ответ" })
 
-            val body = response.body<AuthResponseDto>()
-            return AuthResponse.Success(
-                cookie = body.cookies,
-                bearerToken = body.bearerToken
-            )
-        } else {
-            return AuthResponse.Error(
-                message = response.bodyAsText().ifBlank { "Неизвестный ответ" }
-            )
-        }
+        return response.body<AuthResponseDto>().toDomain()
     }
+
+    override suspend fun fetchUserData(email: String): UserData {
+        val clientInstance = client.instance()
+
+        val authUserData = clientInstance
+            .get("/help-desk/v2/users?email=$email")
+
+        if (!authUserData.status.isSuccess())
+            error(authUserData.bodyAsText().ifBlank { "Неизвестный ответ" })
+
+        return authUserData.body<UserDataDto>().toDomain()
+    }
+
+    override fun saveUser(userData: UserData) {
+        this.userData = userData
+    }
+
+    override fun saveAuthData(authData: AuthData) {
+        this.authData = authData
+    }
+
+    override fun getToken(): String =
+        authData?.token ?: error("Токена не существует")
+
+    override fun getUserData(): UserData =
+        userData ?: error("Не найдена информация об авторизованном пользователе")
 }

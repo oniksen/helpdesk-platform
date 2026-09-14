@@ -2,10 +2,9 @@ package presentation.screen.compact
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.tooling.preview.PreviewWrapper
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
-import presentation.AuthorizationScreenEffect
+import presentation.effect.AuthorizationScreenEffect
 import presentation.state.AuthorizationState
 import presentation.utils.PreviewWrapper
 

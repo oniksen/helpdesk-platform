@@ -13,7 +13,7 @@ kotlin {
         commonMain.dependencies {
             implementation(projects.core.authorization.api)
             implementation(projects.features.authorization.api)
-            implementation(projects.features.home.api)
+            implementation(projects.features.tasks.api)
             implementation(projects.core.uiadaptive)
 
             implementation(libs.bundles.koin)

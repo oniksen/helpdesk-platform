@@ -3,7 +3,7 @@ import androidx.compose.runtime.remember
 import data.network.KtorClient
 import data.repository.AuthorizationImpl
 import navigation.AuthorizationScreenModule
-import navigation.HomePageModule
+import navigation.TasksPageModule
 import navigation.ParkingModule
 import org.koin.core.context.GlobalContext.startKoin
 import org.koin.dsl.bind
@@ -28,7 +28,7 @@ class DiProvider {
     // Модуль фич-навигации (внутренняя навигация MainNavigation)
     private val featuresNavModule = module {
         single { ParkingModule() } bind FeatureNavModule::class
-        single { HomePageModule() } bind FeatureNavModule::class
+        single { TasksPageModule() } bind FeatureNavModule::class
     }
 
     // Модуль рутовой навигации (Auth ↔ Home)

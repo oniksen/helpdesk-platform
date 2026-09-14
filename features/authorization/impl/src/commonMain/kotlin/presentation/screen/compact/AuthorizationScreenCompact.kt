@@ -16,7 +16,7 @@ import max_helpdesk.features.authorization.impl.generated.resources.auth_repeat_
 import max_helpdesk.features.authorization.impl.generated.resources.auth_screen_title
 import org.jetbrains.compose.resources.getString
 import org.jetbrains.compose.resources.stringResource
-import presentation.AuthorizationScreenEffect
+import presentation.effect.AuthorizationScreenEffect
 import presentation.screen.LocalAuthorizationActions
 import presentation.state.AuthorizationState
 

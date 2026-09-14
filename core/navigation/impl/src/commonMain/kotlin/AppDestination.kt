@@ -3,7 +3,7 @@ import androidx.compose.material.icons.outlined.CarRental
 import androidx.compose.material.icons.outlined.TaskAlt
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.navigation3.runtime.NavKey
-import navigation.HomePageRoute
+import navigation.TasksPageRoute
 import navigation.ParkingScreenRoute
 
 enum class AppDestination(
@@ -19,6 +19,6 @@ enum class AppDestination(
     TASKS(
         label = "Задачи",
         icon = Icons.Outlined.TaskAlt,
-        route = HomePageRoute,
+        route = TasksPageRoute,
     )
 }

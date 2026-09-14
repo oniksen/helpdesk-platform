@@ -4,7 +4,7 @@ import AdaptiveLayoutWrapper
 import androidx.compose.runtime.*
 import domain.intent.AuthorizationScreenIntent
 import kotlinx.coroutines.flow.SharedFlow
-import presentation.AuthorizationScreenEffect
+import presentation.effect.AuthorizationScreenEffect
 import presentation.actions.AuthorizationScreenActions
 import presentation.screen.compact.AuthorizationScreenCompact
 import presentation.state.AuthorizationState

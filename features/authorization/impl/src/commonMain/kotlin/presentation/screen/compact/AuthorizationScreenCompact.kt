@@ -2,7 +2,11 @@ package presentation.screen.compact
 
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.foundation.gestures.scrollable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.selection.SelectionContainer
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -78,9 +82,12 @@ internal fun AuthorizationScreenCompact(
                 AnimatedVisibility(
                     visible = currentState.authResultMessage != null,
                 ) {
-                    Text(
-                        text = currentState.authResultMessage ?: "",
-                    )
+                    SelectionContainer {
+                        Text(
+                            modifier = Modifier.verticalScroll(rememberScrollState()),
+                            text = currentState.authResultMessage ?: "",
+                        )
+                    }
                     Spacer(modifier = Modifier.height(4.dp))
                 }
             }

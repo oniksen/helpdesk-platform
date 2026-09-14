@@ -55,7 +55,10 @@ internal class AuthorizationScreenViewModel(
                 getMaxInitDataOrShowError()?.let { maxInitData ->
                     val authResponse = authorizer.helpdeskAuth(maxInitData)
                     val userData = authorizer.fetchUserData(authResponse.email)
-
+                    updateState { copy(
+                        inProgress = true,
+                        authResultMessage = "Сохранение полученных данных",
+                    ) }
                     authorizer.saveAuthData(AuthData(
                         maxInitData = maxInitData,
                         token = authResponse.bearerToken,
@@ -63,12 +66,13 @@ internal class AuthorizationScreenViewModel(
                     ))
                     authorizer.saveUser(userData)
 
+                    delay(1_000.milliseconds)
                     openHomeScreen()
                 }
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Throwable) {
-                showAuthorizationError(e.message ?: "Неизвестная ошибка")
+                showAuthorizationError(e.message ?: "Ошибка авторизации")
             }
         }
     }
@@ -97,7 +101,7 @@ internal class AuthorizationScreenViewModel(
         effect.tryEmit(AuthorizationScreenEffect.ShowSnackBar(message))
 
         updateState { copy(
-            authResultMessage = null,
+            authResultMessage = "Ошибка авторизации. Повторите снова",
             inProgress = false,
         ) }
     }

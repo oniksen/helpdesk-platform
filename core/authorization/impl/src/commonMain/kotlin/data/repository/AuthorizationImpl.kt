@@ -44,7 +44,7 @@ class AuthorizationImpl(
         val clientInstance = client.instance()
 
         val authUserData = clientInstance
-            .get("/help-desk/v2/users?email=$email")
+            .get("https://helpdesk.lpmti.ru/help-desk/v2/users?email=$email&api_key=helpdesk")
 
         if (!authUserData.status.isSuccess())
             error(authUserData.bodyAsText().ifBlank { "Неизвестный ответ" })

@@ -1,6 +1,6 @@
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
-import data.network.KtorClient
+import data.TokenProviderImpl
 import data.repository.AuthorizationImpl
 import navigation.AuthorizationScreenModule
 import navigation.TasksPageModule
@@ -15,14 +15,24 @@ class DiProvider {
         single<MaxAuthorization> { createAuthorizationObject() }
     }
 
+    // Модуль кор-авторизации используя MAX API.
     private val authorizationModule = module {
-        single<KtorClient> { KtorClient() }
         single<Authorization> {
             AuthorizationImpl(
                 maxAuthorization = get(),
                 client = get(),
             )
         }
+        single<TokenProvider> {
+            TokenProviderImpl(
+                authorization = get()
+            )
+        }
+    }
+
+    // Модуль для предоставления платформо-зависимых реализаций сетевых Ktor клиентов.
+    private val networkModule = module {
+        single<KtorClient> { createKtorClient(inject()) }
     }
 
     // Модуль фич-навигации (внутренняя навигация MainNavigation)
@@ -45,6 +55,7 @@ class DiProvider {
                     maxMiniAppModule,
                     featuresNavModule,
                     authorizationModule,
+                    networkModule,
                     rootNavModule,
                 )
             }

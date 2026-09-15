@@ -8,6 +8,8 @@ kotlin {
         binaries.executable()
     }
 
+    jvm()
+
     sourceSets {
         commonMain.dependencies {
             implementation(projects.core.network.api)

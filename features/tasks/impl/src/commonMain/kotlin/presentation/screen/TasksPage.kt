@@ -1,72 +1,55 @@
 package presentation.screen
 
-import androidx.compose.foundation.layout.*
-import androidx.compose.material3.Button
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
+import AdaptiveLayoutWrapper
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
-import max_helpdesk.features.tasks.impl.generated.resources.Res
-import max_helpdesk.features.tasks.impl.generated.resources.open_parking_page
-import max_helpdesk.features.tasks.impl.generated.resources.page_title
-import org.jetbrains.compose.resources.stringResource
-import presentation.intent.TasksPageIntent
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.staticCompositionLocalOf
+import domain.intent.TasksPageIntent
+import kotlinx.coroutines.flow.SharedFlow
+import presentation.actions.TasksPageActions
+import presentation.effect.TasksPageEffect
+import presentation.screen.compact.TasksPageContentCompact
+import presentation.state.TasksPageState
 import presentation.viewmodel.TasksPageViewModel
+
+val LocalTasksPageActions = staticCompositionLocalOf<TasksPageActions> {
+    error("No actions provided")
+}
 
 @Composable
 internal fun HomePage(
     tasksPageViewModel: TasksPageViewModel,
 ) {
-    HomePageContent(
-        onParkingPage = { tasksPageViewModel.sendIntent(TasksPageIntent.OpenParkingPage) },
-    )
-}
-
-@Composable
-internal fun HomePageContent(
-    onParkingPage: () -> Unit,
-) {
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-    ) {
-        Column(
-            modifier = Modifier
-                .align(Alignment.Center)
-                .padding(16.dp),
-            verticalArrangement = Arrangement.Center,
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
-            PageTitle()
-            Spacer(modifier = Modifier.height(16.dp))
-            OpenParkingPageButton(onClick = onParkingPage)
-        }
-    }
-}
-
-@Composable
-private fun PageTitle() {
-    Text(
-        text = stringResource(resource = Res.string.page_title),
-        style = MaterialTheme.typography.headlineLarge,
-        fontWeight = FontWeight.SemiBold,
-    )
-}
-
-@Composable
-private fun OpenParkingPageButton(
-    onClick: () -> Unit,
-) {
-    Button(
-        onClick = onClick,
-    ) {
-        Text(
-            text = stringResource(resource = Res.string.open_parking_page),
-            style = MaterialTheme.typography.bodyLarge,
+    val uiState by tasksPageViewModel.uiState.collectAsState()
+    val effect = tasksPageViewModel.effect
+    val actions = remember {
+        TasksPageActions(
+            openDetailsPage = { tasksPageViewModel.sendIntent(TasksPageIntent.OpenDetailsPage(id = it)) }
         )
     }
+
+    CompositionLocalProvider(LocalTasksPageActions provides actions) {
+        HomePageContentShell(
+            state = uiState,
+            effect = effect,
+        )
+    }
+}
+
+@Composable
+internal fun HomePageContentShell(
+    state: TasksPageState,
+    effect: SharedFlow<TasksPageEffect>,
+) {
+    AdaptiveLayoutWrapper(
+        state = state,
+        effect = effect,
+        compact = { state, effect ->
+            TasksPageContentCompact(state, effect)
+        }
+    )
 }
 

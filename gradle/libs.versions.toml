@@ -80,12 +80,16 @@ koin = [
 ]
 ktor = [
     "ktor-core",
-    "ktor-cio",
     "ktor-logging",
     "ktor-negotiation",
     "ktor-serialization",
-    "ktor-js-client",
     "ktor-auth"
+]
+ktorJvm = [
+    "ktor-cio"
+]
+ktorJs = [
+    "ktor-js-client"
 ]
 
 [plugins]

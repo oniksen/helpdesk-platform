@@ -2,6 +2,7 @@ package data.repository
 
 import AuthResponse
 import Authorization
+import KtorClient
 import MaxAuthorization
 import MaxAuthorizationResult
 import auth.AuthData
@@ -9,7 +10,6 @@ import data.dto.auth.AuthBody
 import data.dto.auth.response.AuthResponseDto
 import data.dto.user.UserDataDto
 import data.mapper.toDomain
-import data.network.KtorClient
 import io.ktor.client.call.*
 import io.ktor.client.request.*
 import io.ktor.client.statement.*
@@ -18,8 +18,9 @@ import user.UserData
 
 class AuthorizationImpl(
     private val maxAuthorization: MaxAuthorization,
-    private val client: KtorClient,
+    client: KtorClient,
 ): Authorization {
+    private val baseClient = client.baseInstance()
     private var userData: UserData? = null
     private var authData: AuthData? = null
 
@@ -27,9 +28,7 @@ class AuthorizationImpl(
         = maxAuthorization.getInitUserData()
 
     override suspend fun helpdeskAuth(maxInitData: String): AuthResponse {
-        val clientInstance = client.instance()
-
-        val response = clientInstance.post("https://helpdesk.lpmti.ru/max-app/v1/authorization") {
+        val response = baseClient.post("https://helpdesk.lpmti.ru/max-app/v1/authorization") {
             contentType(ContentType.Application.Json)
             setBody(AuthBody(maxInitData))
         }
@@ -41,9 +40,7 @@ class AuthorizationImpl(
     }
 
     override suspend fun fetchUserData(email: String): UserData {
-        val clientInstance = client.instance()
-
-        val authUserData = clientInstance
+        val authUserData = baseClient
             .get("https://helpdesk.lpmti.ru/help-desk/v2/users?email=$email&api_key=helpdesk")
 
         if (!authUserData.status.isSuccess())

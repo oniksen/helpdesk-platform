@@ -15,6 +15,8 @@ kotlin {
             implementation(projects.core.navigation.impl)
             implementation(projects.core.authorization.api)
             implementation(projects.core.authorization.impl)
+            implementation(projects.core.network.api)
+            implementation(projects.core.network.impl)
             implementation(projects.features.parking.impl)
             implementation(projects.features.tasks.api)
             implementation(projects.features.tasks.impl)

@@ -1,0 +1,1 @@
+expect fun createKtorClient(tokenProvider: Lazy<TokenProvider>): KtorClient

@@ -8,6 +8,7 @@ kotlin {
 
     sourceSets {
         commonMain.dependencies {
+            implementation(projects.core.network.api)
             implementation(projects.core.authorization.api)
             implementation(projects.maxminiappapi.api)
 

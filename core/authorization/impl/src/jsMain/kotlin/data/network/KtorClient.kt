@@ -8,6 +8,7 @@ import io.ktor.client.plugins.logging.*
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.serialization.json.Json
 
+/*
 actual class KtorClient {
     actual fun instance(): HttpClient = HttpClient(Js) {
         install(HttpTimeout) {
@@ -26,4 +27,4 @@ actual class KtorClient {
             })
         }
     }
-}
+}*/

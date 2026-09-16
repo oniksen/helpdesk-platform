@@ -3,6 +3,10 @@ package presentation.viewmodel
 import AppNavigator
 import data.repository.TasksRepository
 import domain.intent.TasksPageIntent
+import domain.model.Filters
+import domain.model.Order
+import domain.model.Sort
+import domain.model.SortParam
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -33,7 +37,16 @@ internal class TasksPageViewModel(
 
     init {
         scope.launch(Dispatchers.Default) {
-            val page = tasksRepository.loadPage(page = 1)
+            val page = tasksRepository.loadPage(
+                page = 1,
+                filters = Filters(
+                    buildings = listOf(5)
+                ),
+                sort = Sort(
+                    param = SortParam.DateLastChanged,
+                    order = Order.desc,
+                )
+            )
 
             println(page)
         }

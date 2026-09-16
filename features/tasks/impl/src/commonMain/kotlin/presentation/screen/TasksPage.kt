@@ -13,7 +13,6 @@ import presentation.actions.TasksPageActions
 import presentation.effect.TasksPageEffect
 import presentation.screen.compact.TasksPageContentCompact
 import presentation.state.TasksPageState
-import presentation.viewmodel.TasksPageViewModel
 
 val LocalTasksPageActions = staticCompositionLocalOf<TasksPageActions> {
     error("No actions provided")

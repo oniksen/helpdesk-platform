@@ -1,5 +1,3 @@
-package data.repository
-
 import domain.exception.AppException
 import io.ktor.client.plugins.ClientRequestException
 import io.ktor.client.plugins.HttpRequestTimeoutException
@@ -7,7 +5,6 @@ import io.ktor.client.plugins.ServerResponseException
 import kotlinx.io.IOException
 
 // Универсальный перехватчик ошибок для Ktor
-/*
 inline fun <T> safeNetworkCall(block: () -> T): NetworkResult<T> {
     return try {
         NetworkResult.Success(block())
@@ -23,4 +20,3 @@ inline fun <T> safeNetworkCall(block: () -> T): NetworkResult<T> {
         NetworkResult.Error(AppException.Unknown(e))
     }
 }
-*/

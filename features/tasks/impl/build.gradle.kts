@@ -18,6 +18,8 @@ kotlin {
             implementation(projects.core.network.api)
             implementation(projects.core.navigation.api)
             implementation(projects.core.uiadaptive)
+            implementation(projects.core.architecture)
+            implementation(projects.core.exception)
             implementation(projects.features.tasks.api)
             implementation(projects.features.parking.api)
             implementation(projects.features.authorization.api)

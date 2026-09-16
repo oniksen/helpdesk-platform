@@ -1,6 +1,7 @@
 package domain.exception
 
 // domain/exception/AppException.kt
+/*
 sealed class AppException : Exception {
     val userMessageId: Int?
 
@@ -23,3 +24,4 @@ sealed class AppException : Exception {
     // Для Unknown передаем и сообщение, и саму причину (cause), чтобы сохранить стэк-трейс
     class Unknown(cause: Throwable?) : AppException(message = cause?.message, cause = cause)
 }
+*/

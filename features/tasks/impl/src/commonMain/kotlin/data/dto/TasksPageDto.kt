@@ -6,6 +6,6 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class TasksPageDto(
-    @SerialName("data") val dataDto: List<DataDto?>? = null,
+    @SerialName("data") val dataDto: List<TaskDataDto?>? = null,
     @SerialName("pagination") val paginationDto: PaginationDto? = null
 )

@@ -5,7 +5,7 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 @Serializable
-data class Statuses(
+data class StatusesDto(
     @SerialName("assigned_users") val assignedUsersDto: List<Int?>? = null,
     @SerialName("completed_users") val completedUsersDto: List<Int?>? = null,
     @SerialName("in_progress_users") val inProgressUsersDto: List<Int?>? = null

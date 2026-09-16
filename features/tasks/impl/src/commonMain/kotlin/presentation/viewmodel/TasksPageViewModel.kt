@@ -1,7 +1,9 @@
 package presentation.viewmodel
 
 import AppNavigator
+import data.repository.NetworkResult
 import data.repository.TasksRepository
+import domain.exception.AppException
 import domain.intent.TasksPageIntent
 import domain.model.Filters
 import domain.model.Order
@@ -37,7 +39,7 @@ internal class TasksPageViewModel(
 
     init {
         scope.launch(Dispatchers.Default) {
-            val page = tasksRepository.loadPage(
+            tasksRepository.loadPage(
                 page = 1,
                 filters = Filters(
                     buildings = listOf(5)
@@ -47,8 +49,10 @@ internal class TasksPageViewModel(
                     order = Order.desc,
                 )
             )
-
-            println(page)
+                .getResultOrSendEffect()
+                ?.let { result ->
+                    println(result)
+                }
         }
     }
 
@@ -60,5 +64,19 @@ internal class TasksPageViewModel(
 
     private fun updateState(block: TasksPageState.() -> TasksPageState) {
         uiState.update { block.invoke(uiState.value) }
+    }
+
+    private fun<T> NetworkResult<T>.getResultOrSendEffect(): T? {
+        return when (this) {
+            is NetworkResult.Success -> this.data
+            is NetworkResult.Error -> {
+                effect.tryEmit(
+                    value = TasksPageEffect.ShowSnackBar(
+                        message = exception.message ?: "Неизвестная ошибка"
+                    )
+                )
+                null
+            }
+        }
     }
 }

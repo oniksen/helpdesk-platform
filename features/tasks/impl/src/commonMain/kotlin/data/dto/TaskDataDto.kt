@@ -5,7 +5,7 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 @Serializable
-data class DataDto(
+data class TaskDataDto(
     @SerialName("building") val buildingDto: Int? = null,
     @SerialName("category") val categoryDto: String? = null,
     @SerialName("commercial") val commercialDto: Boolean? = null,
@@ -17,6 +17,6 @@ data class DataDto(
     @SerialName("reopen_count") val reopenCountDto: Int? = null,
     @SerialName("service_id") val serviceIdDto: String? = null,
     @SerialName("status") val statusDto: String? = null,
-    @SerialName("statuses") val statusesDto: Statuses? = null,
+    @SerialName("statuses") val statusesDto: StatusesDto? = null,
     @SerialName("title") val titleDto: String? = null
 )

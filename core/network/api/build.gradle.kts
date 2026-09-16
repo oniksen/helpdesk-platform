@@ -8,9 +8,17 @@ kotlin {
         binaries.executable()
     }
 
+    jvm()
+
     sourceSets {
         commonMain.dependencies {
             api(libs.bundles.ktor)
+        }
+        jvmMain.dependencies {
+            api(libs.bundles.ktorJvm)
+        }
+        jsMain.dependencies {
+            api(libs.bundles.ktorJs)
         }
     }
 }

@@ -16,7 +16,7 @@ kotlin {
             implementation(libs.bundles.ktor)
         }
         jsMain.dependencies {
-            implementation(libs.bundles.ktor)
+            implementation(libs.bundles.ktorJs)
         }
     }
 }

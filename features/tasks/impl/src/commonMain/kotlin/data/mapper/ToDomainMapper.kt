@@ -12,7 +12,7 @@ import domain.model.TasksPage
 internal fun TasksPageDto.toDomain(): TasksPage {
     return TasksPage(
         data = this.dataDto?.mapNotNull { it?.toDomain() } ?: emptyList(),
-        paginationDto = this.paginationDto.toDomain()
+        pagination = this.paginationDto.toDomain()
     )
 }
 

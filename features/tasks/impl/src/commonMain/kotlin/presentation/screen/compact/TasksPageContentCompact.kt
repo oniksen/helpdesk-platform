@@ -3,16 +3,20 @@ package presentation.screen.compact
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.TextUnitType
 import androidx.compose.ui.unit.dp
@@ -76,6 +80,8 @@ internal fun TasksPageContentCompact(
                                 .fillMaxSize()
                                 .padding(horizontal = 16.dp),
                             list = state.currentList,
+                            hasNextPage = state.hasNextPage,
+                            onFirstVisibleIndexChange = { index -> actions.changeFirstVisibleIndex(index) }
                         )
                         else -> {
                             Text(
@@ -106,11 +112,20 @@ private fun TasksTopBar() {
 @Composable
 private fun TasksList(
     modifier: Modifier = Modifier,
-    list: List<TaskModel>
+    list: List<TaskModel>,
+    hasNextPage: Boolean,
+    onFirstVisibleIndexChange: (Int) -> Unit,
 ) {
+    val listState = rememberLazyListState()
+
+    LaunchedEffect(listState) {
+        onFirstVisibleIndexChange(listState.firstVisibleItemIndex)
+    }
+
     LazyColumn(
         modifier = modifier,
         verticalArrangement = Arrangement.spacedBy(2.dp),
+        state = listState,
     ) {
         itemsIndexed(items = list) { index, taskModel  ->
             TaskItemCard(
@@ -121,6 +136,20 @@ private fun TasksList(
                     else -> ListPosition.Middle
                 }
             )
+        }
+        if (hasNextPage) {
+            item {
+                Spacer(modifier = Modifier.height(16.dp))
+                Text(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp),
+                    text = "Конец списка",
+                    textAlign = TextAlign.Center,
+                    color = MaterialTheme.colorScheme.outline,
+                )
+                Spacer(modifier = Modifier.height(16.dp))
+            }
         }
     }
 }

@@ -5,4 +5,5 @@ import domain.model.TaskModel
 data class TasksPageState(
     val loading: Boolean = false,
     val currentList: List<TaskModel> = emptyList(),
+    val hasNextPage: Boolean = false,
 )

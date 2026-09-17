@@ -27,7 +27,8 @@ internal fun TasksPage(
     val effect = tasksPageViewModel.effect
     val actions = remember {
         TasksPageActions(
-            openDetailsPage = { tasksPageViewModel.sendIntent(TasksPageIntent.OpenDetailsPage(id = it)) }
+            openDetailsPage = { tasksPageViewModel.sendIntent(TasksPageIntent.OpenDetailsPage(it)) },
+            changeFirstVisibleIndex = { tasksPageViewModel.sendIntent(TasksPageIntent.FirstVisibleIndexChanged(it)) }
         )
     }
 

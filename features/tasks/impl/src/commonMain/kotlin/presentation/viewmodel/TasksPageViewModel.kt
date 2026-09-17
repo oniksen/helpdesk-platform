@@ -9,6 +9,7 @@ import domain.model.Filters
 import domain.model.Order
 import domain.model.Sort
 import domain.model.SortParam
+import domain.model.TaskModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import presentation.effect.TasksPageEffect
@@ -36,6 +37,11 @@ internal class TasksPageViewModel(
                     }
                 )
                 ?.let { result ->
+                    updateState {
+                        copy(
+                            currentList = result.data.map { raw -> TaskModel(raw.id.toLong(), raw.title) }
+                        )
+                    }
                     println(result)
                 }
         }

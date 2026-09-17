@@ -8,7 +8,7 @@ import data.repository.TasksRepository
 import kotlinx.serialization.modules.SerializersModule
 import kotlinx.serialization.modules.polymorphic
 import org.koin.compose.koinInject
-import presentation.screen.HomePage
+import presentation.screen.TasksPage
 import presentation.viewmodel.TasksPageViewModel
 
 class TasksPageModule : FeatureNavModule {
@@ -29,7 +29,7 @@ class TasksPageModule : FeatureNavModule {
             ),
         )
 
-        HomePage(
+        TasksPage(
             tasksPageViewModel = tasksPageViewModel,
         )
     }

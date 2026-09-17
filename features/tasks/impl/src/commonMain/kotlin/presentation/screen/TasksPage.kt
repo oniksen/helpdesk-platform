@@ -13,13 +13,14 @@ import presentation.actions.TasksPageActions
 import presentation.effect.TasksPageEffect
 import presentation.screen.compact.TasksPageContentCompact
 import presentation.state.TasksPageState
+import presentation.viewmodel.TasksPageViewModel
 
 val LocalTasksPageActions = staticCompositionLocalOf<TasksPageActions> {
     error("No actions provided")
 }
 
 @Composable
-internal fun HomePage(
+internal fun TasksPage(
     tasksPageViewModel: TasksPageViewModel,
 ) {
     val uiState by tasksPageViewModel.uiState.collectAsState()
@@ -31,7 +32,7 @@ internal fun HomePage(
     }
 
     CompositionLocalProvider(LocalTasksPageActions provides actions) {
-        HomePageContentShell(
+        TasksPageContentShell(
             state = uiState,
             effect = effect,
         )
@@ -39,7 +40,7 @@ internal fun HomePage(
 }
 
 @Composable
-internal fun HomePageContentShell(
+internal fun TasksPageContentShell(
     state: TasksPageState,
     effect: SharedFlow<TasksPageEffect>,
 ) {

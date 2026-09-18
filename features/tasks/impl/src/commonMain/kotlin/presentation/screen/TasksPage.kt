@@ -3,11 +3,13 @@ package presentation.screen
 import AdaptiveLayoutWrapper
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.staticCompositionLocalOf
 import domain.intent.TasksPageIntent
+import domain.model.TasksPage
 import kotlinx.coroutines.flow.SharedFlow
 import presentation.actions.TasksPageActions
 import presentation.effect.TasksPageEffect
@@ -28,7 +30,8 @@ internal fun TasksPage(
     val actions = remember {
         TasksPageActions(
             openDetailsPage = { tasksPageViewModel.sendIntent(TasksPageIntent.OpenDetailsPage(it)) },
-            changeFirstVisibleIndex = { tasksPageViewModel.sendIntent(TasksPageIntent.FirstVisibleIndexChanged(it)) }
+            changeFirstVisibleIndex = { tasksPageViewModel.sendIntent(TasksPageIntent.FirstVisibleIndexChanged(it)) },
+            cancelJobs = { tasksPageViewModel.sendIntent(TasksPageIntent.CancelJobs) }
         )
     }
 
@@ -37,6 +40,12 @@ internal fun TasksPage(
             state = uiState,
             effect = effect,
         )
+    }
+
+    DisposableEffect(Unit) {
+        onDispose {
+            actions.cancelJobs()
+        }
     }
 }
 

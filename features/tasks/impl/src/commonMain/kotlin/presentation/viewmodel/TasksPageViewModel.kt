@@ -12,13 +12,20 @@ import domain.model.SortParam
 import domain.model.TaskModel
 import domain.model.TasksPage
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import presentation.effect.TasksPageEffect
 import presentation.state.TasksPageState
 import kotlin.time.Duration.Companion.milliseconds
 
+@OptIn(ExperimentalCoroutinesApi::class)
 internal class TasksPageViewModel(
     private val tasksRepository: TasksRepository,
     private val navigator: AppNavigator
@@ -26,19 +33,23 @@ internal class TasksPageViewModel(
     /** Кэш самих объектов. */
     private val entityCache: MutableMap<Long, TaskModel> = HashMap()
     private val filterCache: MutableMap<Int, MutableList<Long>> = HashMap()
-    private var firstVisibleIndex = 0
+    private val _currentPage = MutableStateFlow(1)
 
     init {
-        loadPage(
-            page = 1,
-            filters = Filters(buildings = listOf(5)),
-            sort = Sort(SortParam.DateLastChanged, Order.desc,)
-        )
         scope.launch {
-            while (isActive) {
-                delay(5_000.milliseconds)
-                val currentPage = (firstVisibleIndex / 10) + 1
-                loadPage(page = currentPage, filters = Filters(buildings = listOf(5)), sort = Sort(SortParam.DateLastChanged, Order.desc,))
+            _currentPage.flatMapLatest { page ->
+                flow {
+                    while(currentCoroutineContext().isActive) {
+                        emit(page)
+                        delay(5_000.milliseconds)
+                    }
+                }
+            }.collect { page ->
+                loadPage(
+                    page = page,
+                    filters = Filters(buildings = listOf(5)),
+                    sort = Sort(SortParam.DateLastChanged, Order.desc)
+                )
             }
         }
     }
@@ -46,8 +57,17 @@ internal class TasksPageViewModel(
     fun sendIntent(intent: TasksPageIntent) {
         when (intent) {
             is TasksPageIntent.OpenDetailsPage -> TODO()
-            is TasksPageIntent.FirstVisibleIndexChanged -> { firstVisibleIndex = intent.index }
+            is TasksPageIntent.FirstVisibleIndexChanged -> emitNewPage(intent.index)
+            TasksPageIntent.CancelJobs -> cancelScope()
         }
+    }
+
+    private fun emitNewPage(index: Int) {
+        // Если индекс на текущей странице < порогового значения, не должны подгружать следующую страницу. Иначе должны.
+        val nextPageIndex = if (index % 10 < 3) 0 else 1
+        val currentPage = index / 10 + 1 + nextPageIndex
+
+        _currentPage.value = currentPage
     }
 
     private fun loadPage(page: Int, filters: Filters, sort: Sort) {
@@ -105,5 +125,9 @@ internal class TasksPageViewModel(
 
             filterCache[filtersHash] = currentListIds
         }
+    }
+
+    private fun cancelScope() {
+        scope.cancel()
     }
 }

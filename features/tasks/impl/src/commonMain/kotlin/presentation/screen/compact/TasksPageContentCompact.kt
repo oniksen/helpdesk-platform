@@ -10,6 +10,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
@@ -23,6 +24,7 @@ import androidx.compose.ui.unit.dp
 import domain.model.Tabs
 import domain.model.TaskModel
 import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
 import presentation.effect.TasksPageEffect
 import presentation.screen.LocalTasksPageActions
@@ -42,9 +44,21 @@ internal fun TasksPageContentCompact(
 
     val pagerState = rememberPagerState(pageCount = { Tabs.entries.size })
     val coroutineScope = rememberCoroutineScope()
+    val snackbarState = remember { SnackbarHostState() }
+
+    LaunchedEffect(effect) {
+        effect.collect { effect ->
+            when (effect) {
+                is TasksPageEffect.ShowSnackBar -> {
+                    snackbarState.showSnackbar(effect.message)
+                }
+            }
+        }
+    }
 
     Scaffold(
-        topBar = { TasksTopBar() }
+        topBar = { TasksTopBar() },
+        snackbarHost = {  SnackbarHost(snackbarState) },
     ) { innerPadding ->
         Column(
             modifier = Modifier.fillMaxSize(),
@@ -119,7 +133,11 @@ private fun TasksList(
     val listState = rememberLazyListState()
 
     LaunchedEffect(listState) {
-        onFirstVisibleIndexChange(listState.firstVisibleItemIndex)
+        snapshotFlow { listState.firstVisibleItemIndex }
+            .distinctUntilChanged()
+            .collect { index ->
+                onFirstVisibleIndexChange(index)
+            }
     }
 
     LazyColumn(
@@ -137,7 +155,7 @@ private fun TasksList(
                 }
             )
         }
-        if (hasNextPage) {
+        if (!hasNextPage) {
             item {
                 Spacer(modifier = Modifier.height(16.dp))
                 Text(
@@ -149,6 +167,19 @@ private fun TasksList(
                     color = MaterialTheme.colorScheme.outline,
                 )
                 Spacer(modifier = Modifier.height(16.dp))
+            }
+        } else {
+            item {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 16.dp),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    CircularWavyProgressIndicator(
+                        modifier = Modifier.size(24.dp),
+                    )
+                }
             }
         }
     }

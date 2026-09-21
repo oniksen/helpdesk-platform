@@ -1,0 +1,193 @@
+name: Release
+
+on:
+  pull_request:
+    branches:
+      - main
+    types:
+      - closed
+
+concurrency:
+  group: release-main
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: Build and Publish Release
+    # Запускать только после merge PR
+    if: github.event.pull_request.merged == true
+    runs-on: windows-latest
+    permissions:
+      contents: write
+
+    env:
+      MSI_PATH: composeApp/build/compose/binaries/main-release/msi
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+          cache: gradle
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Grant execute permission for Gradle
+        shell: bash
+        run: chmod +x gradlew
+
+      - name: Extract release metadata from PR
+        id: metadata
+        shell: bash
+        run: |
+          PR_TITLE="${{ github.event.pull_request.title }}"
+
+          cat << 'EOF' > PR_BODY.txt
+          ${{ github.event.pull_request.body }}
+          EOF
+
+          FIRST_LINE=$(head -n 1 PR_BODY.txt | tr -d '\r')
+
+          # Проверяем формат первой строки
+          if ! echo "$FIRST_LINE" | grep -qE '^\[Release-[0-9]+\.[0-9]+\.[0-9]+\]'; then
+            echo "❌ Error: First line must match format [Release-X.Y.Z]"
+            echo "Got: $FIRST_LINE"
+            exit 1
+          fi
+
+          # Удаляем квадратные скобки
+          RELEASE_ID=$(echo "$FIRST_LINE" | sed 's/\[//g' | sed 's/\]//g')
+
+          # Создаём tag из версии
+          VERSION=$(echo "$RELEASE_ID" | sed 's/.*-//')
+          TAG_NAME="v$VERSION"
+
+          # Удаляем первую строку и пустую строку после неё
+          tail -n +3 PR_BODY.txt > RELEASE_BODY.md
+
+          # Проверяем, что release notes не пустые
+          if [ ! -s RELEASE_BODY.md ]; then
+            echo "⚠️  Warning: Release notes are empty"
+          fi
+
+          echo "release_id=$RELEASE_ID" >> $GITHUB_OUTPUT
+          echo "release_name=$PR_TITLE" >> $GITHUB_OUTPUT
+          echo "tag_name=$TAG_NAME" >> $GITHUB_OUTPUT
+
+          echo "✅ Release ID: $RELEASE_ID"
+          echo "✅ Release Name: $PR_TITLE"
+          echo "✅ Tag: $TAG_NAME"
+
+          echo "Release Notes:"
+          cat RELEASE_BODY.md
+
+      - name: Run Detekt
+        run: ./gradlew detekt
+        continue-on-error: false
+
+      - name: Run tests
+        run: ./gradlew test
+        continue-on-error: false
+
+      - name: Build MSI installer
+        run: ./gradlew :composeApp:packageReleaseMsi
+        continue-on-error: false
+
+      - name: Verify MSI exists
+        shell: bash
+        run: |
+          echo "🔍 Looking for MSI files in: ${{ env.MSI_PATH }}"
+          
+          if [ ! -d "${{ env.MSI_PATH }}" ]; then
+            echo "❌ Error: Directory not found: ${{ env.MSI_PATH }}"
+            exit 1
+          fi
+          
+          MSI_COUNT=$(find "${{ env.MSI_PATH }}" -name "*.msi" | wc -l)
+          
+          if [ "$MSI_COUNT" -eq 0 ]; then
+            echo "❌ Error: No MSI files found in ${{ env.MSI_PATH }}"
+            find "${{ env.MSI_PATH }}" -type f | head -10
+            exit 1
+          fi
+          
+          echo "✅ Found $MSI_COUNT MSI file(s)"
+          find "${{ env.MSI_PATH }}" -name "*.msi" -exec ls -lh {} \;
+
+      - name: Rename MSI artifact
+        shell: bash
+        run: |
+          echo "📦 Renaming MSI artifact..."
+          
+          MSI_FILE=$(find "${{ env.MSI_PATH }}" -name "*.msi" | head -1)
+          
+          if [ -z "$MSI_FILE" ]; then
+            echo "❌ Error: Could not find MSI file"
+            exit 1
+          fi
+          
+          NEW_NAME="${{ steps.metadata.outputs.release_id }}.msi"
+          
+          echo "Old name: $(basename "$MSI_FILE")"
+          echo "New name: $NEW_NAME"
+          
+          mv "$MSI_FILE" "$NEW_NAME"
+          
+          if [ -f "$NEW_NAME" ]; then
+            echo "✅ Successfully renamed to: $NEW_NAME"
+            ls -lh "$NEW_NAME"
+          else
+            echo "❌ Error: Failed to rename MSI file"
+            exit 1
+          fi
+
+      - name: Setup Git credentials
+        shell: bash
+        run: |
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git config user.name "github-actions[bot]"
+
+      - name: Create Git Tag
+        shell: bash
+        run: |
+          TAG_NAME="${{ steps.metadata.outputs.tag_name }}"
+          
+          # Проверяем, не существует ли уже такой tag
+          if git rev-parse "$TAG_NAME" >/dev/null 2>&1; then
+            echo "❌ Error: Tag $TAG_NAME already exists"
+            exit 1
+          fi
+          
+          echo "🏷️  Creating tag: $TAG_NAME"
+          git tag "$TAG_NAME"
+          git push origin "$TAG_NAME"
+          echo "✅ Tag created and pushed successfully"
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.metadata.outputs.tag_name }}
+          name: ${{ steps.metadata.outputs.release_name }}
+          body_path: RELEASE_BODY.md
+          files: "*.msi"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Release Summary
+        shell: bash
+        run: |
+          echo "================================"
+          echo "✅ Release Completed Successfully"
+          echo "================================"
+          echo "Release ID: ${{ steps.metadata.outputs.release_id }}"
+          echo "Release Name: ${{ steps.metadata.outputs.release_name }}"
+          echo "Tag: ${{ steps.metadata.outputs.tag_name }}"
+          echo "Repository: ${{ github.repository }}"
+          echo "Release URL: https://github.com/${{ github.repository }}/releases/tag/${{ steps.metadata.outputs.tag_name }}"

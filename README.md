@@ -4,6 +4,7 @@ Web-приложение для управления задачами и сер�
 
 [![PR Check](https://github.com/oniksen/helpdesk-platform/actions/workflows/pr-check.yml/badge.svg)](https://github.com/oniksen/helpdesk-platform/actions/workflows/pr-check.yml)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
+![Coverage](coverage-badge.svg)
 
 ## Проблема
 
@@ -53,6 +54,25 @@ Web-приложение для управления задачами и сер�
 
 # Линтер
 ./gradlew detekt
+
+# Покрытие тестами
+./gradlew koverXmlReportsAll                     # XML-отчёты по модулям
+./gradlew generateCoverageBadge                  # Генерация badge SVG
+```
+
+## Покрытие тестами
+
+Проект использует [Kotlinx Kover](https://github.com/Kotlin/kotlinx-kover) для сбора метрик покрытия.
+
+```bash
+# Собрать XML-отчёты по всем модулям
+./gradlew koverXmlReportsAll
+
+# Сгенерировать badge с процентом покрытия
+./gradlew generateCoverageBadge
+
+# HTML-отчёт по конкретному модулю
+./gradlew :features:parking:impl:koverHtmlReport
 ```
 
 ## Добавление фичи
@@ -61,8 +81,6 @@ Web-приложение для управления задачами и сер�
 2. Создать `features/<name>/impl` с `FeatureNavModule` и экранами
 3. Зарегистрировать модуль в `DiProvider`
 4. Добавить модули в `settings.gradle.kts`
-
-Подробнее — в [docs/Добавление-фичи.md](docs/Добавление-фичи.md).
 
 ## Контрибьюция
 

@@ -3,10 +3,10 @@ package presentation.screen.shared
 import androidx.compose.material3.Button
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import max_helpdesk.features.parking.impl.generated.resources.Res
-import max_helpdesk.features.parking.impl.generated.resources.parking_check_pass_btn_next_step
-import max_helpdesk.features.parking.impl.generated.resources.parking_check_pass_btn_process
-import max_helpdesk.features.parking.impl.generated.resources.parking_check_pass_btn_text_default
+import helpdesk_platform.features.parking.impl.generated.resources.Res
+import helpdesk_platform.features.parking.impl.generated.resources.parking_check_pass_btn_next_step
+import helpdesk_platform.features.parking.impl.generated.resources.parking_check_pass_btn_process
+import helpdesk_platform.features.parking.impl.generated.resources.parking_check_pass_btn_text_default
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
 import presentation.state.PassInputState

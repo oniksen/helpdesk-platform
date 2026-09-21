@@ -7,8 +7,8 @@ import domain.model.toPassNumber
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.*
-import max_helpdesk.features.parking.impl.generated.resources.Res
-import max_helpdesk.features.parking.impl.generated.resources.parking_scan_max_unavailable
+import helpdesk_platform.features.parking.impl.generated.resources.Res
+import helpdesk_platform.features.parking.impl.generated.resources.parking_scan_max_unavailable
 import org.jetbrains.compose.resources.getString
 import presentation.effect.ParkingScreenEffect
 import presentation.state.ParkingScreenState

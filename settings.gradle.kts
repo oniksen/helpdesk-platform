@@ -1,4 +1,4 @@
-rootProject.name = "max-helpdesk"
+rootProject.name = "helpdesk-platform"
 
 pluginManagement {
     repositories {

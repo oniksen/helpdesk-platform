@@ -1,4 +1,4 @@
-rootProject.name = "max-helpdesk"
+rootProject.name = "helpdesk-platform"
 
 pluginManagement {
     repositories {
@@ -39,6 +39,8 @@ include(":core:authorization:impl")
 include(":core:network")
 include(":core:network:api")
 include(":core:network:impl")
+include(":core:architecture")
+include(":core:exception")
 include(":maxminiappapi")
 include(":maxminiappapi:api")
 include(":maxminiappapi:impl")

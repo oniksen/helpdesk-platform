@@ -1,6 +1,7 @@
 package data.repository
 
 import KtorClient
+import NetworkResult
 import data.dto.TasksPageDto
 import data.mapper.toDomain
 import data.mapper.toDto
@@ -10,6 +11,7 @@ import domain.model.TasksPage
 import io.ktor.client.call.*
 import io.ktor.client.request.*
 import io.ktor.http.*
+import safeNetworkCall
 import utils.toJsonString
 
 

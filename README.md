@@ -1,37 +1,75 @@
-This is a Kotlin Multiplatform project targeting Web.
+# Helpdesk Platform
 
-* [/shared](./shared/src) is for code that will be shared across your Compose Multiplatform applications. It contains
-  several subfolders:
-    - [commonMain](./shared/src/commonMain/kotlin) is for code that’s common for all targets.
-    - Other folders are for Kotlin code that will be compiled for only the platform indicated in the folder name. For
-      example, if you want to use Apple’s CoreCrypto for the iOS part of your Kotlin app,
-      the [iosMain](./shared/src/iosMain/kotlin) folder would be the right place for such calls. Similarly, if you want
-      to edit the Desktop (JVM) specific part, the [jvmMain](./shared/src/jvmMain/kotlin)
-      folder is the appropriate location.
+Web-приложение для управления задачами и сервисными обращениями, построенное на Kotlin Multiplatform с Compose Multiplatform.
 
-### Running the apps
+[![PR Check](https://github.com/oniksen/helpdesk-platform/actions/workflows/pr-check.yml/badge.svg)](https://github.com/oniksen/helpdesk-platform/actions/workflows/pr-check.yml)
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
 
-Use the run configurations provided by the run widget in your IDE's toolbar. You can also use these commands and
-options:
+## Проблема
 
-- Web app:
-    - Wasm target (faster, modern browsers): `./gradlew :webApp:wasmJsBrowserDevelopmentRun`
-    - JS target (slower, supports older browsers): `./gradlew :webApp:jsBrowserDevelopmentRun`
+Сервисные команды нуждаются в едином интерфейсе для обработки обращений, управления парковочными местами и отслеживания задач. Helpdesk Platform объединяет эти процессы в одном web-приложении с modern UI и модульной архитектурой.
 
-### Running tests
+## Быстрый старт
 
-Use the run button in your IDE's editor gutter, or run tests using Gradle tasks:
+### Требования
 
-- Web tests:
-    - Wasm target: `./gradlew :shared:wasmJsTest`
-    - JS target: `./gradlew :shared:jsTest`
+- JDK 21
+- Gradle (используется wrapper)
 
----
+### Запуск
 
-Learn more about [Kotlin Multiplatform](https://www.jetbrains.com/help/kotlin-multiplatform-dev/get-started.html),
-[Compose Multiplatform](https://github.com/JetBrains/compose-multiplatform/#compose-multiplatform),
-[Kotlin/Wasm](https://kotl.in/wasm/)…
+```bash
+# Wasm (быстрее, современные браузеры)
+./gradlew :webApp:wasmJsBrowserDevelopmentRun
 
-We would appreciate your feedback on Compose/Web and Kotlin/Wasm in the public Slack
-channel [#compose-web](https://slack-chats.kotlinlang.org/c/compose-web). If you face any issues, please report them
-on [YouTrack](https://youtrack.jetbrains.com/newIssue?project=CMP).
+# JS (для старых браузеров)
+./gradlew :webApp:jsBrowserDevelopmentRun
+```
+
+## Модули
+
+| Модуль | Назначение |
+|--------|------------|
+| `core/di` | DI-провайдер (Koin), точка входа в граф зависимостей |
+| `core/navigation/api` | Интерфейс `FeatureNavModule` для фич |
+| `core/navigation/impl` | `BasicDslContainer` — навигационный контейнер |
+| `features/*/api` | Маршруты фич (`@Serializable data object : NavKey`) |
+| `features/*/impl` | Реализация экранов и модулей фич |
+| `maxminiappapi/api` | Интерфейсы API (мост к внешней платформе) |
+| `maxminiappapi/impl` | Платформенные реализации API |
+| `shared` | Общий код (`App.kt`, `Platform.kt`) |
+| `webApp` | Точка входа Web-приложения |
+
+## Команды
+
+```bash
+# Запуск
+./gradlew :webApp:wasmJsBrowserDevelopmentRun    # Web (Wasm)
+./gradlew :webApp:jsBrowserDevelopmentRun       # Web (JS)
+
+# Тесты
+./gradlew :shared:wasmJsTest                     # Wasm-тесты
+./gradlew allTests                               # Все тесты
+
+# Линтер
+./gradlew detekt
+```
+
+## Добавление фичи
+
+1. Создать `features/<name>/api` с маршрутом (`@Serializable data object ... : NavKey`)
+2. Создать `features/<name>/impl` с `FeatureNavModule` и экранами
+3. Зарегистрировать модуль в `DiProvider`
+4. Добавить модули в `settings.gradle.kts`
+
+Подробнее — в [docs/Добавление-фичи.md](docs/Добавление-фичи.md).
+
+## Контрибьюция
+
+- Базовая ветка: `develop`
+- Требования: JDK 21
+- Перед отправкой PR: `./gradlew detekt && ./gradlew allTests`
+
+## Лицензия
+
+[Apache License 2.0](LICENSE)

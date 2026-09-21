@@ -1,0 +1,36 @@
+package navigation
+
+import AppNavigator
+import FeatureNavModule
+import androidx.navigation3.runtime.NavEntry
+import androidx.navigation3.runtime.NavKey
+import data.repository.TasksRepository
+import kotlinx.serialization.modules.SerializersModule
+import kotlinx.serialization.modules.polymorphic
+import org.koin.compose.koinInject
+import presentation.screen.TasksPage
+import presentation.viewmodel.TasksPageViewModel
+
+class TasksPageModule : FeatureNavModule {
+    override val serializerModule = SerializersModule {
+        polymorphic(NavKey::class) { subclass(TasksPageRoute::class, TasksPageRoute.serializer()) }
+    }
+
+    override fun canResolve(key: NavKey): Boolean = key is TasksPageRoute
+
+    override fun resolve(
+        key: NavKey,
+        navigator: AppNavigator,
+    ): NavEntry<out NavKey> = NavEntry(key = key as TasksPageRoute) {
+        val tasksPageViewModel = TasksPageViewModel(
+            navigator = navigator,
+            tasksRepository = TasksRepository(
+                client = koinInject()
+            ),
+        )
+
+        TasksPage(
+            tasksPageViewModel = tasksPageViewModel,
+        )
+    }
+}

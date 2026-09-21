@@ -1,0 +1,7 @@
+<resources>
+    <string name="parking_scan_qr_button">Сканировать QR</string>
+    <string name="parking_scan_max_unavailable">Сканирование QR через MAX недоступно. Используйте ручной ввод.</string>
+    <string name="parking_check_pass_btn_text_default">Проверить</string>
+    <string name="parking_check_pass_btn_process">Проверка</string>
+    <string name="parking_check_pass_btn_next_step">Далее</string>
+</resources>

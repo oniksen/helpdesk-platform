@@ -1,4 +1,4 @@
-rootProject.name = "max-helpdesk"
+rootProject.name = "helpdesk-platform"
 
 pluginManagement {
     repositories {
@@ -29,17 +29,31 @@ dependencyResolutionManagement {
 
 enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
 
-include(":shared")
 include(":webApp")
 include(":core")
 include(":core:di")
+include(":core:uiadaptive")
+include(":core:authorization")
+include(":core:authorization:api")
+include(":core:authorization:impl")
+include(":core:network")
+include(":core:network:api")
+include(":core:network:impl")
+include(":core:architecture")
+include(":core:exception")
 include(":maxminiappapi")
 include(":maxminiappapi:api")
 include(":maxminiappapi:impl")
 include(":features")
-include(":features:qrscan")
-include(":features:qrscan:api")
-include(":features:qrscan:impl")
+include(":features:parking")
+include(":features:parking:api")
+include(":features:parking:impl")
 include(":core:navigation")
 include(":core:navigation:api")
 include(":core:navigation:impl")
+include(":features:tasks")
+include(":features:tasks:api")
+include(":features:tasks:impl")
+include(":features:authorization")
+include(":features:authorization:api")
+include(":features:authorization:impl")

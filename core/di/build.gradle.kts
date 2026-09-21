@@ -13,21 +13,20 @@ kotlin {
         commonMain.dependencies {
             implementation(projects.core.navigation.api)
             implementation(projects.core.navigation.impl)
-
+            implementation(projects.core.authorization.api)
+            implementation(projects.core.authorization.impl)
+            implementation(projects.core.network.api)
+            implementation(projects.core.network.impl)
+            implementation(projects.features.parking.impl)
+            implementation(projects.features.tasks.api)
+            implementation(projects.features.tasks.impl)
+            implementation(projects.features.authorization.api)
+            implementation(projects.features.authorization.impl)
             implementation(projects.maxminiappapi.api)
             implementation(projects.maxminiappapi.impl)
-            implementation(projects.features.qrscan.api)
-            implementation(projects.features.qrscan.impl)
 
             implementation(libs.compose.runtime)
-            implementation(libs.compose.foundation)
-            implementation(libs.compose.material3)
-            implementation(libs.compose.ui)
-            implementation(libs.compose.components.resources)
-            implementation(libs.compose.uiToolingPreview)
-            implementation(libs.androidx.lifecycle.viewmodelCompose)
-            implementation(libs.androidx.lifecycle.runtimeCompose)
-            implementation(libs.bundles.koin)
+            implementation(libs.koin.core)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)

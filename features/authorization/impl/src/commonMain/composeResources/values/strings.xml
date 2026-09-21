@@ -1,0 +1,4 @@
+<resources>
+    <string name="auth_screen_title">Авторизация</string>
+    <string name="auth_repeat_action">Повторить</string>
+</resources>

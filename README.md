@@ -90,4 +90,4 @@ Web-приложение для управления задачами и сер�
 
 ## Лицензия
 
-[Apache License 2.0](LICENSE)
+[LPMTI Proprietary Internal Use License](LICENSE)

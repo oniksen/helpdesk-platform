@@ -17,6 +17,7 @@ import navigation.TasksPageRoute
 import presentation.effect.AuthorizationScreenEffect
 import presentation.state.AuthorizationState
 import user.UserData
+import UpdateScreenRoute
 import kotlin.time.Duration.Companion.milliseconds
 
 internal class AuthorizationScreenViewModel(
@@ -94,7 +95,7 @@ internal class AuthorizationScreenViewModel(
 
         scope.launch {
             delay(1_000.milliseconds)
-            navigator.navigate(TasksPageRoute)
+            navigator.navigate(UpdateScreenRoute)
         }
     }
     private fun showAuthorizationError(message: String) {

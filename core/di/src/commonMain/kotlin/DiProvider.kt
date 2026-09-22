@@ -5,6 +5,7 @@ import data.repository.AuthorizationImpl
 import navigation.AuthorizationScreenModule
 import navigation.TasksPageModule
 import navigation.ParkingModule
+import navigation.UpdateScreenModule
 import org.koin.core.context.GlobalContext.startKoin
 import org.koin.dsl.bind
 import org.koin.dsl.module
@@ -44,7 +45,13 @@ class DiProvider {
     // Модуль рутовой навигации (Auth ↔ Home)
     private val rootNavModule = module {
         single { AuthorizationScreenModule() } bind RootNavModule::class
+        single { UpdateScreenModule() } bind RootNavModule::class
         single { HomePageContainerModule() } bind RootNavModule::class
+    }
+
+    // Модуль обновлений (загрузка сборок с сервера)
+    private val updateModule = module {
+        single<AppUpdater> { createAppUpdater() }
     }
 
     @Composable
@@ -57,6 +64,7 @@ class DiProvider {
                     authorizationModule,
                     networkModule,
                     rootNavModule,
+                    updateModule,
                 )
             }
         }

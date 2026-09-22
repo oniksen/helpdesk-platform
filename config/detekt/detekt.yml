@@ -1,0 +1,146 @@
+config:
+  validation: true
+  warningsAsErrors: false
+  checkExhaustiveness: false
+  excludes: []
+
+processors:
+  active: false
+
+console-reports:
+  active: true
+  exclude:
+    - 'ProjectStatisticsReport'
+    - 'ComplexityReport'
+    - 'NotificationReport'
+    - 'IssuesReport'
+    - 'FileBasedIssuesReport'
+
+comments:
+  active: false
+
+complexity:
+  active: true
+  CyclomaticComplexMethod:
+    active: true
+    allowedComplexity: 15
+  LargeClass:
+    active: true
+    allowedLines: 600
+  LongMethod:
+    active: true
+    allowedLines: 60
+  LongParameterList:
+    active: true
+    allowedFunctionParameters: 8
+    allowedConstructorParameters: 10
+    ignoreDefaultParameters: true
+    ignoreDataClasses: true
+  TooManyFunctions:
+    active: true
+    excludes: ['**/test/**']
+    allowedFunctionsPerFile: 25
+    allowedFunctionsPerClass: 25
+  NestedBlockDepth:
+    active: true
+    allowedDepth: 4
+
+coroutines:
+  active: true
+  GlobalCoroutineUsage:
+    active: false
+  SuspendFunSwallowedCancellation:
+    active: false
+  SuspendFunWithCoroutineScopeReceiver:
+    active: false
+
+empty-blocks:
+  active: true
+  EmptyFunctionBlock:
+    active: true
+    ignoreOverridden: true
+
+exceptions:
+  active: true
+  TooGenericExceptionCaught:
+    active: false
+  TooGenericExceptionThrown:
+    active: false
+  NotImplementedDeclaration:
+    active: false
+  ErrorUsageWithThrowable:
+    active: false
+
+naming:
+  active: true
+  FunctionNaming:
+    active: true
+    excludes: ['**/test/**', '**/commonTest/**', '**/jsTest/**', '**/jvmTest/**']
+    functionPattern: '[a-z][a-zA-Z0-9]*'
+    excludeClassPattern: '$^'
+  BooleanPropertyNaming:
+    active: false
+  TopLevelPropertyNaming:
+    active: true
+    constantPattern: '[A-Z][_A-Z0-9]*'
+    propertyPattern: '[A-Za-z][_A-Za-z0-9]*'
+  MatchingDeclarationName:
+    active: true
+    multiplatformTargets:
+      - 'js'
+      - 'jvm'
+
+performance:
+  active: true
+  SpreadOperator:
+    active: false
+
+potential-bugs:
+  active: true
+  HasPlatformType:
+    active: false
+  IgnoredReturnValue:
+    active: false
+  ExitOutsideMain:
+    active: false
+
+style:
+  active: true
+  MagicNumber:
+    active: false
+  MaxLineLength:
+    active: true
+    maxLineLength: 140
+    excludePackageStatements: true
+    excludeImportStatements: true
+    excludeCommentStatements: false
+    excludeRawStrings: true
+  WildcardImport:
+    active: false
+  ReturnCount:
+    active: true
+    max: 4
+    excludeLabeled: false
+    excludeReturnFromLambda: true
+  ForbiddenComment:
+    active: false
+  ForbiddenMethodCall:
+    active: false
+  ExpressionBodySyntax:
+    active: false
+  RedundantVisibilityModifier:
+    active: false
+  UnusedImport:
+    active: true
+  VarCouldBeVal:
+    active: true
+  DataClassContainsFunctions:
+    active: false
+  DataClassShouldBeImmutable:
+    active: false
+  OptionalAbstractKeyword:
+    active: true
+  UseCheckOrError:
+    active: true
+  UtilityClassWithPublicConstructor:
+    active: false

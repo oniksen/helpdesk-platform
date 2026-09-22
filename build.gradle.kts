@@ -7,6 +7,23 @@ plugins {
     alias(libs.plugins.composeCompiler) apply false
     alias(libs.plugins.kotlinMultiplatform) apply false
     alias(libs.plugins.kotlinx.kover) apply false
+    alias(libs.plugins.detekt)
+}
+
+detekt {
+    buildUponDefaultConfig = true
+    config.setFrom(files("$rootDir/config/detekt/detekt.yml"))
+    baseline.set(file("$rootDir/config/detekt/baseline.xml"))
+    parallel = true
+    basePath.set(projectDir)
+    source.setFrom(
+        fileTree(projectDir) {
+            include("**/src/*/kotlin/**/*.kt")
+            exclude("**/build/**")
+            exclude("**/generated/**")
+            exclude("**/resources/**")
+        }
+    )
 }
 
 tasks.register("koverXmlReportsAll") {

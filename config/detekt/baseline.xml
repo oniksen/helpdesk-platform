@@ -1,0 +1,128 @@
+<?xml version="1.0" ?>
+<SmellBaseline>
+  <ManuallySuppressedIssues/>
+  <CurrentIssues>
+    <ID>EmptyFunctionBlock:LargeParkingScreen.kt:{ }</ID>
+    <ID>EnumNaming:Order.kt:Order$asc</ID>
+    <ID>EnumNaming:Order.kt:Order$desc</ID>
+    <ID>FunctionNaming:AdaptiveLayoutWrapper.kt:@Composable fun AdaptiveLayoutWrapper</ID>
+    <ID>FunctionNaming:AdaptiveLayoutWrapper.kt:@Composable fun&lt;S, E&gt; AdaptiveLayoutWrapper</ID>
+    <ID>FunctionNaming:AdaptiveNavigationContainer.kt:@Composable internal fun AdaptiveNavigationContainer</ID>
+    <ID>FunctionNaming:AdaptiveNavigationContainer.kt:@Composable private fun LargeScreen</ID>
+    <ID>FunctionNaming:AdaptiveNavigationContainer.kt:@Composable private fun MediumScreen</ID>
+    <ID>FunctionNaming:AdaptiveNavigationContainer.kt:@Composable private fun SmallScreen</ID>
+    <ID>FunctionNaming:AnimatedTabBar.kt:@Composable fun AnimatedTabBar</ID>
+    <ID>FunctionNaming:AuthorizationScreen.kt:@Composable internal fun AuthorizationScreen</ID>
+    <ID>FunctionNaming:AuthorizationScreen.kt:@Composable private fun AuthorizationScreenShell</ID>
+    <ID>FunctionNaming:AuthorizationScreenCompact.kt:@Composable internal fun AuthorizationScreenCompact</ID>
+    <ID>FunctionNaming:AuthorizationScreenCompactPreview.kt:@Preview @Composable fun AuthorizationScreenCompactPreview</ID>
+    <ID>FunctionNaming:CheckPassButton.kt:@Composable internal fun CheckPassButton</ID>
+    <ID>FunctionNaming:DiProvider.kt:DiProvider$@Composable fun MainKoinApplication</ID>
+    <ID>FunctionNaming:LargeParkingScreen.kt:@Composable internal fun LargeParkingScreen</ID>
+    <ID>FunctionNaming:MainNavigation.kt:@Composable fun MainNavigation</ID>
+    <ID>FunctionNaming:ParkingScreen.kt:@Composable fun ParkingScreen</ID>
+    <ID>FunctionNaming:ParkingScreen.kt:@Composable private fun ParkingScreenContentShell</ID>
+    <ID>FunctionNaming:ParkingScreenSmallContent.kt:@Composable internal fun ParkingScreenSmallContent</ID>
+    <ID>FunctionNaming:ParkingScreenSmallContent.kt:@Composable private fun PassField</ID>
+    <ID>FunctionNaming:ParkingScreenSmallContent.kt:@Composable private fun ScanQrButton</ID>
+    <ID>FunctionNaming:ParkingScreenSmallContentPreview.kt:@Preview(showSystemUi = true, showBackground = true, name = "Light Mode") @Composable private fun ParkingScreenSmallContentPreviewDark</ID>
+    <ID>FunctionNaming:ParkingScreenSmallContentPreview.kt:@Preview(showSystemUi = true, showBackground = true, name = "Light Mode") @Composable private fun ParkingScreenSmallContentPreviewLight</ID>
+    <ID>FunctionNaming:PassNumberInput.kt:@Composable internal fun PassNumberInput</ID>
+    <ID>FunctionNaming:PreviewWrapper.kt:@Composable internal fun PreviewWrapper</ID>
+    <ID>FunctionNaming:RootNavigation.kt:@Composable fun RootNavigation</ID>
+    <ID>FunctionNaming:TasksPage.kt:@Composable internal fun TasksPage</ID>
+    <ID>FunctionNaming:TasksPage.kt:@Composable internal fun TasksPageContentShell</ID>
+    <ID>FunctionNaming:TasksPageContentCompact.kt:@Composable internal fun TasksPageContentCompact</ID>
+    <ID>FunctionNaming:TasksPageContentCompact.kt:@Composable private fun TaskItemCard</ID>
+    <ID>FunctionNaming:TasksPageContentCompact.kt:@Composable private fun TasksList</ID>
+    <ID>FunctionNaming:TasksPageContentCompact.kt:@Composable private fun TasksTopBar</ID>
+    <ID>FunctionNaming:TasksPageContentCompactPreview.kt:@Composable private fun PreviewState</ID>
+    <ID>FunctionNaming:TasksPageContentCompactPreview.kt:@Preview @Composable private fun TasksPageCompatPreviewDark</ID>
+    <ID>FunctionNaming:TasksPageContentCompactPreview.kt:@Preview @Composable private fun TasksPageCompatPreviewLight</ID>
+    <ID>LongMethod:AuthorizationScreenCompact.kt:@Composable internal fun AuthorizationScreenCompact</ID>
+    <ID>LongMethod:TasksPageContentCompact.kt:@Composable internal fun TasksPageContentCompact</ID>
+    <ID>NewLineAtEndOfFile:AccessLevel.kt:user.AccessLevel.kt</ID>
+    <ID>NewLineAtEndOfFile:AdaptiveLayoutWrapper.kt:.AdaptiveLayoutWrapper.kt</ID>
+    <ID>NewLineAtEndOfFile:AdaptiveNavigationContainer.kt:.AdaptiveNavigationContainer.kt</ID>
+    <ID>NewLineAtEndOfFile:AnimatedTabBar.kt:presentation.screen.shared.AnimatedTabBar.kt</ID>
+    <ID>NewLineAtEndOfFile:AppDestination.kt:.AppDestination.kt</ID>
+    <ID>NewLineAtEndOfFile:AppNavigator.kt:.AppNavigator.kt</ID>
+    <ID>NewLineAtEndOfFile:AuthMapper.kt:data.mapper.AuthMapper.kt</ID>
+    <ID>NewLineAtEndOfFile:AuthResponse.kt:.AuthResponse.kt</ID>
+    <ID>NewLineAtEndOfFile:AuthResponseDto.kt:data.dto.auth.response.AuthResponseDto.kt</ID>
+    <ID>NewLineAtEndOfFile:AuthResult.kt:.AuthResult.kt</ID>
+    <ID>NewLineAtEndOfFile:Authorization.kt:.Authorization.kt</ID>
+    <ID>NewLineAtEndOfFile:AuthorizationFactory.jvm.kt:.AuthorizationFactory.jvm.kt</ID>
+    <ID>NewLineAtEndOfFile:AuthorizationFactory.kt:.AuthorizationFactory.kt</ID>
+    <ID>NewLineAtEndOfFile:AuthorizationImpl.kt:data.repository.AuthorizationImpl.kt</ID>
+    <ID>NewLineAtEndOfFile:AuthorizationScreen.kt:presentation.screen.AuthorizationScreen.kt</ID>
+    <ID>NewLineAtEndOfFile:AuthorizationScreenActions.kt:presentation.actions.AuthorizationScreenActions.kt</ID>
+    <ID>NewLineAtEndOfFile:AuthorizationScreenCompact.kt:presentation.screen.compact.AuthorizationScreenCompact.kt</ID>
+    <ID>NewLineAtEndOfFile:AuthorizationScreenCompactPreview.kt:presentation.screen.compact.AuthorizationScreenCompactPreview.kt</ID>
+    <ID>NewLineAtEndOfFile:AuthorizationScreenIntent.kt:domain.intent.AuthorizationScreenIntent.kt</ID>
+    <ID>NewLineAtEndOfFile:AuthorizationScreenModule.kt:navigation.AuthorizationScreenModule.kt</ID>
+    <ID>NewLineAtEndOfFile:AuthorizationScreenRoute.kt:.AuthorizationScreenRoute.kt</ID>
+    <ID>NewLineAtEndOfFile:AuthorizationScreenViewModel.kt:presentation.viewmodel.AuthorizationScreenViewModel.kt</ID>
+    <ID>NewLineAtEndOfFile:AuthorizationState.kt:presentation.state.AuthorizationState.kt</ID>
+    <ID>NewLineAtEndOfFile:BaseViewModel.kt:.BaseViewModel.kt</ID>
+    <ID>NewLineAtEndOfFile:CheckPassButton.kt:presentation.screen.shared.CheckPassButton.kt</ID>
+    <ID>NewLineAtEndOfFile:CreateKtorClient.js.kt:.CreateKtorClient.js.kt</ID>
+    <ID>NewLineAtEndOfFile:DiProvider.kt:.DiProvider.kt</ID>
+    <ID>NewLineAtEndOfFile:FeatureNavModule.kt:.FeatureNavModule.kt</ID>
+    <ID>NewLineAtEndOfFile:FiltersDtoExtentions.kt:utils.FiltersDtoExtentions.kt</ID>
+    <ID>NewLineAtEndOfFile:KtorClient.kt:.KtorClient.kt</ID>
+    <ID>NewLineAtEndOfFile:KtorClientImpl.kt:.KtorClientImpl.kt</ID>
+    <ID>NewLineAtEndOfFile:LargeParkingScreen.kt:presentation.screen.large.LargeParkingScreen.kt</ID>
+    <ID>NewLineAtEndOfFile:MaxAuthorization.kt:.MaxAuthorization.kt</ID>
+    <ID>NewLineAtEndOfFile:MaxAuthorizationResult.kt:.MaxAuthorizationResult.kt</ID>
+    <ID>NewLineAtEndOfFile:MessageDto.kt:data.dto.user.MessageDto.kt</ID>
+    <ID>NewLineAtEndOfFile:NetworkResult.kt:.NetworkResult.kt</ID>
+    <ID>NewLineAtEndOfFile:Order.kt:domain.model.Order.kt</ID>
+    <ID>NewLineAtEndOfFile:PaginationDto.kt:data.dto.PaginationDto.kt</ID>
+    <ID>NewLineAtEndOfFile:ParkingModule.kt:navigation.ParkingModule.kt</ID>
+    <ID>NewLineAtEndOfFile:ParkingScreen.kt:presentation.screen.ParkingScreen.kt</ID>
+    <ID>NewLineAtEndOfFile:ParkingScreenIntent.kt:domain.intent.ParkingScreenIntent.kt</ID>
+    <ID>NewLineAtEndOfFile:ParkingScreenRoute.kt:navigation.ParkingScreenRoute.kt</ID>
+    <ID>NewLineAtEndOfFile:ParkingScreenSmallContentPreview.kt:presentation.screen.small.ParkingScreenSmallContentPreview.kt</ID>
+    <ID>NewLineAtEndOfFile:ParkingScreenState.kt:presentation.state.ParkingScreenState.kt</ID>
+    <ID>NewLineAtEndOfFile:ParkingScreenViewModel.kt:presentation.viewmodel.ParkingScreenViewModel.kt</ID>
+    <ID>NewLineAtEndOfFile:PassInputState.kt:presentation.state.PassInputState.kt</ID>
+    <ID>NewLineAtEndOfFile:PassNumber.kt:domain.model.PassNumber.kt</ID>
+    <ID>NewLineAtEndOfFile:PassNumberInput.kt:presentation.screen.shared.PassNumberInput.kt</ID>
+    <ID>NewLineAtEndOfFile:PreviewWrapper.kt:presentation.screen.compact.PreviewWrapper.kt</ID>
+    <ID>NewLineAtEndOfFile:PreviewWrapper.kt:presentation.utils.PreviewWrapper.kt</ID>
+    <ID>NewLineAtEndOfFile:QrCodeScanner.kt:.QrCodeScanner.kt</ID>
+    <ID>NewLineAtEndOfFile:QrCodeScannerFactory.jvm.kt:.QrCodeScannerFactory.jvm.kt</ID>
+    <ID>NewLineAtEndOfFile:QrCodeScannerFactory.kt:.QrCodeScannerFactory.kt</ID>
+    <ID>NewLineAtEndOfFile:QrCodeScannerResult.kt:.QrCodeScannerResult.kt</ID>
+    <ID>NewLineAtEndOfFile:RootNavModule.kt:.RootNavModule.kt</ID>
+    <ID>NewLineAtEndOfFile:RootNavigation.kt:.RootNavigation.kt</ID>
+    <ID>NewLineAtEndOfFile:Sort.kt:domain.model.Sort.kt</ID>
+    <ID>NewLineAtEndOfFile:SortExtentions.kt:utils.SortExtentions.kt</ID>
+    <ID>NewLineAtEndOfFile:SortParam.kt:domain.model.SortParam.kt</ID>
+    <ID>NewLineAtEndOfFile:StatusesDto.kt:data.dto.StatusesDto.kt</ID>
+    <ID>NewLineAtEndOfFile:Tabs.kt:domain.model.Tabs.kt</ID>
+    <ID>NewLineAtEndOfFile:TaskDataDto.kt:data.dto.TaskDataDto.kt</ID>
+    <ID>NewLineAtEndOfFile:TasksPage.kt:domain.model.TasksPage.kt</ID>
+    <ID>NewLineAtEndOfFile:TasksPageContentCompact.kt:presentation.screen.compact.TasksPageContentCompact.kt</ID>
+    <ID>NewLineAtEndOfFile:TasksPageContentCompactPreview.kt:presentation.screen.compact.TasksPageContentCompactPreview.kt</ID>
+    <ID>NewLineAtEndOfFile:TasksPageDto.kt:data.dto.TasksPageDto.kt</ID>
+    <ID>NewLineAtEndOfFile:TasksPageEffect.kt:presentation.effect.TasksPageEffect.kt</ID>
+    <ID>NewLineAtEndOfFile:TasksPageIntent.kt:domain.intent.TasksPageIntent.kt</ID>
+    <ID>NewLineAtEndOfFile:TasksPageModule.kt:navigation.TasksPageModule.kt</ID>
+    <ID>NewLineAtEndOfFile:TasksPageRoute.kt:navigation.TasksPageRoute.kt</ID>
+    <ID>NewLineAtEndOfFile:TasksPageState.kt:presentation.state.TasksPageState.kt</ID>
+    <ID>NewLineAtEndOfFile:TasksPageViewModel.kt:presentation.viewmodel.TasksPageViewModel.kt</ID>
+    <ID>NewLineAtEndOfFile:TasksRepository.kt:data.repository.TasksRepository.kt</ID>
+    <ID>NewLineAtEndOfFile:ToDomainMapper.kt:data.mapper.ToDomainMapper.kt</ID>
+    <ID>NewLineAtEndOfFile:ToDtoMapper.kt:data.mapper.ToDtoMapper.kt</ID>
+    <ID>NewLineAtEndOfFile:TokenProvider.kt:.TokenProvider.kt</ID>
+    <ID>NewLineAtEndOfFile:TokenProviderImpl.kt:data.TokenProviderImpl.kt</ID>
+    <ID>NewLineAtEndOfFile:UserDataDto.kt:data.dto.user.UserDataDto.kt</ID>
+    <ID>NewLineAtEndOfFile:UserDataMapper.kt:data.mapper.UserDataMapper.kt</ID>
+    <ID>NewLineAtEndOfFile:UserRole.kt:user.UserRole.kt</ID>
+    <ID>NewLineAtEndOfFile:main.kt:org.lpmti.helpdeskplatform.main.kt</ID>
+    <ID>SwallowedException:safeNetworkCall.kt:e: HttpRequestTimeoutException</ID>
+    <ID>SwallowedException:safeNetworkCall.kt:e: IOException</ID>
+  </CurrentIssues>
+</SmellBaseline>

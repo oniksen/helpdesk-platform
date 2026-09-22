@@ -6,6 +6,7 @@ kotlin = "2.4.10"
 kotlinx-coroutines = "1.11.0"
 kotlin-wrappers = "2026.8.4"
 kover = "0.9.8"
+detekt = "2.0.0-alpha.6"
 material3 = "1.12.0-alpha03"
 koin = "4.0.2"
 multiplatform-nav3-ui = "1.1.1"
@@ -99,3 +100,4 @@ composeCompiler = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "k
 kotlinMultiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
 kotlinSerialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
 kotlinx-kover = { id = "org.jetbrains.kotlinx.kover", version.ref = "kover" }
+detekt = { id = "dev.detekt", version.ref = "detekt" }

@@ -40,26 +40,12 @@ class AppUpdaterImpl : AppUpdater {
     }
 
     private suspend fun saveToCache(url: String, files: Map<String, ByteArray>) {
-        val db = openDatabaseJs().await()
-        val tx = db.transaction("builds", "readwrite")
-        val store = tx.objectStore("builds")
-
-        val record = js("({})")
-        js("record.url = url")
-        js("record.files = files")
-        js("record.timestamp = Date.now()")
-
-        store.put(record).await()
-        db.close()
+        val filesJson: String = js("JSON.stringify(files)")
+        putToCacheJs(url, filesJson).await()
     }
 
     private suspend fun readFromCache(url: String): Map<String, ByteArray>? {
-        val db = openDatabaseJs().await()
-        val tx = db.transaction("builds", "readonly")
-        val store = tx.objectStore("builds")
-
-        val result: dynamic = store.get(url).await()
-        db.close()
+        val result: dynamic = getFromCacheJs(url).await()
 
         return if (result != null) {
             @Suppress("UNCHECKED_CAST")

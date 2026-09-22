@@ -78,6 +78,8 @@ naming:
     excludes: ['**/test/**', '**/commonTest/**', '**/jsTest/**', '**/jvmTest/**']
     functionPattern: '[a-z][a-zA-Z0-9]*'
     excludeClassPattern: '$^'
+    ignoreAnnotated:
+      - 'Composable'
   BooleanPropertyNaming:
     active: false
   TopLevelPropertyNaming:

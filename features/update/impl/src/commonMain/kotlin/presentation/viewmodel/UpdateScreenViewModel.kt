@@ -100,6 +100,7 @@ internal class UpdateScreenViewModel(
         }
 
         delay(1_000.milliseconds)
+        navigator.popBackStack()
         navigator.navigate(TasksPageRoute)
     }
 

@@ -14,8 +14,8 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
     const url = new URL(event.request.url);
 
-    // Only handle navigation requests and known static assets
     if (event.request.method !== 'GET') return;
+    if (url.origin !== self.location.origin) return;
 
     event.respondWith(
         openDatabase()
@@ -42,7 +42,7 @@ self.addEventListener('fetch', (event) => {
 
 function openDatabase() {
     return new Promise((resolve, reject) => {
-        const request = indexedDB.open(CACHE_DB_NAME, 1);
+        const request = indexedDB.open(CACHE_DB_NAME, 2);
         request.onupgradeneeded = (event) => {
             const db = event.target.result;
             if (!db.objectStoreNames.contains(CACHE_STORE)) {
@@ -68,8 +68,12 @@ function getActiveBuild(db) {
             } else {
                 resolve(null);
             }
+            db.close();
         };
-        request.onerror = (event) => reject(event.target.error);
+        request.onerror = (event) => {
+            db.close();
+            reject(event.target.error);
+        };
     });
 }
 
@@ -84,5 +88,8 @@ function getContentType(fileName) {
     if (fileName.endsWith('.svg')) return 'image/svg+xml';
     if (fileName.endsWith('.ico')) return 'image/x-icon';
     if (fileName.endsWith('.map')) return 'application/json';
+    if (fileName.endsWith('.woff2')) return 'font/woff2';
+    if (fileName.endsWith('.ttf')) return 'font/ttf';
+    if (fileName.endsWith('.webmanifest')) return 'application/manifest+json';
     return 'application/octet-stream';
 }

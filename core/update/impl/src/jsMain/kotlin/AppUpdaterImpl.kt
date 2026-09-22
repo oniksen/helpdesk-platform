@@ -6,6 +6,7 @@ class AppUpdaterImpl : AppUpdater {
         getCachedBuild(url)?.let { return it }
 
         val response = fetchJs(url).await()
+        check(response.ok) { "Ошибка загрузки обновления: HTTP ${response.status}" }
         val arrayBuffer = response.arrayBuffer().await()
 
         val zip = JSZip.loadAsync(arrayBuffer).await()
@@ -40,18 +41,25 @@ class AppUpdaterImpl : AppUpdater {
     }
 
     private suspend fun saveToCache(url: String, files: Map<String, ByteArray>) {
-        val filesJson: String = js("JSON.stringify(files)")
-        putToCacheJs(url, filesJson).await()
+        val filesObj: dynamic = js("{}")
+        for ((name, data) in files) {
+            filesObj[name] = data
+        }
+        putToCacheJs(url, filesObj).await()
     }
 
     private suspend fun readFromCache(url: String): Map<String, ByteArray>? {
-        val result: dynamic = getFromCacheJs(url).await()
+        val result: dynamic = getFromCacheJs(url).await() ?: return null
 
-        return if (result != null) {
-            @Suppress("UNCHECKED_CAST")
-            result.files as Map<String, ByteArray>
-        } else {
-            null
+        val filesObj: dynamic = result.files
+        val names: Array<String> = objectKeys(filesObj)
+        if (names.isEmpty()) return null
+
+        val map = mutableMapOf<String, ByteArray>()
+        for (name in names) {
+            val data: dynamic = filesObj[name]
+            map[name] = ByteArray(data.length as Int) { index -> data[index] as Byte }
         }
+        return map
     }
 }

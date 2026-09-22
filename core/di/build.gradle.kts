@@ -8,6 +8,7 @@ plugins {
 kotlin {
     js {
         browser()
+        binaries.executable()
     }
 
     sourceSets {

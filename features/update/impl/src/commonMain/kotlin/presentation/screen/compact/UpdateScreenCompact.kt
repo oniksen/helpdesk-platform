@@ -56,42 +56,47 @@ internal fun UpdateScreenCompact(
             modifier = Modifier.padding(innerPadding),
             targetState = state,
         ) { currentState ->
+            UpdateStatusContent(currentState)
+        }
+    }
+}
+
+@Composable
+private fun UpdateStatusContent(state: UpdateState) {
+    Column(
+        modifier = Modifier.fillMaxSize(),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Text(
+            modifier = Modifier.padding(16.dp),
+            text = "Обновление приложения",
+            style = MaterialTheme.typography.headlineLarge,
+        )
+        Spacer(modifier = Modifier.height(16.dp))
+        AnimatedVisibility(
+            visible = state.inProgress
+        ) {
             Column(
-                modifier = Modifier.fillMaxSize(),
-                verticalArrangement = Arrangement.Center,
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
+                CircularWavyProgressIndicator()
+                Spacer(modifier = Modifier.height(8.dp))
                 Text(
-                    modifier = Modifier.padding(16.dp),
-                    text = "Обновление приложения",
-                    style = MaterialTheme.typography.headlineLarge,
+                    text = state.message ?: "",
+                    style = MaterialTheme.typography.bodyLarge,
                 )
-                Spacer(modifier = Modifier.height(16.dp))
-                AnimatedVisibility(
-                    visible = currentState.inProgress
-                ) {
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                    ) {
-                        CircularWavyProgressIndicator()
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text(
-                            text = currentState.message ?: "",
-                            style = MaterialTheme.typography.bodyLarge,
-                        )
-                    }
-                }
-                AnimatedVisibility(
-                    visible = !currentState.inProgress && currentState.message != null,
-                ) {
-                    SelectionContainer {
-                        Text(
-                            modifier = Modifier.verticalScroll(rememberScrollState()),
-                            text = currentState.message ?: "",
-                            style = MaterialTheme.typography.bodyLarge,
-                        )
-                    }
-                }
+            }
+        }
+        AnimatedVisibility(
+            visible = !state.inProgress && state.message != null,
+        ) {
+            SelectionContainer {
+                Text(
+                    modifier = Modifier.verticalScroll(rememberScrollState()),
+                    text = state.message ?: "",
+                    style = MaterialTheme.typography.bodyLarge,
+                )
             }
         }
     }

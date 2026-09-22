@@ -11,7 +11,7 @@ concurrency:
 
 jobs:
   check:
-    name: Code Check
+    name: Check & Build
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -35,40 +35,13 @@ jobs:
       - name: Run all tests
         run: ./gradlew allTests
 
-  deploy-pages:
-    name: Build & Deploy to GitHub Pages
-    needs: check
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      pages: write
-      id-token: write
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Setup JDK 21
-        uses: actions/setup-java@v6
-        with:
-          distribution: temurin
-          java-version: 21
-
-      - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v6
-
       - name: Build JS distribution
         run: ./gradlew :webApp:jsBrowserDevelopmentExecutableDistribution
 
-      - name: Upload artifact
-        uses: actions/upload-pages-artifact@v3
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
         with:
+          name: webapp-js-dist
           path: dist
-
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
-
+          retention-days: 2
+          if-no-files-found: error

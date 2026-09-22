@@ -1,0 +1,55 @@
+name: Cache Cleanup
+
+on:
+  schedule:
+    - cron: "0 3 * * *"
+  workflow_dispatch:
+
+permissions:
+  actions: write
+  contents: read
+
+jobs:
+  cleanup:
+    name: Clean caches older than 2 days
+    runs-on: ubuntu-latest
+    steps:
+      - name: Delete stale caches
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          max_age_days=2
+          repo="$GITHUB_REPOSITORY"
+          cutoff=$(date -d "-${max_age_days} days" +%s)
+          page=1
+          deleted=0
+
+          while :; do
+            body=$(gh api -H "Accept: application/vnd.github+json" \
+              "/repos/${repo}/actions/caches?per_page=100&page=${page}")
+            total=$(jq -r '.total_count // 0' <<< "$body")
+            pages=$(( (total + 99) / 100 ))
+            matched=0
+
+            while IFS=$'\t' read -r id last_used; do
+              matched=1
+              used_ts=$(date -d "$last_used" +%s)
+              if [ "$used_ts" -lt "$cutoff" ]; then
+                echo "Deleting cache ${id} (last used: ${last_used})"
+                gh api -X DELETE -H "Accept: application/vnd.github+json" \
+                  "/repos/${repo}/actions/caches/${id}" && deleted=$((deleted + 1))
+              fi
+            done < <(jq -r '.actions_caches[] | [.id, .last_used_at] | @tsv' <<< "$body")
+
+            if [ "$matched" -eq 0 ]; then
+              break
+            fi
+
+            if [ "$page" -ge "$pages" ]; then
+              break
+            fi
+            page=$((page + 1))
+          done
+
+          echo "Deleted ${deleted} cache(s) older than ${max_age_days} days"

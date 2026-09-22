@@ -1,4 +1,5 @@
 import kotlinx.coroutines.await
+import jszip.loadAsync
 
 class AppUpdaterImpl : AppUpdater {
 
@@ -9,7 +10,7 @@ class AppUpdaterImpl : AppUpdater {
         check(response.ok) { "Ошибка загрузки обновления: HTTP ${response.status}" }
         val arrayBuffer = arrayBufferJs(response).await()
 
-        val zip = JSZip.loadAsync(arrayBuffer).await()
+        val zip = loadAsync(arrayBuffer).await()
         val files = mutableMapOf<String, ByteArray>()
 
         val fileNames: Array<String> = js("Object.keys(zip.files)") as Array<String>

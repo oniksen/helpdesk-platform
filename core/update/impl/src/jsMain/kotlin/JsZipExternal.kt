@@ -1,8 +1,8 @@
 @file:JsModule("jszip")
 @file:JsNonModule
 
+package jszip
+
 import kotlin.js.Promise
 
-external object JSZip {
-    fun loadAsync(data: dynamic): Promise<dynamic>
-}
+external fun loadAsync(data: dynamic): Promise<dynamic>

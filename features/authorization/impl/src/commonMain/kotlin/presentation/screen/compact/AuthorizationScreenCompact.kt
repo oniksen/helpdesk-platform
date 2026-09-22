@@ -15,9 +15,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.flow.SharedFlow
-import max_helpdesk.features.authorization.impl.generated.resources.Res
-import max_helpdesk.features.authorization.impl.generated.resources.auth_repeat_action
-import max_helpdesk.features.authorization.impl.generated.resources.auth_screen_title
+import helpdesk_platform.features.authorization.impl.generated.resources.Res
+import helpdesk_platform.features.authorization.impl.generated.resources.auth_repeat_action
+import helpdesk_platform.features.authorization.impl.generated.resources.auth_screen_title
 import org.jetbrains.compose.resources.getString
 import org.jetbrains.compose.resources.stringResource
 import presentation.effect.AuthorizationScreenEffect

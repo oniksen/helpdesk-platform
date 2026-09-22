@@ -1,3 +1,7 @@
+@file:OptIn(ExperimentalDistributionDsl::class)
+
+import org.jetbrains.kotlin.gradle.targets.js.dsl.ExperimentalDistributionDsl
+
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
     alias(libs.plugins.composeMultiplatform)
@@ -6,7 +10,11 @@ plugins {
 
 kotlin {
     js {
-        browser()
+        browser {
+            distribution {
+                outputDirectory.set(projectDir.parentFile.resolve("dist"))
+            }
+        }
         binaries.executable()
     }
 

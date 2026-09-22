@@ -7,7 +7,7 @@ class AppUpdaterImpl : AppUpdater {
 
         val response = fetchJs(url).await()
         check(response.ok) { "Ошибка загрузки обновления: HTTP ${response.status}" }
-        val arrayBuffer = response.arrayBuffer().await()
+        val arrayBuffer = arrayBufferJs(response).await()
 
         val zip = JSZip.loadAsync(arrayBuffer).await()
         val files = mutableMapOf<String, ByteArray>()
@@ -19,7 +19,7 @@ class AppUpdaterImpl : AppUpdater {
             val isDir: Boolean = zipEntry.dir as Boolean
 
             if (!isDir) {
-                val data: dynamic = zipEntry.async("arraybuffer").await()
+                val data: dynamic = zipEntryAsyncJs(zipEntry, "arraybuffer").await()
                 val uint8Array = js("new Uint8Array(data)")
                 val size: Int = uint8Array.length as Int
                 val byteArray = ByteArray(size) { idx -> uint8Array[idx] as Byte }

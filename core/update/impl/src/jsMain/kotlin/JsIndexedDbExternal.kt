@@ -85,3 +85,9 @@ external fun putToCacheJs(url: String, files: dynamic): Promise<dynamic>
 
 @JsFun("(files) => Object.keys(files)")
 external fun objectKeys(files: dynamic): Array<String>
+
+@JsFun("(response) => response.arrayBuffer()")
+external fun arrayBufferJs(response: dynamic): Promise<dynamic>
+
+@JsFun("(entry, type) => entry.async(type)")
+external fun zipEntryAsyncJs(entry: dynamic, type: String): Promise<dynamic>

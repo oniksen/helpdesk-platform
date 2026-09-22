@@ -1,9 +1,11 @@
+import kotlinx.coroutines.await
+
 class AppUpdaterImpl : AppUpdater {
 
     override suspend fun downloadAndUnpack(url: String): Map<String, ByteArray> {
         getCachedBuild(url)?.let { return it }
 
-        val response = fetchAsync(url).await()
+        val response = fetchJs(url).await()
         val arrayBuffer = response.arrayBuffer().await()
 
         val zip = JSZip.loadAsync(arrayBuffer).await()
@@ -34,14 +36,11 @@ class AppUpdaterImpl : AppUpdater {
     }
 
     override suspend fun clearCache() {
-        val db = openDatabaseAsync().await()
-        val tx = db.transaction("builds", "readwrite")
-        tx.objectStore("builds").clear()
-        db.close()
+        clearDatabaseJs().await()
     }
 
     private suspend fun saveToCache(url: String, files: Map<String, ByteArray>) {
-        val db = openDatabaseAsync().await()
+        val db = openDatabaseJs().await()
         val tx = db.transaction("builds", "readwrite")
         val store = tx.objectStore("builds")
 
@@ -55,7 +54,7 @@ class AppUpdaterImpl : AppUpdater {
     }
 
     private suspend fun readFromCache(url: String): Map<String, ByteArray>? {
-        val db = openDatabaseAsync().await()
+        val db = openDatabaseJs().await()
         val tx = db.transaction("builds", "readonly")
         val store = tx.objectStore("builds")
 
@@ -69,24 +68,4 @@ class AppUpdaterImpl : AppUpdater {
             null
         }
     }
-}
-
-private fun fetchAsync(url: String): dynamic {
-    return js("fetch(url)")
-}
-
-private fun openDatabaseAsync(): dynamic {
-    return js("""
-        new Promise((resolve, reject) => {
-            const request = indexedDB.open('app-updates', 1);
-            request.onupgradeneeded = (event) => {
-                const db = event.target.result;
-                if (!db.objectStoreNames.contains('builds')) {
-                    db.createObjectStore('builds', { keyPath: 'url' });
-                }
-            };
-            request.onsuccess = (event) => resolve(event.target.result);
-            request.onerror = (event) => reject(event.target.error);
-        })
-    """)
 }

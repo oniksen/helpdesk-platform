@@ -10,5 +10,8 @@ kotlin {
         commonMain.dependencies {
             api(libs.kotlinx.coroutines.core)
         }
+        jsMain.dependencies {
+            implementation(libs.wrappers.browser)
+        }
     }
 }

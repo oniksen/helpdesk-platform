@@ -15,6 +15,7 @@ import kotlinx.coroutines.flow.update
 import presentation.effect.UpdateScreenEffect
 import presentation.state.UpdateState
 import presentation.state.UpdateStatus
+import shouldSkipUpdate
 import kotlin.time.Duration.Companion.milliseconds
 
 internal expect suspend fun platformRegisterServiceWorker(): Boolean
@@ -49,6 +50,12 @@ internal class UpdateScreenViewModel(
 
     private fun startUpdate() {
         println("[DIAG] update: start url=$DEFAULT_WEB_APP_URL")
+
+        if (shouldSkipUpdate()) {
+            scope.launch { finishInstall() }
+            return
+        }
+
         updateState {
             copy(
                 inProgress = true,
@@ -138,6 +145,10 @@ internal class UpdateScreenViewModel(
 
         delay(1_000.milliseconds)
         println("[DIAG] update: calling finishInstall")
+        finishInstall()
+    }
+
+    private suspend fun finishInstall() {
         val result = platformFinishInstall(navigator)
         if (result == FinishInstallResult.Failed) {
             showError("Установка завершена, но приложение не переключилось на новую сборку. Обновите страницу вручную.")

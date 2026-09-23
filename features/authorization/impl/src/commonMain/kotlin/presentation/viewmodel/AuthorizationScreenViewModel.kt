@@ -17,6 +17,7 @@ import navigation.TasksPageRoute
 import presentation.effect.AuthorizationScreenEffect
 import presentation.state.AuthorizationState
 import user.UserData
+import shouldSkipUpdate
 import UpdateScreenRoute
 import kotlin.time.Duration.Companion.milliseconds
 
@@ -102,7 +103,9 @@ internal class AuthorizationScreenViewModel(
 
         scope.launch {
             delay(1_000.milliseconds)
-            navigator.navigate(UpdateScreenRoute)
+            val route = if (shouldSkipUpdate()) TasksPageRoute else UpdateScreenRoute
+            println("[DIAG] auth: openHomeScreen route=${route::class.simpleName}")
+            navigator.navigate(route)
         }
     }
     private fun showAuthorizationError(message: String) {

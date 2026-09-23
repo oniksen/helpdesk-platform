@@ -4,7 +4,12 @@ import kotlinx.coroutines.await
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withTimeoutOrNull
 
-private const val SW_PATH = "update-sw.js"
+// Ищем update-sw.js относительно базового URL документа, чтобы регистрация не
+// уходила в корень домена (GitHub Pages под проектом имеет вложенный путь).
+private val SW_PATH: String
+    get() = js(
+        "new URL('update-sw.js', window.document.baseURI).href"
+    ) as String
 
 private var messageBridgeInstalled = false
 

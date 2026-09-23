@@ -19,3 +19,11 @@ expect fun incrementInstallReloadAttempts(): Int
  * Сбрасывает счётчик попыток перезагрузки (успешная установка).
  * */
 expect fun resetInstallReloadAttempts()
+
+/**
+ * Стоит ли пропустить экран обновления и открыть приложение напрямую.
+ *
+ * Возвращает true, когда сборка уже установлена и Service Worker
+ * контролирует текущую страницу, то есть приложение уже доступно.
+ * */
+fun shouldSkipUpdate(): Boolean = isAppInstalled() && isServiceWorkerControlled()

@@ -24,6 +24,7 @@ kotlin {
 
             implementation(projects.core.authorization.api)
             implementation(projects.core.navigation.api)
+            implementation(projects.core.update.api)
             implementation(projects.core.update.impl)
             implementation(projects.features.authorization.api)
             implementation(projects.features.authorization.impl)

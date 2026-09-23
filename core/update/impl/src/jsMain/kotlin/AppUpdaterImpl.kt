@@ -4,9 +4,14 @@ import jszip.loadAsync
 class AppUpdaterImpl : AppUpdater {
 
     override suspend fun downloadAndUnpack(url: String): Map<String, ByteArray> {
-        getCachedBuild(url)?.let { return it }
+        getCachedBuild(url)?.let {
+            println("[DIAG] updater: cache hit, returning ${it.size} files")
+            return it
+        }
 
+        println("[DIAG] updater: fetching $url")
         val response = fetchJs(url).await()
+        println("[DIAG] updater: fetch status=${response.status}")
         check(response.ok) { "Ошибка загрузки обновления: HTTP ${response.status}" }
         val arrayBuffer = arrayBufferJs(response).await()
 
@@ -28,9 +33,11 @@ class AppUpdaterImpl : AppUpdater {
             }
         }
 
-        saveToCache(url, files)
+        val normalized = normalizeBuildKeys(files)
+        println("[DIAG] updater: unpacked ${files.size} files, normalized to ${normalized.size}, saving to cache")
+        saveToCache(url, normalized)
 
-        return files
+        return normalized
     }
 
     override suspend fun getCachedBuild(url: String): Map<String, ByteArray>? {
@@ -61,6 +68,41 @@ class AppUpdaterImpl : AppUpdater {
             val data: dynamic = filesObj[name]
             map[name] = ByteArray(data.length as Int) { index -> data[index] as Byte }
         }
-        return map
+
+        val normalized = normalizeBuildKeys(map)
+        if (normalized.keys != map.keys) {
+            println("[DIAG] updater: healing cached keys (${map.keys.size} -> ${normalized.keys.size})")
+            saveToCache(url, normalized)
+        }
+        return normalized
+    }
+
+    private fun normalizeBuildKeys(files: Map<String, ByteArray>): Map<String, ByteArray> {
+        val cleaned = files.filterKeys { name ->
+            val path = name.replace('\\', '/')
+            val fileName = path.substringAfterLast('/')
+            !path.startsWith("__MACOSX") &&
+                !fileName.startsWith("._") &&
+                fileName != ".DS_Store"
+        }
+
+        val firstSegments = cleaned.keys
+            .map { it.replace('\\', '/') }
+            .map { it.substringBefore('/') }
+            .toSet()
+        val commonRoot = if (firstSegments.size == 1 && firstSegments.single().isNotBlank()) {
+            firstSegments.single() + "/"
+        } else {
+            null
+        }
+
+        return cleaned.mapKeys { (name, _) ->
+            val path = name.replace('\\', '/')
+            if (commonRoot != null && path.startsWith(commonRoot)) {
+                path.removePrefix(commonRoot)
+            } else {
+                path
+            }
+        }.filterKeys { it.isNotEmpty() }
     }
 }

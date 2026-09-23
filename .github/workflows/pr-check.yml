@@ -45,3 +45,14 @@ jobs:
           path: dist
           retention-days: 2
           if-no-files-found: error
+
+      - name: Build webShell distribution
+        run: ./gradlew :webShell:jsBrowserDevelopmentExecutableDistribution
+
+      - name: Upload webShell artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: webshell-js-dist
+          path: dist-shell
+          retention-days: 2
+          if-no-files-found: error

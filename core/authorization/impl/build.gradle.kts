@@ -17,6 +17,7 @@ kotlin {
         }
         jsMain.dependencies {
             implementation(libs.bundles.ktorJs)
+            implementation(libs.wrappers.browser)
         }
     }
 }

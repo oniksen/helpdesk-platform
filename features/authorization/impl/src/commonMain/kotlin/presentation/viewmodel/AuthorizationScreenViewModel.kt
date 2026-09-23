@@ -46,6 +46,7 @@ internal class AuthorizationScreenViewModel(
     }
 
     private fun authorization() {
+        println("[DIAG] auth: start")
         updateState { copy(
             inProgress = true,
             authResultMessage = null,
@@ -54,8 +55,11 @@ internal class AuthorizationScreenViewModel(
         scope.launch(Dispatchers.Default) {
             try {
                 getMaxInitDataOrShowError()?.let { maxInitData ->
+                    println("[DIAG] auth: maxInitData ok, helpdeskAuth...")
                     val authResponse = authorizer.helpdeskAuth(maxInitData)
+                    println("[DIAG] auth: helpdeskAuth ok email=${authResponse.email}")
                     val userData = authorizer.fetchUserData(authResponse.email)
+                    println("[DIAG] auth: fetchUserData ok user=${userData.email}")
                     updateState { copy(
                         inProgress = true,
                         authResultMessage = "Сохранение полученных данных",
@@ -66,6 +70,8 @@ internal class AuthorizationScreenViewModel(
                         cookies = authResponse.cookies,
                     ))
                     authorizer.saveUser(userData)
+                    authorizer.persistAuthState()
+                    println("[DIAG] auth: persistAuthState done")
 
                     delay(1_000.milliseconds)
                     openHomeScreen()
@@ -73,6 +79,7 @@ internal class AuthorizationScreenViewModel(
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Throwable) {
+                println("[DIAG] auth: error ${e::class.simpleName}: ${e.message}")
                 showAuthorizationError(e.message ?: "Ошибка авторизации")
             }
         }

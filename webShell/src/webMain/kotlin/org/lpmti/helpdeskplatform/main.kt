@@ -7,9 +7,9 @@ import installServiceWorkerMessageBridge
 
 @OptIn(ExperimentalComposeUiApi::class)
 fun main() {
-    println("[DIAG] app=full start")
+    println("[DIAG] app=shell start")
     installServiceWorkerMessageBridge()
     ComposeViewport {
-        DiProvider(FullAppDefinition()).MainKoinApplication()
+        DiProvider(ShellAppDefinition()).MainKoinApplication()
     }
 }

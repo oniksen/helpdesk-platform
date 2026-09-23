@@ -17,8 +17,11 @@ class KtorClientImpl(
         install(Auth) {
             bearer {
                 loadTokens {
-                    val token = tokenProvider.value.provide() ?: return@loadTokens null
-                    println(token)
+                    val token = tokenProvider.value.provide() ?: run {
+                        println("[DIAG] loadTokens: token=null")
+                        return@loadTokens null
+                    }
+                    println("[DIAG] loadTokens: token=present")
                     BearerTokens(
                         accessToken = token,
                         refreshToken = null,

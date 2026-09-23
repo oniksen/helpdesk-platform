@@ -2,6 +2,5 @@ package presentation.viewmodel
 
 import registerServiceWorker
 
-actual fun platformRegisterServiceWorker() {
+actual suspend fun platformRegisterServiceWorker(): Boolean =
     registerServiceWorker()
-}

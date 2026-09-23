@@ -2,15 +2,20 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import data.TokenProviderImpl
 import data.repository.AuthorizationImpl
-import navigation.AuthorizationScreenModule
-import navigation.TasksPageModule
-import navigation.ParkingModule
-import navigation.UpdateScreenModule
+import data.storage.createAuthStateStorage
 import org.koin.core.context.GlobalContext.startKoin
-import org.koin.dsl.bind
 import org.koin.dsl.module
 
-class DiProvider {
+/**
+ * Точка входа в граф зависимостей.
+ *
+ * Регистрирует только инфраструктурные модули (MAX-мост, авторизация,
+ * сеть, обновления), а состав приложения (фичи и стартовый экран)
+ * задаётся через [AppDefinition].
+ */
+class DiProvider(
+    private val definition: AppDefinition,
+) {
     private val maxMiniAppModule = module {
         single<QrCodeScanner> { createQrCodeScanner() }
         single<MaxAuthorization> { createAuthorizationObject() }
@@ -22,6 +27,7 @@ class DiProvider {
             AuthorizationImpl(
                 maxAuthorization = get(),
                 client = get(),
+                storage = createAuthStateStorage(),
             )
         }
         single<TokenProvider> {
@@ -36,19 +42,6 @@ class DiProvider {
         single<KtorClient> { createKtorClient(inject()) }
     }
 
-    // Модуль фич-навигации (внутренняя навигация MainNavigation)
-    private val featuresNavModule = module {
-        single { ParkingModule() } bind FeatureNavModule::class
-        single { TasksPageModule() } bind FeatureNavModule::class
-    }
-
-    // Модуль рутовой навигации (Auth ↔ Home)
-    private val rootNavModule = module {
-        single { AuthorizationScreenModule() } bind RootNavModule::class
-        single { UpdateScreenModule() } bind RootNavModule::class
-        single { HomePageContainerModule() } bind RootNavModule::class
-    }
-
     // Модуль обновлений (загрузка сборок с сервера)
     private val updateModule = module {
         single<AppUpdater> { createAppUpdater() }
@@ -56,19 +49,22 @@ class DiProvider {
 
     @Composable
     fun MainKoinApplication() {
-        remember {
+        val koinApplication = remember {
             startKoin {
                 modules(
                     maxMiniAppModule,
-                    featuresNavModule,
                     authorizationModule,
                     networkModule,
-                    rootNavModule,
                     updateModule,
+                    *definition.koinModules.toTypedArray(),
                 )
             }
         }
 
-        RootNavigation(startRoute = AuthorizationScreenRoute)
+        val startRoute = remember {
+            definition.startRoute(koinApplication.koin)
+        }
+
+        RootNavigation(startRoute = startRoute)
     }
 }

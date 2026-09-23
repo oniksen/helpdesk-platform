@@ -21,13 +21,6 @@ kotlin {
             implementation(projects.core.network.impl)
             implementation(projects.core.update.api)
             implementation(projects.core.update.impl)
-            implementation(projects.features.parking.impl)
-            implementation(projects.features.tasks.api)
-            implementation(projects.features.tasks.impl)
-            implementation(projects.features.authorization.api)
-            implementation(projects.features.authorization.impl)
-            implementation(projects.features.update.api)
-            implementation(projects.features.update.impl)
             implementation(projects.maxminiappapi.api)
             implementation(projects.maxminiappapi.impl)
 

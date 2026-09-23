@@ -30,6 +30,7 @@ dependencyResolutionManagement {
 enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
 
 include(":webApp")
+include(":webShell")
 include(":core")
 include(":core:di")
 include(":core:uiadaptive")

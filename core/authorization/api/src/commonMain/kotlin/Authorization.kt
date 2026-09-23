@@ -34,4 +34,14 @@ interface Authorization {
      * @throws IllegalStateException Если данные не существуют.
      * */
     fun getUserData(): UserData
+
+    /** Сохранить авторизационные данные для восстановления после перезагрузки страницы. */
+    fun persistAuthState()
+
+    /**
+     * Восстановить сохранённые авторизационные данные.
+     *
+     * @return true, если данные авторизации и пользователя восстановлены.
+     * */
+    fun restoreAuthState(): Boolean
 }

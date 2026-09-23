@@ -12,7 +12,7 @@ kotlin {
     js {
         browser {
             distribution {
-                outputDirectory.set(projectDir.parentFile.resolve("dist"))
+                outputDirectory.set(projectDir.parentFile.resolve("dist-shell"))
             }
         }
         binaries.executable()
@@ -24,14 +24,9 @@ kotlin {
 
             implementation(projects.core.authorization.api)
             implementation(projects.core.navigation.api)
-            implementation(projects.core.navigation.impl)
             implementation(projects.core.update.impl)
             implementation(projects.features.authorization.api)
             implementation(projects.features.authorization.impl)
-            implementation(projects.features.parking.api)
-            implementation(projects.features.parking.impl)
-            implementation(projects.features.tasks.api)
-            implementation(projects.features.tasks.impl)
             implementation(projects.features.update.api)
             implementation(projects.features.update.impl)
 
@@ -42,7 +37,7 @@ kotlin {
     }
 }
 
-// Общие веб-ресурсы (Service Worker, стили), разделяемые с webShell.
+// Общие веб-ресурсы (Service Worker, стили), разделяемые с webApp.
 // Source set webMain создаётся композ-плагином на поздних этапах конфигурации,
 // поэтому подключаем каталог после evaluation проекта.
 gradle.projectsEvaluated {

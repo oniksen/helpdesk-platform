@@ -1,9 +1,12 @@
-import kotlinx.coroutines.await
+import `helpdesk-platform`.config.BuildKonfig
 import jszip.loadAsync
+import kotlinx.coroutines.await
 
 class AppUpdaterImpl : AppUpdater {
 
     override suspend fun downloadAndUnpack(url: String): Map<String, ByteArray> {
+        val currentVersion = BuildKonfig.PROJECT_VERSION
+
         getCachedBuild(url)?.let {
             println("[DIAG] updater: cache hit, returning ${it.size} files")
             return it

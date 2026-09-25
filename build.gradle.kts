@@ -1,3 +1,5 @@
+import com.codingfeline.buildkonfig.compiler.FieldSpec
+import com.codingfeline.buildkonfig.gradle.BuildKonfigExtension
 import javax.xml.parsers.DocumentBuilderFactory
 
 plugins {
@@ -8,6 +10,7 @@ plugins {
     alias(libs.plugins.kotlinMultiplatform) apply false
     alias(libs.plugins.kotlinx.kover) apply false
     alias(libs.plugins.detekt)
+    alias(libs.plugins.buildkonfig) apply false
 }
 
 detekt {
@@ -24,6 +27,20 @@ detekt {
             exclude("**/resources/**")
         }
     )
+}
+
+version = "0.1.1001"
+
+subprojects {
+    plugins.withId("com.codingfeline.buildkonfig") {
+        extensions.configure<BuildKonfigExtension> {
+            packageName = "helpdesk-platform.config"
+
+            defaultConfigs {
+                buildConfigField(FieldSpec.Type.STRING, "PROJECT_VERSION", rootProject.version.toString())
+            }
+        }
+    }
 }
 
 tasks.register("koverXmlReportsAll") {

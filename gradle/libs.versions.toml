@@ -12,6 +12,7 @@ koin = "4.0.2"
 multiplatform-nav3-ui = "1.1.1"
 jb-compose-material-icons = "1.7.3"
 ktor = "3.5.2"
+buildkonfig = "0.23.0"
 
 [libraries]
 # Compose core
@@ -101,3 +102,4 @@ kotlinMultiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref =
 kotlinSerialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
 kotlinx-kover = { id = "org.jetbrains.kotlinx.kover", version.ref = "kover" }
 detekt = { id = "dev.detekt", version.ref = "detekt" }
+buildkonfig = { id = "com.codingfeline.buildkonfig", version.ref = "buildkonfig" }

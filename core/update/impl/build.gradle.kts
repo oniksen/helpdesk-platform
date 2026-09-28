@@ -15,6 +15,7 @@ kotlin {
         commonMain.dependencies {
             implementation(projects.core.update.api)
 
+            implementation(libs.bundles.ktor)
             implementation(libs.kotlinx.coroutines.core)
         }
         jsMain.dependencies {

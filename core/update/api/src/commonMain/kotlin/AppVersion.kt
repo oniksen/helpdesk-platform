@@ -9,8 +9,15 @@ data class AppVersion(
         Alpha, Beta, RC, Release
     }
 
+    init {
+        require(major >= 0 && minor >= 0 && patch >= 0 && build >= 0) { INVALID_NUMBER_ERROR }
+    }
+
+    override fun toString(): String = "$major.$minor.$patch-${stage.name}.$build"
+
     companion object {
         const val NORMALIZE_ERROR = "Не удалось распарсить версию"
+        const val INVALID_NUMBER_ERROR = "Номер версии не может быть отрицательным"
         const val VERSION_PATTERN = """^(\d+)\.(\d+)\.(\d+)-([a-zA-Z]+)\.(\d+)$"""
     }
 }

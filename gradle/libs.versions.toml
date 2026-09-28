@@ -2,7 +2,7 @@
 composeMultiplatform = "1.12.0"
 composeAdaptive = "1.3.0-beta02"
 junit = "4.13.2"
-kotlin = "2.4.10"
+kotlin = "2.4.20"
 kotlinx-coroutines = "1.11.0"
 kotlin-wrappers = "2026.8.4"
 kover = "0.9.8"

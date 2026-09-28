@@ -127,3 +127,9 @@ tasks.register("generateCoverageBadge") {
         println("Coverage: $percentage%")
     }
 }
+
+tasks.register("build-web-app")   { description = "Сборка основного приложения"
+    dependsOn(":webApp:jsBrowserDevelopmentExecutableDistribution") }
+
+tasks.register("build-web-shell") { description = "Сборка бутстрап оболочки с авторизацией и проверкой версии"
+    dependsOn(":webShell:jsBrowserDevelopmentExecutableDistribution") }

@@ -27,3 +27,10 @@ expect fun resetInstallReloadAttempts()
  * контролирует текущую страницу, то есть приложение уже доступно.
  * */
 fun shouldSkipUpdate(): Boolean = isAppInstalled() && isServiceWorkerControlled()
+
+/**
+ * В следующих патчах все методы будут перенесены в AppInstallState интерфейс.
+ * */
+interface AppInstallState {
+    suspend fun hasNewVersion(): Boolean
+}

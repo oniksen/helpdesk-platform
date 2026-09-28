@@ -108,6 +108,9 @@ potential-bugs:
 
 style:
   active: true
+  DestructuringDeclarationWithTooManyEntries:
+    active: true
+    maxDestructuringEntries: 5
   MagicNumber:
     active: false
   MaxLineLength:

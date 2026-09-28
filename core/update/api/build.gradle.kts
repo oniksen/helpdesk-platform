@@ -13,5 +13,11 @@ kotlin {
         jsMain.dependencies {
             implementation(libs.wrappers.browser)
         }
+        commonTest.dependencies {
+            implementation(libs.kotlin.test)
+        }
+        jvmTest.dependencies {
+            implementation(libs.junit)
+        }
     }
 }

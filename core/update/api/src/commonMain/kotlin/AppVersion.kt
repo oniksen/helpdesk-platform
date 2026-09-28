@@ -8,18 +8,38 @@ data class AppVersion(
     enum class Stage {
         Alpha, Beta, RC, Release
     }
-}
 
-fun String.normalized(): AppVersion {
-    // 0.1.1-alpha.1
-    val (leading, trail) = this.split("-").let {
-        it.map { part -> part.split(".") }
+    companion object {
+        const val NORMALIZE_ERROR = "Не удалось распарсить версию"
+        const val VERSION_PATTERN = """^(\d+)\.(\d+)\.(\d+)-([a-zA-Z]+)\.(\d+)$"""
     }
-    val major = leading[0].toIntOrNull() ?: -1
-    val minor = leading[1].toIntOrNull() ?: -1
-    val patch = leading[2].toIntOrNull() ?: -1
-    val stage = trail[0]
-    val build = trail[1].toIntOrNull() ?: -1
-
-    TODO()
 }
+
+/**
+ * Получить типизированную версию приложения.
+ *
+ * @throws IllegalStateException Если какой-либо параметр не подходит по паттерну.
+ * */
+fun String.normalized(): AppVersion {
+    val matchResult = AppVersion.VERSION_PATTERN.toRegex().matchEntire(this)
+        ?: error(AppVersion.NORMALIZE_ERROR)
+
+    return matchResult.destructured.let { (major, minor, patch, stage, build) ->
+        AppVersion(
+            major = major.toIntOrSendError(),
+            minor = minor.toIntOrSendError(),
+            patch = patch.toIntOrSendError(),
+            stage = stage.toStageOrSendError(),
+            build = build.toIntOrSendError(),
+        )
+    }
+}
+
+private fun String.toIntOrSendError(): Int = toIntOrNull() ?: error(AppVersion.NORMALIZE_ERROR)
+
+/**
+ * Прокси-метод для пробрасывания единообразных исключений при нормализации версии.
+ * */
+private fun String.toStageOrSendError(): AppVersion.Stage =
+    AppVersion.Stage.entries.firstOrNull { it.name.equals(this, ignoreCase = true) }
+        ?: error(AppVersion.NORMALIZE_ERROR)

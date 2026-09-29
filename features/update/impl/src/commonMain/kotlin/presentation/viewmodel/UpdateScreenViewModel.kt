@@ -3,6 +3,7 @@ package presentation.viewmodel
 import AppNavigator
 import AppUpdater
 import DEFAULT_WEB_APP_URL
+import UpdateDecision
 import UpdateScreenRoute
 import presentation.intent.UpdateScreenIntent
 import kotlinx.coroutines.*
@@ -49,44 +50,48 @@ internal class UpdateScreenViewModel(
     }
 
     private fun startUpdate() {
-        println("[DIAG] update: start url=$DEFAULT_WEB_APP_URL")
+        scope.launch {
+            println("[DIAG] update: start url=$DEFAULT_WEB_APP_URL")
 
-        if (shouldSkipUpdate()) {
-            scope.launch { finishInstall() }
-            return
-        }
+            val updateDecision = updater.checkForUpdate()
+            // TODO("Обработать остальные состояния UpdateDecision")
+            if (shouldSkipUpdate() && updateDecision !is UpdateDecision.UpdateAvailable) {
+                scope.launch { finishInstall() }
+                return@launch
+            }
 
-        updateState {
-            copy(
-                inProgress = true,
-                status = UpdateStatus.Downloading,
-                message = "Загрузка...",
-            )
-        }
-
-        scope.launch(Dispatchers.Default) {
-            try {
-                val cached = updater.getCachedBuild(DEFAULT_WEB_APP_URL)
-                println(
-                    "[DIAG] update: cache hit=${cached != null} files=${cached?.size} " +
-                        "hasIndexHtml=${cached?.containsKey("index.html")} " +
-                        "keys=${cached?.keys?.take(6)?.joinToString(",")}"
+            updateState {
+                copy(
+                    inProgress = true,
+                    status = UpdateStatus.Downloading,
+                    message = "Загрузка...",
                 )
-                cached?.get("index.html")?.let { html ->
-                    val snippet = html.decodeToString(0, minOf(400, html.size))
-                    val refsWebApp = snippet.contains("webApp.js")
-                    val refsWebShell = snippet.contains("webShell.js")
+            }
+
+            scope.launch(Dispatchers.Default) {
+                try {
+                    val cached = updater.getCachedBuild(DEFAULT_WEB_APP_URL)
                     println(
-                        "[DIAG] cached index.html: refsWebApp=$refsWebApp refsWebShell=$refsWebShell " +
-                            "snippet=$snippet"
+                        "[DIAG] update: cache hit=${cached != null} files=${cached?.size} " +
+                                "hasIndexHtml=${cached?.containsKey("index.html")} " +
+                                "keys=${cached?.keys?.take(6)?.joinToString(",")}"
                     )
+                    cached?.get("index.html")?.let { html ->
+                        val snippet = html.decodeToString(0, minOf(400, html.size))
+                        val refsWebApp = snippet.contains("webApp.js")
+                        val refsWebShell = snippet.contains("webShell.js")
+                        println(
+                            "[DIAG] cached index.html: refsWebApp=$refsWebApp refsWebShell=$refsWebShell " +
+                                    "snippet=$snippet"
+                        )
+                    }
+                    buildFiles = cached ?: downloadBuild()
+                    applyUpdate()
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (e: Throwable) {
+                    showError(e.message ?: "Ошибка обновления")
                 }
-                buildFiles = cached ?: downloadBuild()
-                applyUpdate()
-            } catch (e: CancellationException) {
-                throw e
-            } catch (e: Throwable) {
-                showError(e.message ?: "Ошибка обновления")
             }
         }
     }

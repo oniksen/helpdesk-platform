@@ -25,6 +25,7 @@ actual class AppInstallStateImpl(
 
         return when (networkResult) {
             is NetworkResult.Error -> {
+                println("[UPDATE] Ошибка получения манифеста")
                 UpdateDecision.ManifestError(networkResult.exception)
             }
             is NetworkResult.Success<UpdateManifest> -> {
@@ -32,13 +33,14 @@ actual class AppInstallStateImpl(
                 val remoteVersion = try {
                     prod.lastVersion.normalize()
                 } catch (e: IllegalStateException) {
-                    println(e.message)
+                    println("[UPDATE] Ошибка получения актуальной версии из манифеста: " + e.message)
                     return UpdateDecision.ManifestError(
                         AppException.ValidationError.MappingFailed("last_version")
                     )
                 }
 
                 if (currentVersion >= remoteVersion) {
+                    println("[UPDATE] Установлена актуальная версия")
                     return UpdateDecision.UpToDate
                 }
 

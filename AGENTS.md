@@ -121,8 +121,10 @@ Kotlin Multiplatform (KMP) проект — Web-приложение (JS + Wasm)
 | `features/*/impl` | Реализация экранов и модулей фич |
 | `maxminiappapi/api` | Интерфейсы API (мост к внешней платформе) |
 | `maxminiappapi/impl` | Платформенные реализации API |
-| `shared` | Общий код (`App.kt`, `Platform.kt`) |
+| `core/update/api` | Контракт механизма динамического обновления приложения |
+| `core/update/impl` | Загрузка и применение обновлений, разбор манифестов |
 | `webApp` | Точка входа Web-приложения |
+| `webShell` | Бутстрап-оболочка с авторизацией и проверкой версии |
 
 ## Паттерны
 
@@ -141,16 +143,28 @@ Kotlin Multiplatform (KMP) проект — Web-приложение (JS + Wasm)
 ./gradlew :webApp:jsBrowserDevelopmentRun
 
 # Тесты
-./gradlew :shared:wasmJsTest
 ./gradlew allTests
 
 # Линтер
 ./gradlew detekt
+
+# Проверка устаревших опций Gradle (как в CI)
+./gradlew --warning-mode=fail help
+
+# Покрытие кода (Kover) и бейдж
+./gradlew koverXmlReportsAll
+./gradlew generateCoverageBadge
 ```
 
 ## CI/CD
 
-PR → `develop`: `detekt` + `allTests` (JDK 21, Gradle configuration cache).
+`pr-check.yml` запускается на PR в `develop` и на push в `develop` (JDK 21).
+Шаги: `help` с `--warning-mode=fail` → `detekt` → `allTests` → сборка JS-дистрибутивов
+`webApp` и `webShell` с выгрузкой артефактов.
+
+Кэш Gradle пишется только на push в `develop` (`cache-read-only` для PR-прогонов),
+так как кэш из `pull_request` доступен лишь повторным прогонам того же PR.
+`cleanup-caches.yml` удаляет записи кэша старше 14 дней.
 
 ## Конвенции
 

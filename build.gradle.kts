@@ -1,5 +1,14 @@
 import com.codingfeline.buildkonfig.compiler.FieldSpec
 import com.codingfeline.buildkonfig.gradle.BuildKonfigExtension
+import org.gradle.api.DefaultTask
+import org.gradle.api.file.ConfigurableFileCollection
+import org.gradle.api.file.RegularFileProperty
+import org.gradle.api.tasks.Input
+import org.gradle.api.tasks.InputFiles
+import org.gradle.api.tasks.OutputFile
+import org.gradle.api.tasks.PathSensitive
+import org.gradle.api.tasks.PathSensitivity
+import org.gradle.api.tasks.TaskAction
 import javax.xml.parsers.DocumentBuilderFactory
 
 plugins {
@@ -48,28 +57,63 @@ tasks.register("koverXmlReportsAll") {
     description = "Generate Kover XML reports for all modules"
 
     dependsOn(
+        ":core:architecture:koverXmlReport",
+        ":core:authorization:impl:koverXmlReport",
+        ":core:di:koverXmlReport",
+        ":core:exception:koverXmlReport",
+        ":core:network:impl:koverXmlReport",
+        ":core:navigation:impl:koverXmlReport",
+        ":core:uiadaptive:koverXmlReport",
+        ":core:update:impl:koverXmlReport",
+        ":features:authorization:impl:koverXmlReport",
         ":features:parking:impl:koverXmlReport",
-        ":maxminiappapi:impl:koverXmlReport",
-        ":core:di:koverXmlReport"
+        ":features:tasks:impl:koverXmlReport",
+        ":features:update:impl:koverXmlReport",
+        ":maxminiappapi:impl:koverXmlReport"
     )
 }
 
-tasks.register("generateCoverageBadge") {
+tasks.register<GenerateCoverageBadge>("generateCoverageBadge") {
     group = "verification"
     description = "Generates a local coverage badge SVG for the whole KMP project"
 
-    outputs.upToDateWhen { false }
-
     dependsOn("koverXmlReportsAll")
 
-    doLast {
-        val xmlFiles = fileTree(rootDir) {
+    reports.from(
+        fileTree(rootDir) {
             include("**/build/reports/kover/report.xml")
-        }.files
+        }
+    )
+    outputFile.set(layout.projectDirectory.file("coverage-badge.svg"))
+}
+
+tasks.register("build-web-app")   { description = "Сборка основного приложения"
+    dependsOn(":webApp:jsBrowserDevelopmentExecutableDistribution") }
+
+tasks.register("build-web-shell") { description = "Сборка бутстрап оболочки с авторизацией и проверкой версии"
+    dependsOn(":webShell:jsBrowserDevelopmentExecutableDistribution") }
+
+/**
+ * Собирает единый бейдж покрытия по XML-отчётам Kover всех подключённых модулей.
+ *
+ * Реализовано отдельным типом задачи, а не через `doLast`, чтобы быть совместимым
+ * с Configuration Cache: внутри `doLast` нельзя обращаться к объекту скрипта и к
+ * `Project`, иначе запись кэша не сериализуется.
+ */
+abstract class GenerateCoverageBadge : DefaultTask() {
+    @get:InputFiles
+    @get:PathSensitive(PathSensitivity.RELATIVE)
+    abstract val reports: ConfigurableFileCollection
+
+    @get:OutputFile
+    abstract val outputFile: RegularFileProperty
+
+    @TaskAction
+    fun generate() {
+        val xmlFiles = reports.files.filter { it.isFile }
 
         if (xmlFiles.isEmpty()) {
-            println("ERROR: No Kover XML reports found")
-            return@doLast
+            error("No Kover XML reports found")
         }
 
         var totalCovered = 0
@@ -121,15 +165,9 @@ tasks.register("generateCoverageBadge") {
             </svg>
         """.trimIndent()
 
-        val badgeFile = file("coverage-badge.svg")
+        val badgeFile = outputFile.get().asFile
         badgeFile.writeText(badgeSvg)
-        println("Coverage badge generated: ${badgeFile.absolutePath}")
-        println("Coverage: $percentage%")
+        logger.lifecycle("Coverage badge generated: ${badgeFile.absolutePath}")
+        logger.lifecycle("Coverage: $percentage%")
     }
 }
-
-tasks.register("build-web-app")   { description = "Сборка основного приложения"
-    dependsOn(":webApp:jsBrowserDevelopmentExecutableDistribution") }
-
-tasks.register("build-web-shell") { description = "Сборка бутстрап оболочки с авторизацией и проверкой версии"
-    dependsOn(":webShell:jsBrowserDevelopmentExecutableDistribution") }

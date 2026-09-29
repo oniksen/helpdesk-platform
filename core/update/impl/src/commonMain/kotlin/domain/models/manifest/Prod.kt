@@ -7,5 +7,6 @@ data class Prod(
     val needRestart: Boolean,
     val patchNote: List<String>,
     val tags: List<String>,
+    val web: Web?,
     val windows: Windows,
 )

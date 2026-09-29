@@ -11,5 +11,6 @@ data class StableDto(
     @SerialName("need_restart") val needRestartDto: Boolean? = null,
     @SerialName("patch_note") val patchNoteDto: List<String>? = null,
     @SerialName("tags") val tagsDto: List<String>? = null,
+    @SerialName("web") val webDto: WebDto? = null,
     @SerialName("windows") val windowsDto: WindowsDto? = null
 )

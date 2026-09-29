@@ -7,6 +7,6 @@ data class Current(
     val needRestart: Boolean,
     val patchNote: List<String>,
     val tags: List<String>,
-    val web: Web,
+    val web: Web?,
     val windows: Windows
 )

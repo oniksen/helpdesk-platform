@@ -24,13 +24,16 @@ import domain.models.manifest.Windows
 private const val MISSING_FIELD_ERROR = "Отсутствует обязательное поле манифеста"
 private const val INVALID_FIELD_ERROR = "Некорректное значение поля манифеста"
 private const val MIN_SCHEMA_VERSION = 3
+private const val MAX_UNPUBLISHED_SIZE = 0
 
 /**
  * Маппинг манифеста обновлений на доменные модели.
  *
  * Маппинг строгий: отсутствие любого обязательного поля приводит к ошибке.
  * Исключения — патч-ноуты и теги (для них отсутствие значения равносильно
- * пустому списку) и версия схемы, которая должна быть положительным числом.
+ * пустому списку), версия схемы, которая должна быть положительным числом,
+ * и веб-таргет, который считается неопубликованным при пустом хеше или
+ * неположительном размере.
  * */
 internal fun UpdateManifestDto.toDomain(): UpdateManifest = UpdateManifest(
     channels = this.channelsDto.required("channels").toDomain(),
@@ -80,6 +83,7 @@ private fun StableDto.toDomain(): Stable {
         needRestart = this.needRestartDto.required("$path.need_restart"),
         patchNote = this.patchNoteDto.orEmptyList(),
         tags = this.tagsDto.orEmptyList(),
+        web = this.webDto.required("$path.web").toDomain("$path.web"),
         windows = this.windowsDto.required("$path.windows").toDomain("$path.windows"),
     )
 }
@@ -93,6 +97,7 @@ private fun ProdDto.toDomain(): Prod {
         needRestart = this.needRestartDto.required("$path.need_restart"),
         patchNote = this.patchNoteDto.orEmptyList(),
         tags = this.tagsDto.orEmptyList(),
+        web = this.webDto.required("$path.web").toDomain("$path.web"),
         windows = this.windowsDto.required("$path.windows").toDomain("$path.windows"),
     )
 }
@@ -103,11 +108,19 @@ private fun MacosDto.toDomain(path: String): Macos = Macos(
     size = this.sizeDto.required("$path.size"),
 )
 
-private fun WebDto.toDomain(path: String): Web = Web(
-    hash = this.hashDto.required("$path.hash"),
-    link = this.linkDto.required("$path.link"),
-    size = this.sizeDto.required("$path.size"),
-)
+private fun WebDto.toDomain(path: String): Web? {
+    val link = this.linkDto.required("$path.link")
+    val hash = this.hashDto.required("$path.hash")
+    val size = this.sizeDto.required("$path.size")
+
+    if (hash.isBlank() || size <= MAX_UNPUBLISHED_SIZE) return null
+
+    return Web(
+        hash = hash,
+        link = link,
+        size = size,
+    )
+}
 
 private fun WindowsDto.toDomain(path: String): Windows = Windows(
     hash = this.hashDto.required("$path.hash"),

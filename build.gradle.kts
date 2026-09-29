@@ -52,25 +52,27 @@ subprojects {
     }
 }
 
+val coverageModules = listOf(
+    ":core:architecture",
+    ":core:authorization:impl",
+    ":core:di",
+    ":core:exception",
+    ":core:network:impl",
+    ":core:navigation:impl",
+    ":core:uiadaptive",
+    ":core:update:impl",
+    ":features:authorization:impl",
+    ":features:parking:impl",
+    ":features:tasks:impl",
+    ":features:update:impl",
+    ":maxminiappapi:impl"
+)
+
 tasks.register("koverXmlReportsAll") {
     group = "verification"
     description = "Generate Kover XML reports for all modules"
 
-    dependsOn(
-        ":core:architecture:koverXmlReport",
-        ":core:authorization:impl:koverXmlReport",
-        ":core:di:koverXmlReport",
-        ":core:exception:koverXmlReport",
-        ":core:network:impl:koverXmlReport",
-        ":core:navigation:impl:koverXmlReport",
-        ":core:uiadaptive:koverXmlReport",
-        ":core:update:impl:koverXmlReport",
-        ":features:authorization:impl:koverXmlReport",
-        ":features:parking:impl:koverXmlReport",
-        ":features:tasks:impl:koverXmlReport",
-        ":features:update:impl:koverXmlReport",
-        ":maxminiappapi:impl:koverXmlReport"
-    )
+    dependsOn(coverageModules.map { "$it:koverXmlReport" })
 }
 
 tasks.register<GenerateCoverageBadge>("generateCoverageBadge") {
@@ -80,8 +82,10 @@ tasks.register<GenerateCoverageBadge>("generateCoverageBadge") {
     dependsOn("koverXmlReportsAll")
 
     reports.from(
-        fileTree(rootDir) {
-            include("**/build/reports/kover/report.xml")
+        coverageModules.map { module ->
+            layout.projectDirectory.dir(
+                "${module.removePrefix(":").replace(':', '/')}/build/reports/kover/report.xml"
+            )
         }
     )
     outputFile.set(layout.projectDirectory.file("coverage-badge.svg"))

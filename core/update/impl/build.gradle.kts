@@ -18,6 +18,8 @@ kotlin {
 
     sourceSets {
         commonMain.dependencies {
+            implementation(projects.core.architecture)
+            implementation(projects.core.exception)
             implementation(projects.core.update.api)
 
             implementation(libs.bundles.ktor)

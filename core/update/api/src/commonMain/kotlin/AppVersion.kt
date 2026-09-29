@@ -38,7 +38,7 @@ data class AppVersion(
  *
  * @throws IllegalStateException Если какой-либо параметр не подходит по паттерну.
  * */
-fun String.normalized(): AppVersion {
+fun String.normalize(): AppVersion {
     val matchResult = AppVersion.VERSION_PATTERN.toRegex().matchEntire(this)
         ?: error(AppVersion.NORMALIZE_ERROR)
 

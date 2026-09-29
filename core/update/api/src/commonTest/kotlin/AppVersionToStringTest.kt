@@ -14,14 +14,14 @@ class AppVersionToStringTest {
     @Test
     fun `formatted version is parsed back without changes`() {
         FORMATTING_CASES.forEach { (version, _) ->
-            assertEquals(version, version.toString().normalized(), "Round-trip теряет данные для $version")
+            assertEquals(version, version.toString().normalize(), "Round-trip теряет данные для $version")
         }
     }
 
     @Test
     fun `formats version canonically after parsing`() {
         CANONICAL_CASES.forEach { (raw, expected) ->
-            assertEquals(expected, raw.normalized().toString(), "Неверная канонизация для '$raw'")
+            assertEquals(expected, raw.normalize().toString(), "Неверная канонизация для '$raw'")
         }
     }
 

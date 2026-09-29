@@ -9,7 +9,7 @@ class AppVersionTest {
     @Test
     fun `parses valid version strings into typed objects`() {
         PARSING_CASES.forEach { (raw, expected) ->
-            assertEquals(expected, raw.normalized(), "Неверный разбор версии '$raw'")
+            assertEquals(expected, raw.normalize(), "Неверный разбор версии '$raw'")
         }
     }
 
@@ -21,11 +21,11 @@ class AppVersionTest {
     @Test
     fun `equality depends on every version part`() {
         assertEquals(BASE_VERSION, BASE_VERSION.copy(), "Копия версии не равна оригиналу")
-        assertEquals(BASE_VERSION, BASE_VERSION.toString().normalized(), "Версия не равна себе же после разбора")
+        assertEquals(BASE_VERSION, BASE_VERSION.toString().normalize(), "Версия не равна себе же после разбора")
         VARIANT_CASES.forEach { (variant, raw) ->
             val message = "Версии отличаются одной частью, но равны: $BASE_VERSION и $variant"
             assertNotEquals(BASE_VERSION, variant, message)
-            assertNotEquals(BASE_VERSION, raw.normalized(), message)
+            assertNotEquals(BASE_VERSION, raw.normalize(), message)
         }
     }
 
@@ -73,7 +73,7 @@ class AppVersionTest {
     }
 
     private fun assertNormalizeError(version: String) {
-        val exception = assertFailsWith<IllegalStateException> { version.normalized() }
+        val exception = assertFailsWith<IllegalStateException> { version.normalize() }
         assertEquals(AppVersion.NORMALIZE_ERROR, exception.message, "Неожиданное сообщение для '$version'")
     }
 

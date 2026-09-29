@@ -8,6 +8,9 @@ kotlin {
 
     sourceSets {
         commonMain.dependencies {
+            implementation(projects.core.architecture)
+            implementation(projects.core.exception)
+
             api(libs.kotlinx.coroutines.core)
         }
         jsMain.dependencies {

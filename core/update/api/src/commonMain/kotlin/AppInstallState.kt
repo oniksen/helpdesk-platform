@@ -32,5 +32,13 @@ fun shouldSkipUpdate(): Boolean = isAppInstalled() && isServiceWorkerControlled(
  * В следующих патчах все методы будут перенесены в AppInstallState интерфейс.
  * */
 interface AppInstallState {
-    suspend fun hasNewVersion(): Boolean
+    /**
+     * Проверка существования новой, более высокой версии.
+     *
+     * **Внимание!**
+     * На данном этапе этот метод глушит все возможные ошибки
+     * при получении и обработке версии приложения из манифеста.
+     * */
+    @TemporaryArchitectureStab
+    suspend fun hasNewVersion(): UpdateDecision
 }

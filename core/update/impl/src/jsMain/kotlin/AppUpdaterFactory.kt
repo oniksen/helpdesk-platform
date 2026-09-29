@@ -1,1 +1,2 @@
-actual fun createAppUpdater(): AppUpdater = AppUpdaterImpl()
+actual fun createAppUpdater(appInstallState: AppInstallState): AppUpdater =
+    AppUpdaterImpl(appInstallState)

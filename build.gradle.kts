@@ -1,15 +1,28 @@
 import com.codingfeline.buildkonfig.compiler.FieldSpec
 import com.codingfeline.buildkonfig.gradle.BuildKonfigExtension
-import org.gradle.api.DefaultTask
-import org.gradle.api.file.ConfigurableFileCollection
-import org.gradle.api.file.RegularFileProperty
-import org.gradle.api.tasks.Input
-import org.gradle.api.tasks.InputFiles
-import org.gradle.api.tasks.OutputFile
-import org.gradle.api.tasks.PathSensitive
-import org.gradle.api.tasks.PathSensitivity
-import org.gradle.api.tasks.TaskAction
 import javax.xml.parsers.DocumentBuilderFactory
+
+val major = 0
+val minor = 2
+val patch = 0
+val stage = "alpha" // alpha, beta, rc, release
+val buildIteration = 0
+
+// Формирование user-friendly версии
+val userVersion = when(stage) {
+    "release" -> "$major.$minor.$patch"
+    else -> "$major.$minor.$patch-$stage.$buildIteration"
+}
+val systemVersion = "$major.$minor.${calculateTechnicalPatch(stage, patch, buildIteration)}"
+fun calculateTechnicalPatch(stage: String, patch: Int, iteration: Int): Int {
+    val stageOffset = when(stage) {
+        "alpha" -> 1_000
+        "beta" -> 2_000
+        "rc" -> 3_000
+        else -> 4_000 // release
+    }
+    return patch * 10_000 + stageOffset + iteration
+}
 
 plugins {
     // this is necessary to avoid the plugins to be loaded multiple times
@@ -38,15 +51,13 @@ detekt {
     )
 }
 
-version = "0.1.1001"
-
 subprojects {
     plugins.withId("com.codingfeline.buildkonfig") {
         extensions.configure<BuildKonfigExtension> {
             packageName = "helpdesk-platform.config"
 
             defaultConfigs {
-                buildConfigField(FieldSpec.Type.STRING, "PROJECT_VERSION", rootProject.version.toString())
+                buildConfigField(FieldSpec.Type.STRING, "PROJECT_VERSION", systemVersion)
             }
         }
     }

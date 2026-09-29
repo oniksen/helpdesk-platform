@@ -5,28 +5,28 @@ import kotlin.test.assertNotEquals
 class AppVersionToStringTest {
 
     @Test
-    fun formatsVersionAsMajorMinorPatchStageBuild() {
+    fun `formats version as major minor patch stage build`() {
         FORMATTING_CASES.forEach { (version, expected) ->
             assertEquals(expected, version.toString(), "Неверный формат для $version")
         }
     }
 
     @Test
-    fun formattedVersionIsParsedBackWithoutChanges() {
+    fun `formatted version is parsed back without changes`() {
         FORMATTING_CASES.forEach { (version, _) ->
             assertEquals(version, version.toString().normalized(), "Round-trip теряет данные для $version")
         }
     }
 
     @Test
-    fun formatsVersionCanonicallyAfterParsing() {
+    fun `formats version canonically after parsing`() {
         CANONICAL_CASES.forEach { (raw, expected) ->
             assertEquals(expected, raw.normalized().toString(), "Неверная канонизация для '$raw'")
         }
     }
 
     @Test
-    fun everyVersionPartChangesFormattedString() {
+    fun `every version part changes formatted string`() {
         val base = AppVersion(1, 2, 3, AppVersion.Stage.RC, 4)
         val variants = listOf(
             base.copy(major = 9),

@@ -2,23 +2,24 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertNotEquals
+import kotlin.test.assertTrue
 
 class AppVersionTest {
 
     @Test
-    fun parsesVersionString() {
+    fun `parses valid version strings into typed objects`() {
         PARSING_CASES.forEach { (raw, expected) ->
             assertEquals(expected, raw.normalized(), "Неверный разбор версии '$raw'")
         }
     }
 
     @Test
-    fun rejectsInvalidVersionStrings() {
+    fun `rejects invalid version strings`() {
         INVALID_CASES.forEach { assertNormalizeError(it) }
     }
 
     @Test
-    fun equalityDependsOnEveryPart() {
+    fun `equality depends on every version part`() {
         assertEquals(BASE_VERSION, BASE_VERSION.copy(), "Копия версии не равна оригиналу")
         assertEquals(BASE_VERSION, BASE_VERSION.toString().normalized(), "Версия не равна себе же после разбора")
         VARIANT_CASES.forEach { (variant, raw) ->
@@ -29,13 +30,45 @@ class AppVersionTest {
     }
 
     @Test
-    fun negativeNumbersAreRejected() {
+    fun `rejects negative version numbers`() {
         NEGATIVE_CASES.forEach { (major, minor, patch, build) ->
             val exception = assertFailsWith<IllegalArgumentException> {
                 AppVersion(major, minor, patch, AppVersion.Stage.Release, build)
             }
             val message = "Неожиданное сообщение для $major.$minor.$patch-Release.$build"
             assertEquals(AppVersion.INVALID_NUMBER_ERROR, exception.message, message)
+        }
+    }
+
+    @Test
+    fun `comparison depends on every version part`() {
+        assertEquals(0, BASE_VERSION.compareTo(BASE_VERSION), "Версия не равна себе же по compareTo")
+        assertEquals(0, BASE_VERSION.compareTo(BASE_VERSION.copy()), "Копия версии не равна оригиналу по compareTo")
+
+        GREATER_CASES.forEach { greater ->
+            val message = "$greater должен быть больше $BASE_VERSION"
+            assertTrue(greater > BASE_VERSION, message)
+            assertTrue(BASE_VERSION < greater, message)
+            assertTrue(greater.compareTo(BASE_VERSION) > 0, message)
+        }
+
+        LESS_CASES.forEach { less ->
+            val message = "$less должен быть меньше $BASE_VERSION"
+            assertTrue(less < BASE_VERSION, message)
+            assertTrue(BASE_VERSION > less, message)
+            assertTrue(less.compareTo(BASE_VERSION) < 0, message)
+        }
+
+        STAGE_ORDERING.forEach { (lower, higher) ->
+            val message = "Стадия $lower должна идти раньше стадии $higher"
+            assertTrue(lower < higher, message)
+            assertTrue(higher > lower, message)
+        }
+
+        PRECEDENCE_CASES.forEach { (greater, less) ->
+            val message = "Старшая часть не перевесила младшие: $greater должно быть больше $less"
+            assertTrue(greater > less, message)
+            assertTrue(less < greater, message)
         }
     }
 
@@ -77,6 +110,37 @@ class AppVersionTest {
             listOf(1, -2, 3, 4),
             listOf(1, 2, -3, 4),
             listOf(1, 2, 3, -4),
+        )
+
+        val GREATER_CASES = listOf(
+            BASE_VERSION.copy(major = 2),
+            BASE_VERSION.copy(minor = 3),
+            BASE_VERSION.copy(patch = 4),
+            BASE_VERSION.copy(stage = AppVersion.Stage.Release),
+            BASE_VERSION.copy(build = 5),
+        )
+
+        val LESS_CASES = listOf(
+            BASE_VERSION.copy(major = 0),
+            BASE_VERSION.copy(minor = 1),
+            BASE_VERSION.copy(patch = 2),
+            BASE_VERSION.copy(stage = AppVersion.Stage.Beta),
+            BASE_VERSION.copy(build = 3),
+        )
+
+        val STAGE_ORDERING = listOf(
+            AppVersion.Stage.Alpha to AppVersion.Stage.Beta,
+            AppVersion.Stage.Beta to AppVersion.Stage.RC,
+            AppVersion.Stage.RC to AppVersion.Stage.Release,
+        )
+
+        /**
+         * Старшая часть должна перевешивать все младшие: `major` решает сравнение,
+         * даже если младшие части у старшей версии меньше, а у младшей — больше.
+         * */
+        val PRECEDENCE_CASES = listOf(
+            AppVersion(2, 0, 0, AppVersion.Stage.Alpha, 0) to BASE_VERSION,
+            BASE_VERSION to AppVersion(0, 9, 9, AppVersion.Stage.Release, 999),
         )
     }
 }

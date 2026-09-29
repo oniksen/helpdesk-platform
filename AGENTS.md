@@ -172,6 +172,47 @@ Kotlin Multiplatform (KMP) проект — Web-приложение (JS + Wasm)
 - Комментарии на русском языке
 - Пакеты: `org.lpmti.helpdeskplatform.*`, фичи — `navigation`, `presentation.screen`
 
+## Тесты
+
+### Именование
+
+Имя теста — читаемая английская фраза в `backticks`, нижний регистр, без точки в конце:
+
+```kotlin
+@Test
+fun `rejects negative version numbers`() { /* ... */ }
+```
+
+Требования к имени:
+
+1. **Описывает поведение, а не механизм.** Имя должно отвечать на вопрос «что проверяется», а не «как устроен код». Сравнение версий — это `comparison depends on every version part`, а не `Equals test`.
+2. **Начинается с подлежащего или глагола**, в зависимости от того, что важнее: активное действие — `parses valid version strings`, свойство — `equality depends on every part`.
+3. **Конкретно, без общих слов.** Запрещены `test`, `test1`, `check`, `shouldWork`, `works`, `simpleValid`, `minValues`.
+
+### Группировка
+
+1. **Один тест — одно поведение.** Не создавай отдельный тест на каждый граничный случай.
+2. **Однотипные случаи оформляй таблицей** в `private companion object` и прокручивай через `forEach`. Это проверяет общую логику и избавляет от разрозненных мелких операций:
+
+```kotlin
+@Test
+fun `converts valid pass numbers to decimal numbers`() {
+    CONVERSION_CASES.forEach { (pass, expected) ->
+        assertEquals(expected, PassNumber(pass).toDecimalNumber(), "Неверная конвертация для '$pass'")
+    }
+}
+
+private companion object {
+    val CONVERSION_CASES = listOf(
+        "0/0" to "00000000",
+        "1/1" to "00065537",
+    )
+}
+```
+
+3. **Сообщения ассертов — на русском** и включают входные данные, чтобы по падению было видно, какой случай сломался.
+4. Если набор разнородный — группируй по правилу, а не по количеству: «пустой ввод», «превышение диапазона», «неверный формат».
+
 ## Добавление фичи
 
 1. Создать `features/<name>/api` с маршрутом (`@Serializable data object ... : NavKey`)

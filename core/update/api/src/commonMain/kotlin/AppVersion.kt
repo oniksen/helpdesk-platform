@@ -15,6 +15,17 @@ data class AppVersion(
 
     override fun toString(): String = "$major.$minor.$patch-${stage.name}.$build"
 
+    operator fun compareTo(other: AppVersion): Int {
+        return compareValuesBy(
+            this, other,
+            AppVersion::major,
+            AppVersion::minor,
+            AppVersion::patch,
+            AppVersion::stage,
+            AppVersion::build
+        )
+    }
+
     companion object {
         const val NORMALIZE_ERROR = "Не удалось распарсить версию"
         const val INVALID_NUMBER_ERROR = "Номер версии не может быть отрицательным"

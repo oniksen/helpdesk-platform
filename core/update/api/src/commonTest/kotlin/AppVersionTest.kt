@@ -9,23 +9,32 @@ class AppVersionTest {
     @Test
     fun `parses valid version strings into typed objects`() {
         PARSING_CASES.forEach { (raw, expected) ->
-            assertEquals(expected, raw.normalize(), "Неверный разбор версии '$raw'")
+            assertEquals(expected, raw.normalizeFromUi(), "Неверный разбор версии '$raw'")
         }
     }
 
     @Test
-    fun `rejects invalid version strings`() {
-        INVALID_CASES.forEach { assertNormalizeError(it) }
+    fun `rejects version strings that do not match the pattern`() {
+        PATTERN_MISMATCH_CASES.forEach { raw ->
+            assertNormalizeError(raw, AppVersion.NORMALIZE_ERROR)
+        }
+    }
+
+    @Test
+    fun `rejects version strings with unparseable parts`() {
+        UNPARSEABLE_PARTS_CASES.forEach { raw ->
+            assertNormalizeError(raw, AppVersion.NORMALIZE_ERROR)
+        }
     }
 
     @Test
     fun `equality depends on every version part`() {
         assertEquals(BASE_VERSION, BASE_VERSION.copy(), "Копия версии не равна оригиналу")
-        assertEquals(BASE_VERSION, BASE_VERSION.toString().normalize(), "Версия не равна себе же после разбора")
+        assertEquals(BASE_VERSION, BASE_VERSION.toString().normalizeFromUi(), "Версия не равна себе же после разбора")
         VARIANT_CASES.forEach { (variant, raw) ->
             val message = "Версии отличаются одной частью, но равны: $BASE_VERSION и $variant"
             assertNotEquals(BASE_VERSION, variant, message)
-            assertNotEquals(BASE_VERSION, raw.normalize(), message)
+            assertNotEquals(BASE_VERSION, raw.normalizeFromUi(), message)
         }
     }
 
@@ -72,9 +81,9 @@ class AppVersionTest {
         }
     }
 
-    private fun assertNormalizeError(version: String) {
-        val exception = assertFailsWith<IllegalStateException> { version.normalize() }
-        assertEquals(AppVersion.NORMALIZE_ERROR, exception.message, "Неожиданное сообщение для '$version'")
+    private fun assertNormalizeError(version: String, expectedMessage: String) {
+        val exception = assertFailsWith<IllegalStateException> { version.normalizeFromUi() }
+        assertEquals(expectedMessage, exception.message, "Неожиданное сообщение для '$version'")
     }
 
     private companion object {
@@ -99,9 +108,12 @@ class AppVersionTest {
             BASE_VERSION.copy(build = 9) to "1.2.3-RC.9",
         )
 
-        val INVALID_CASES = listOf(
+        val PATTERN_MISMATCH_CASES = listOf(
             "", "not-a-version", "1.2.3", "1.2-Release.1", "v1.2.3-Release.1",
             "1.2.3-Release.x", "1.2.3--.1", "1.2.3-Release.5+build.42",
+        )
+
+        val UNPARSEABLE_PARTS_CASES = listOf(
             "1.2.3-Snapshot.1", "99999999999.0.0-Release.0",
         )
 

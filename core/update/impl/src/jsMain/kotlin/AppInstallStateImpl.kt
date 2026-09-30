@@ -11,7 +11,7 @@ actual class AppInstallStateImpl(
 ) : AppInstallState {
     val client = client.baseInstance()
     actual override suspend fun hasNewVersion(): UpdateDecision {
-        val currentVersion = BuildKonfig.PROJECT_VERSION.normalize()
+        val currentVersion = BuildKonfig.PROJECT_VERSION.normalizeFromTechnical()
 
         val networkResult = safeNetworkCall {
             client.get {
@@ -31,7 +31,7 @@ actual class AppInstallStateImpl(
             is NetworkResult.Success<UpdateManifest> -> {
                 val prod = networkResult.data.channels.prod
                 val remoteVersion = try {
-                    prod.lastVersion.normalize()
+                    prod.lastVersion.normalizeFromTechnical()
                 } catch (e: IllegalStateException) {
                     println("[UPDATE] Ошибка получения актуальной версии из манифеста: " + e.message)
                     return UpdateDecision.ManifestError(

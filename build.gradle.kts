@@ -102,7 +102,7 @@ tasks.register<GenerateCoverageBadge>("generateCoverageBadge") {
     outputFile.set(layout.projectDirectory.file("coverage-badge.svg"))
 }
 
-tasks.register("build-web-app")   { description = "Сборка основного приложения"
+tasks.register("build-web-app") { description = "Сборка основного приложения"
     dependsOn(":webApp:jsBrowserDevelopmentExecutableDistribution") }
 
 tasks.register("build-web-shell") { description = "Сборка бутстрап оболочки с авторизацией и проверкой версии"

@@ -6,14 +6,16 @@ class AppUpdaterImpl(
 ) : AppUpdater {
     override suspend fun checkForUpdate(): UpdateDecision = appInstallState.hasNewVersion()
 
-    override suspend fun downloadAndUnpack(url: String): Map<String, ByteArray> {
-        getCachedBuild(url)?.let {
-            println("[DIAG] updater: cache hit, returning ${it.size} files")
-            return it
+    override suspend fun downloadAndUnpack(url: String, forceRefresh: Boolean): Map<String, ByteArray> {
+        if (!forceRefresh) {
+            getCachedBuild(url)?.let {
+                println("[DIAG] updater: cache hit, returning ${it.size} files")
+                return it
+            }
         }
 
-        println("[DIAG] updater: fetching $url")
-        val response = fetchJs(url).await()
+        println("[DIAG] updater: fetching $url forceRefresh=$forceRefresh")
+        val response = fetchJs(url, forceRefresh).await()
         println("[DIAG] updater: fetch status=${response.status}")
         check(response.ok) { "Ошибка загрузки обновления: HTTP ${response.status}" }
         val arrayBuffer = arrayBufferJs(response).await()

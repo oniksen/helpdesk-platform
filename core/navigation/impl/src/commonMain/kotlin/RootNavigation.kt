@@ -1,4 +1,5 @@
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.navigation3.runtime.NavEntry
 import androidx.navigation3.runtime.NavKey
@@ -40,6 +41,16 @@ fun RootNavigation(startRoute: NavKey) {
                     if (navBackStack.size > 1) navBackStack.removeLast()
                 }
             }
+        }
+
+        // 5. Проверки при старте: асинхронные условия, которые нельзя учесть в стартовом маршруте.
+        val startupGates = remember { koin.getAll<AppStartupGate>() }
+        LaunchedEffect(Unit) {
+            startupGates.firstNotNullOfOrNull { it.resolveStartupRoute() }
+                ?.let { route ->
+                    println("[DIAG] startup gate: переход на ${route::class.simpleName}")
+                    navigator.navigate(route)
+                }
         }
 
         NavDisplay(

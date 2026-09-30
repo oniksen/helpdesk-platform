@@ -6,7 +6,7 @@ val major = 0
 val minor = 2
 val patch = 0
 val stage = "alpha" // alpha, beta, rc, release
-val buildIteration = 2
+val buildIteration = 3
 
 // Формирование user-friendly версии
 val userVersion = when(stage) {

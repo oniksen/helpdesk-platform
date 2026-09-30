@@ -70,10 +70,11 @@ internal class UpdateScreenViewModel(
 
             scope.launch(Dispatchers.Default) {
                 try {
-                    val cached = updater.getCachedBuild(DEFAULT_WEB_APP_URL)
+                    val hasNewVersion = updateDecision is UpdateDecision.UpdateAvailable
+                    val cached = if (hasNewVersion) null else updater.getCachedBuild(DEFAULT_WEB_APP_URL)
                     println(
-                        "[DIAG] update: cache hit=${cached != null} files=${cached?.size} " +
-                                "hasIndexHtml=${cached?.containsKey("index.html")} " +
+                        "[DIAG] update: hasNewVersion=$hasNewVersion cache hit=${cached != null} " +
+                                "files=${cached?.size} hasIndexHtml=${cached?.containsKey("index.html")} " +
                                 "keys=${cached?.keys?.take(6)?.joinToString(",")}"
                     )
                     cached?.get("index.html")?.let { html ->
@@ -85,7 +86,9 @@ internal class UpdateScreenViewModel(
                                     "snippet=$snippet"
                         )
                     }
-                    buildFiles = cached ?: downloadBuild()
+                    // При найденном обновлении кэш игнорируется: иначе в Service Worker
+                    // уедет уже знакомая сборка и перезагрузка вернёт прежнюю версию.
+                    buildFiles = cached ?: downloadBuild(forceRefresh = hasNewVersion)
                     applyUpdate()
                 } catch (e: CancellationException) {
                     throw e
@@ -96,9 +99,9 @@ internal class UpdateScreenViewModel(
         }
     }
 
-    private suspend fun downloadBuild(): Map<String, ByteArray> {
-        val files = updater.downloadAndUnpack(DEFAULT_WEB_APP_URL)
-        println("[DIAG] update: downloaded ok files=${files.size}")
+    private suspend fun downloadBuild(forceRefresh: Boolean): Map<String, ByteArray> {
+        val files = updater.downloadAndUnpack(DEFAULT_WEB_APP_URL, forceRefresh)
+        println("[DIAG] update: downloaded ok forceRefresh=$forceRefresh files=${files.size}")
 
         updateState {
             copy(

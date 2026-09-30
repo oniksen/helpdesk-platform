@@ -2,8 +2,10 @@
 
 import kotlin.js.Promise
 
-@JsFun("(url) => fetch(url)")
-external fun fetchJs(url: String): Promise<dynamic>
+// noStore=true отключает HTTP-кэш, иначе zip-архив может прийти из кэша CDN
+// и приложение установит ту же сборку, что и раньше.
+@JsFun("(url, noStore) => noStore ? fetch(url, { cache: 'no-store' }) : fetch(url)")
+external fun fetchJs(url: String, noStore: Boolean): Promise<dynamic>
 
 @JsFun("""() => {
     return new Promise((resolve, reject) => {

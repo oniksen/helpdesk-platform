@@ -33,6 +33,7 @@ plugins {
     alias(libs.plugins.kotlinx.kover) apply false
     alias(libs.plugins.detekt)
     alias(libs.plugins.buildkonfig) apply false
+    alias(libs.plugins.mokkery) apply false
 }
 
 detekt {

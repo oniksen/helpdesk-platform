@@ -26,6 +26,12 @@ internal expect suspend fun platformPushBuild(url: String, files: Map<String, By
 internal class UpdateScreenViewModel(
     private val navigator: AppNavigator,
     private val updater: AppUpdater,
+    private val isUpdateSkippable: () -> Boolean = { shouldSkipUpdate() },
+    private val registerServiceWorker: suspend () -> Boolean = { platformRegisterServiceWorker() },
+    private val pushBuild: suspend (url: String, files: Map<String, ByteArray>) -> Boolean =
+        { url, files -> platformPushBuild(url, files) },
+    private val finishInstall: suspend () -> FinishInstallResult = { platformFinishInstall(navigator) },
+    private val backgroundDispatcher: CoroutineDispatcher = Dispatchers.Default,
 ) {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
     private var buildFiles: Map<String, ByteArray>? = null
@@ -55,8 +61,8 @@ internal class UpdateScreenViewModel(
 
             val updateDecision = updater.checkForUpdate()
             // TODO("Обработать остальные состояния UpdateDecision")
-            if (shouldSkipUpdate() && updateDecision !is UpdateDecision.UpdateAvailable) {
-                scope.launch { finishInstall() }
+            if (isUpdateSkippable() && updateDecision !is UpdateDecision.UpdateAvailable) {
+                scope.launch { completeInstall() }
                 return@launch
             }
 
@@ -68,7 +74,7 @@ internal class UpdateScreenViewModel(
                 )
             }
 
-            scope.launch(Dispatchers.Default) {
+            scope.launch(backgroundDispatcher) {
                 try {
                     val hasNewVersion = updateDecision is UpdateDecision.UpdateAvailable
                     val cached = if (hasNewVersion) null else updater.getCachedBuild(DEFAULT_WEB_APP_URL)
@@ -123,7 +129,7 @@ internal class UpdateScreenViewModel(
             )
         }
 
-        val swControlled = platformRegisterServiceWorker()
+        val swControlled = registerServiceWorker()
         println("[DIAG] update: registerServiceWorker called controlled=$swControlled")
         if (!swControlled) {
             showError("Service Worker недоступен: установка не может завершиться")
@@ -133,7 +139,7 @@ internal class UpdateScreenViewModel(
         val files = buildFiles
         if (files != null) {
             println("[DIAG] update: pushing build to SW (${files.size} files)")
-            val pushed = platformPushBuild(DEFAULT_WEB_APP_URL, files)
+            val pushed = pushBuild(DEFAULT_WEB_APP_URL, files)
             println("[DIAG] update: build pushed via SW=$pushed")
             if (!pushed) {
                 showError("Не удалось передать сборку в Service Worker")
@@ -153,11 +159,11 @@ internal class UpdateScreenViewModel(
 
         delay(1_000.milliseconds)
         println("[DIAG] update: calling finishInstall")
-        finishInstall()
+        completeInstall()
     }
 
-    private suspend fun finishInstall() {
-        val result = platformFinishInstall(navigator)
+    private suspend fun completeInstall() {
+        val result = finishInstall()
         if (result == FinishInstallResult.Failed) {
             showError("Установка завершена, но приложение не переключилось на новую сборку. Обновите страницу вручную.")
         }

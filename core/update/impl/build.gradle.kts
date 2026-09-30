@@ -3,6 +3,7 @@ plugins {
     alias(libs.plugins.buildkonfig)
     alias(libs.plugins.kotlinSerialization)
     alias(libs.plugins.kotlinx.kover)
+    alias(libs.plugins.mokkery)
 }
 
 kotlin {
@@ -30,6 +31,12 @@ kotlin {
 
             implementation(npm("jszip", "3.10.1"))
             implementation(libs.wrappers.browser)
+        }
+        commonTest.dependencies {
+            implementation(libs.kotlin.test)
+        }
+        jvmTest.dependencies {
+            implementation(libs.junit)
         }
     }
 }

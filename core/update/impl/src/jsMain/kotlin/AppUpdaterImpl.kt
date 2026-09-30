@@ -8,15 +8,10 @@ class AppUpdaterImpl(
 
     override suspend fun downloadAndUnpack(url: String, forceRefresh: Boolean): Map<String, ByteArray> {
         if (!forceRefresh) {
-            getCachedBuild(url)?.let {
-                println("[DIAG] updater: cache hit, returning ${it.size} files")
-                return it
-            }
+            getCachedBuild(url)?.let { return it }
         }
 
-        println("[DIAG] updater: fetching $url forceRefresh=$forceRefresh")
         val response = fetchJs(url, forceRefresh).await()
-        println("[DIAG] updater: fetch status=${response.status}")
         check(response.ok) { "Ошибка загрузки обновления: HTTP ${response.status}" }
         val arrayBuffer = arrayBufferJs(response).await()
 
@@ -39,7 +34,6 @@ class AppUpdaterImpl(
         }
 
         val normalized = normalizeBuildKeys(files)
-        println("[DIAG] updater: unpacked ${files.size} files, normalized to ${normalized.size}, saving to cache")
         saveToCache(url, normalized)
 
         return normalized
@@ -76,7 +70,6 @@ class AppUpdaterImpl(
 
         val normalized = normalizeBuildKeys(map)
         if (normalized.keys != map.keys) {
-            println("[DIAG] updater: healing cached keys (${map.keys.size} -> ${normalized.keys.size})")
             saveToCache(url, normalized)
         }
         return normalized

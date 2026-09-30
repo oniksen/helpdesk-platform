@@ -57,8 +57,6 @@ internal class UpdateScreenViewModel(
 
     private fun startUpdate() {
         scope.launch {
-            println("[DIAG] update: start url=$DEFAULT_WEB_APP_URL")
-
             val updateDecision = updater.checkForUpdate()
             // TODO("Обработать остальные состояния UpdateDecision")
             if (isUpdateSkippable() && updateDecision !is UpdateDecision.UpdateAvailable) {
@@ -78,20 +76,6 @@ internal class UpdateScreenViewModel(
                 try {
                     val hasNewVersion = updateDecision is UpdateDecision.UpdateAvailable
                     val cached = if (hasNewVersion) null else updater.getCachedBuild(DEFAULT_WEB_APP_URL)
-                    println(
-                        "[DIAG] update: hasNewVersion=$hasNewVersion cache hit=${cached != null} " +
-                                "files=${cached?.size} hasIndexHtml=${cached?.containsKey("index.html")} " +
-                                "keys=${cached?.keys?.take(6)?.joinToString(",")}"
-                    )
-                    cached?.get("index.html")?.let { html ->
-                        val snippet = html.decodeToString(0, minOf(400, html.size))
-                        val refsWebApp = snippet.contains("webApp.js")
-                        val refsWebShell = snippet.contains("webShell.js")
-                        println(
-                            "[DIAG] cached index.html: refsWebApp=$refsWebApp refsWebShell=$refsWebShell " +
-                                    "snippet=$snippet"
-                        )
-                    }
                     // При найденном обновлении кэш игнорируется: иначе в Service Worker
                     // уедет уже знакомая сборка и перезагрузка вернёт прежнюю версию.
                     buildFiles = cached ?: downloadBuild(forceRefresh = hasNewVersion)
@@ -107,7 +91,6 @@ internal class UpdateScreenViewModel(
 
     private suspend fun downloadBuild(forceRefresh: Boolean): Map<String, ByteArray> {
         val files = updater.downloadAndUnpack(DEFAULT_WEB_APP_URL, forceRefresh)
-        println("[DIAG] update: downloaded ok forceRefresh=$forceRefresh files=${files.size}")
 
         updateState {
             copy(
@@ -121,7 +104,6 @@ internal class UpdateScreenViewModel(
     }
 
     private suspend fun applyUpdate() {
-        println("[DIAG] update: applyUpdate started")
         updateState {
             copy(
                 status = UpdateStatus.Installing,
@@ -130,7 +112,6 @@ internal class UpdateScreenViewModel(
         }
 
         val swControlled = registerServiceWorker()
-        println("[DIAG] update: registerServiceWorker called controlled=$swControlled")
         if (!swControlled) {
             showError("Service Worker недоступен: установка не может завершиться")
             return
@@ -138,15 +119,11 @@ internal class UpdateScreenViewModel(
 
         val files = buildFiles
         if (files != null) {
-            println("[DIAG] update: pushing build to SW (${files.size} files)")
             val pushed = pushBuild(DEFAULT_WEB_APP_URL, files)
-            println("[DIAG] update: build pushed via SW=$pushed")
             if (!pushed) {
                 showError("Не удалось передать сборку в Service Worker")
                 return
             }
-        } else {
-            println("[DIAG] update: no build files, skipping SW push")
         }
 
         updateState {
@@ -158,7 +135,6 @@ internal class UpdateScreenViewModel(
         }
 
         delay(1_000.milliseconds)
-        println("[DIAG] update: calling finishInstall")
         completeInstall()
     }
 
@@ -170,7 +146,6 @@ internal class UpdateScreenViewModel(
     }
 
     private fun showError(message: String) {
-        println("[DIAG] update: error $message")
         effect.tryEmit(UpdateScreenEffect.ShowSnackBar(message))
 
         updateState {

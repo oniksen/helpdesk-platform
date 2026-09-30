@@ -25,12 +25,14 @@ class UpdateStartupGate(
 ) : AppStartupGate {
     private var checked = false
 
+    // Сбой проверки версии не должен блокировать запуск: приложение открывается
+    // на текущей сборке, а обновление предложит экран обновления позже.
+    @Suppress("SwallowedException")
     override suspend fun resolveStartupRoute(): NavKey? {
         if (checked) return null
         checked = true
 
         if (!isUpdateSkippable()) {
-            println("[DIAG] startup gate: сборка не обслуживается Service Worker, проверка пропущена")
             return null
         }
 
@@ -38,12 +40,10 @@ class UpdateStartupGate(
             updater.checkForUpdate()
         } catch (e: CancellationException) {
             throw e
-        } catch (e: Throwable) {
-            println("[DIAG] startup gate: ошибка проверки версии ${e::class.simpleName}: ${e.message}")
+        } catch (_: Throwable) {
             return null
         }
 
-        println("[DIAG] startup gate: решение проверки=${decision::class.simpleName}")
         return when (decision) {
             is UpdateDecision.UpdateAvailable -> UpdateScreenRoute
             is UpdateDecision.UpToDate, is UpdateDecision.ManifestError -> null

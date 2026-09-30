@@ -51,16 +51,9 @@ class FullAppDefinition : AppDefinition {
         val authorization = koin.get<Authorization>()
         val installed = isAppInstalled()
         val restored = installed && authorization.restoreAuthState()
-        if (installed && restored) {
+if (installed && restored) {
             resetInstallReloadAttempts()
-            println("[DIAG] full: reload attempts reset")
         }
-        val route = if (installed && restored)
-            TasksPageRoute
-        else
-            AuthorizationScreenRoute
-        println("[DIAG] full startRoute: installed=$installed restored=${if (installed) restored else "skipped"}")
-        println("[DIAG] full startRoute: route=${route::class.simpleName}")
-        return route
+        return if (installed && restored) TasksPageRoute else AuthorizationScreenRoute
     }
 }

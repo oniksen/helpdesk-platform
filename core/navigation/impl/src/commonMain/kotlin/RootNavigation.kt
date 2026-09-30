@@ -47,10 +47,7 @@ fun RootNavigation(startRoute: NavKey) {
         val startupGates = remember { koin.getAll<AppStartupGate>() }
         LaunchedEffect(Unit) {
             startupGates.firstNotNullOfOrNull { it.resolveStartupRoute() }
-                ?.let { route ->
-                    println("[DIAG] startup gate: переход на ${route::class.simpleName}")
-                    navigator.navigate(route)
-                }
+                ?.let { route -> navigator.navigate(route) }
         }
 
         NavDisplay(

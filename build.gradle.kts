@@ -2,27 +2,8 @@ import com.codingfeline.buildkonfig.compiler.FieldSpec
 import com.codingfeline.buildkonfig.gradle.BuildKonfigExtension
 import javax.xml.parsers.DocumentBuilderFactory
 
-val major = 0
-val minor = 2
-val patch = 0
-val stage = "alpha" // alpha, beta, rc, release
-val buildIteration = 4
-
-// Формирование user-friendly версии
-val userVersion = when(stage) {
-    "release" -> "$major.$minor.$patch"
-    else -> "$major.$minor.$patch-$stage.$buildIteration"
-}
-val systemVersion = "$major.$minor.${calculateTechnicalPatch(stage, patch, buildIteration)}"
-fun calculateTechnicalPatch(stage: String, patch: Int, iteration: Int): Int {
-    val stageOffset = when(stage) {
-        "alpha" -> 1_000
-        "beta" -> 2_000
-        "rc" -> 3_000
-        else -> 4_000 // release
-    }
-    return patch * 10_000 + stageOffset + iteration
-}
+val webVersion = WebVersion(0, 2, 0, AppVersion.Stage.Alpha, 5)
+val jvmVersion = JVMVersion(0, 1, 0, AppVersion.Stage.Alpha, 0)
 
 plugins {
     // this is necessary to avoid the plugins to be loaded multiple times
@@ -58,7 +39,8 @@ subprojects {
             packageName = "helpdesk-platform.config"
 
             defaultConfigs {
-                buildConfigField(FieldSpec.Type.STRING, "PROJECT_VERSION", systemVersion)
+                buildConfigField(FieldSpec.Type.STRING, "PROJECT_TECHNICAL_VERSION_WEB", webVersion.createSystemVersion())
+                buildConfigField(FieldSpec.Type.STRING, "PROJECT_TECHNICAL_VERSION_JVM", jvmVersion.createSystemVersion())
             }
         }
     }
@@ -187,3 +169,68 @@ abstract class GenerateCoverageBadge : DefaultTask() {
         logger.lifecycle("Coverage: $percentage%")
     }
 }
+
+abstract class AppVersion(
+    private val major: Int,
+    private val minor: Int,
+    private val patch: Int,
+    private val stage: Stage, // alpha, beta, rc, release
+    private val buildIteration: Int,
+) {
+    enum class Stage(val value: String) {
+        Alpha("alpha"), Beta("beta"), Rc("rc"), Release("release")
+    }
+
+    fun createUiVersion(): String {
+        return when(stage) {
+            Stage.Release -> "$major.$minor.$patch"
+            else -> "$major.$minor.$patch-${stage.value}.$buildIteration"
+        }
+    }
+
+    fun createSystemVersion(): String {
+        return "$major.$minor.${calculateTechnicalPatch(stage, patch, buildIteration)}"
+    }
+
+    private fun calculateTechnicalPatch(stage: Stage, patch: Int, iteration: Int): Int {
+        val stageOffset = when(stage) {
+            Stage.Alpha -> 1_000
+            Stage.Beta -> 2_000
+            Stage.Rc -> 3_000
+            else -> 4_000 // release
+        }
+        return patch * 10_000 + stageOffset + iteration
+    }
+}
+
+class WebVersion(
+    private val major: Int,
+    private val minor: Int,
+    private val patch: Int,
+    private val stage: AppVersion.Stage,
+    private val buildIteration: Int,
+): AppVersion(major, minor, patch, stage, buildIteration)
+
+class JVMVersion(
+    private val major: Int,
+    private val minor: Int,
+    private val patch: Int,
+    private val stage: AppVersion.Stage,
+    private val buildIteration: Int,
+): AppVersion(major, minor, patch, stage, buildIteration)
+
+/*// Формирование user-friendly версии
+val userVersion = when(stage) {
+    "release" -> "$major.$minor.$patch"
+    else -> "$major.$minor.$patch-$stage.$buildIteration"
+}
+val systemVersion = "$major.$minor.${calculateTechnicalPatch(stage, patch, buildIteration)}"
+fun calculateTechnicalPatch(stage: String, patch: Int, iteration: Int): Int {
+    val stageOffset = when(stage) {
+        "alpha" -> 1_000
+        "beta" -> 2_000
+        "rc" -> 3_000
+        else -> 4_000 // release
+    }
+    return patch * 10_000 + stageOffset + iteration
+}*/

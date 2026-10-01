@@ -1,17 +1,17 @@
 import data.dto.manifest.UpdateManifestDto
 import data.mapper.toDomain
 import domain.models.manifest.UpdateManifest
-import `helpdesk-platform`.config.BuildKonfig
-import io.ktor.client.call.body
+import io.ktor.client.call.*
 import io.ktor.client.request.*
 import io.ktor.http.*
 
 actual class AppInstallStateImpl(
     client: KtorClient,
+    private val versionProvider: AppVersionProvider,
 ) : AppInstallState {
     val client = client.baseInstance()
     actual override suspend fun hasNewVersion(): UpdateDecision {
-        val currentVersion = BuildKonfig.PROJECT_VERSION.normalizeFromTechnical()
+        val currentVersion = versionProvider.provide()
 
         val networkResult = safeNetworkCall {
             client.get {

@@ -2,6 +2,7 @@ package presentation.viewmodel
 
 import AppNavigator
 import AppUpdater
+
 import DEFAULT_WEB_APP_URL
 import UpdateDecision
 import UpdateScreenRoute

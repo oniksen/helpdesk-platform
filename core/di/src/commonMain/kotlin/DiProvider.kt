@@ -45,7 +45,8 @@ class DiProvider(
     // Модуль обновлений (загрузка сборок с сервера)
     private val updateModule = module {
         single<AppUpdater> { createAppUpdater(get()) }
-        single<AppInstallState> { AppInstallStateImpl(get()) }
+        single<AppInstallState> { AppInstallStateImpl(get(), get()) }
+        single<AppVersionProvider> { AppVersionProviderImpl() }
     }
 
     @Composable

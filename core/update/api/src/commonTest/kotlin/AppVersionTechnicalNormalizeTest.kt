@@ -4,7 +4,7 @@ import kotlin.test.assertFailsWith
 
 /**
  * Тесты технического формата версии вида `major.minor.(patch * 10_000 + stageOffset + iteration)`,
- * который собирается в `build.gradle.kts` и попадает в `BuildKonfig.PROJECT_VERSION`.
+ * который собирается в `build.gradle.kts` и попадает в `BuildKonfig.PROJECT_VERSION_WEB`.
  * */
 class AppVersionTechnicalNormalizeTest {
 

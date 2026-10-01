@@ -1,6 +1,6 @@
-import data.dto.manifest.UpdateManifestDto
+import data.dto.manifest.v1.UpdateManifestDto
 import data.mapper.toDomain
-import domain.models.manifest.UpdateManifest
+import domain.models.manifest.v1.UpdateManifest
 import io.ktor.client.call.*
 import io.ktor.client.request.*
 import io.ktor.http.*

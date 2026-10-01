@@ -1,10 +1,10 @@
-package data.dto.manifest
+package data.dto.manifest.v1
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 @Serializable
-data class StableDto(
+data class CurrentDto(
     @SerialName("date") val dateDto: String? = null,
     @SerialName("last_version") val lastVersionDto: String? = null,
     @SerialName("macos") val macosDto: MacosDto? = null,

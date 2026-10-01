@@ -1,4 +1,4 @@
-package domain.models.manifest
+package domain.models.manifest.v1
 
 data class LastRejection(
     val date: String,

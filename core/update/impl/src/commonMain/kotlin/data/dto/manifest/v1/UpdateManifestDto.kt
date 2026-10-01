@@ -1,4 +1,4 @@
-package data.dto.manifest
+package data.dto.manifest.v1
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable

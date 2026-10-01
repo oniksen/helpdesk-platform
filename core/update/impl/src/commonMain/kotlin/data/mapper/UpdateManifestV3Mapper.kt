@@ -1,29 +1,30 @@
 package data.mapper
 
-import data.dto.manifest.ChannelsDto
-import data.dto.manifest.CurrentDto
-import data.dto.manifest.DevDto
-import data.dto.manifest.LastRejectionDto
-import data.dto.manifest.MacosDto
-import data.dto.manifest.ProdDto
-import data.dto.manifest.StableDto
-import data.dto.manifest.UpdateManifestDto
-import data.dto.manifest.WebDto
-import data.dto.manifest.WindowsDto
-import domain.models.manifest.Channels
-import domain.models.manifest.Current
-import domain.models.manifest.Dev
-import domain.models.manifest.LastRejection
-import domain.models.manifest.Macos
-import domain.models.manifest.Prod
-import domain.models.manifest.Stable
-import domain.models.manifest.UpdateManifest
-import domain.models.manifest.Web
-import domain.models.manifest.Windows
+import data.dto.manifest.v1.ChannelsDto
+import data.dto.manifest.v1.CurrentDto
+import data.dto.manifest.v1.DevDto
+import data.dto.manifest.v1.LastRejectionDto
+import data.dto.manifest.v1.MacosDto
+import data.dto.manifest.v1.ProdDto
+import data.dto.manifest.v1.StableDto
+import data.dto.manifest.v1.UpdateManifestDto
+import data.dto.manifest.v1.WebDto
+import data.dto.manifest.v1.WindowsDto
+import domain.ManifestSupported
+import domain.models.manifest.v1.Channels
+import domain.models.manifest.v1.Current
+import domain.models.manifest.v1.Dev
+import domain.models.manifest.v1.LastRejection
+import domain.models.manifest.v1.Macos
+import domain.models.manifest.v1.Prod
+import domain.models.manifest.v1.Stable
+import domain.models.manifest.v1.UpdateManifest
+import domain.models.manifest.v1.Web
+import domain.models.manifest.v1.Windows
 
 private const val MISSING_FIELD_ERROR = "Отсутствует обязательное поле манифеста"
 private const val INVALID_FIELD_ERROR = "Некорректное значение поля манифеста"
-private const val MIN_SCHEMA_VERSION = 3
+private val SCHEMA_VERSION = ManifestSupported.getManifestVersion("v1")
 private const val MAX_UNPUBLISHED_SIZE = 0
 
 /**
@@ -135,7 +136,7 @@ private fun <T> T?.required(path: String): T = this ?: error("$MISSING_FIELD_ERR
  * */
 private fun Int?.schemaVersion(path: String): Int {
     val version = this ?: error("$MISSING_FIELD_ERROR: $path")
-    if (version < MIN_SCHEMA_VERSION) error("$INVALID_FIELD_ERROR: $path = $version")
+    if (version < SCHEMA_VERSION) error("$INVALID_FIELD_ERROR: $path = $version")
     return version
 }
 

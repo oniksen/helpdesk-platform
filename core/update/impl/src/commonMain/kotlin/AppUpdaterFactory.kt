@@ -1,1 +1,1 @@
-expect fun createAppUpdater(): AppUpdater
+expect fun createAppUpdater(appInstallState: AppInstallState): AppUpdater

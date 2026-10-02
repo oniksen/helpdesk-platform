@@ -1,4 +1,9 @@
+import com.codingfeline.buildkonfig.compiler.FieldSpec
+import com.codingfeline.buildkonfig.gradle.BuildKonfigExtension
 import javax.xml.parsers.DocumentBuilderFactory
+
+val webVersion = WebVersion(0, 2, 0, AppVersion.Stage.Alpha, 6)
+val jvmVersion = JVMVersion(0, 1, 0, AppVersion.Stage.Alpha, 0)
 
 plugins {
     // this is necessary to avoid the plugins to be loaded multiple times
@@ -8,6 +13,8 @@ plugins {
     alias(libs.plugins.kotlinMultiplatform) apply false
     alias(libs.plugins.kotlinx.kover) apply false
     alias(libs.plugins.detekt)
+    alias(libs.plugins.buildkonfig) apply false
+    alias(libs.plugins.mokkery) apply false
 }
 
 detekt {
@@ -26,33 +33,85 @@ detekt {
     )
 }
 
+subprojects {
+    plugins.withId("com.codingfeline.buildkonfig") {
+        extensions.configure<BuildKonfigExtension> {
+            packageName = "helpdesk-platform.config"
+
+            defaultConfigs {
+                buildConfigField(FieldSpec.Type.STRING, "PROJECT_TECHNICAL_VERSION_WEB", webVersion.createSystemVersion())
+                buildConfigField(FieldSpec.Type.STRING, "PROJECT_TECHNICAL_VERSION_JVM", jvmVersion.createSystemVersion())
+            }
+        }
+    }
+}
+
+val coverageModules = listOf(
+    ":core:architecture",
+    ":core:authorization:impl",
+    ":core:di",
+    ":core:exception",
+    ":core:network:impl",
+    ":core:navigation:impl",
+    ":core:uiadaptive",
+    ":core:update:impl",
+    ":features:authorization:impl",
+    ":features:parking:impl",
+    ":features:tasks:impl",
+    ":features:update:impl",
+    ":maxminiappapi:impl"
+)
+
 tasks.register("koverXmlReportsAll") {
     group = "verification"
     description = "Generate Kover XML reports for all modules"
 
-    dependsOn(
-        ":features:parking:impl:koverXmlReport",
-        ":maxminiappapi:impl:koverXmlReport",
-        ":core:di:koverXmlReport"
-    )
+    dependsOn(coverageModules.map { "$it:koverXmlReport" })
 }
 
-tasks.register("generateCoverageBadge") {
+tasks.register<GenerateCoverageBadge>("generateCoverageBadge") {
     group = "verification"
     description = "Generates a local coverage badge SVG for the whole KMP project"
 
-    outputs.upToDateWhen { false }
-
     dependsOn("koverXmlReportsAll")
 
-    doLast {
-        val xmlFiles = fileTree(rootDir) {
-            include("**/build/reports/kover/report.xml")
-        }.files
+    reports.from(
+        coverageModules.map { module ->
+            layout.projectDirectory.dir(
+                "${module.removePrefix(":").replace(':', '/')}/build/reports/kover/report.xml"
+            )
+        }
+    )
+    outputFile.set(layout.projectDirectory.file("coverage-badge.svg"))
+}
+
+tasks.register("build-web-app") { description = "Сборка основного приложения"
+    dependsOn(":webApp:jsBrowserDevelopmentExecutableDistribution") }
+
+tasks.register("build-web-shell") { description = "Сборка бутстрап оболочки с авторизацией и проверкой версии"
+    dependsOn(":webShell:jsBrowserDevelopmentExecutableDistribution") }
+
+/**
+ * Собирает единый бейдж покрытия по XML-отчётам Kover всех подключённых модулей.
+ *
+ * Реализовано отдельным типом задачи, а не через `doLast`, чтобы быть совместимым
+ * с Configuration Cache: внутри `doLast` нельзя обращаться к объекту скрипта и к
+ * `Project`, иначе запись кэша не сериализуется.
+ */
+abstract class GenerateCoverageBadge : DefaultTask() {
+    @get:InputFiles
+    @get:PathSensitive(PathSensitivity.RELATIVE)
+    abstract val reports: ConfigurableFileCollection
+
+    @get:OutputFile
+    abstract val outputFile: RegularFileProperty
+
+    @TaskAction
+    fun generate() {
+        val xmlFiles = reports.files.filter { it.isFile }
 
         if (xmlFiles.isEmpty()) {
-            println("ERROR: No Kover XML reports found")
-            return@doLast
+            error("No Kover XML reports found")
         }
 
         var totalCovered = 0
@@ -104,9 +163,74 @@ tasks.register("generateCoverageBadge") {
             </svg>
         """.trimIndent()
 
-        val badgeFile = file("coverage-badge.svg")
+        val badgeFile = outputFile.get().asFile
         badgeFile.writeText(badgeSvg)
-        println("Coverage badge generated: ${badgeFile.absolutePath}")
-        println("Coverage: $percentage%")
+        logger.lifecycle("Coverage badge generated: ${badgeFile.absolutePath}")
+        logger.lifecycle("Coverage: $percentage%")
     }
 }
+
+abstract class AppVersion(
+    private val major: Int,
+    private val minor: Int,
+    private val patch: Int,
+    private val stage: Stage, // alpha, beta, rc, release
+    private val buildIteration: Int,
+) {
+    enum class Stage(val value: String) {
+        Alpha("alpha"), Beta("beta"), Rc("rc"), Release("release")
+    }
+
+    fun createUiVersion(): String {
+        return when(stage) {
+            Stage.Release -> "$major.$minor.$patch"
+            else -> "$major.$minor.$patch-${stage.value}.$buildIteration"
+        }
+    }
+
+    fun createSystemVersion(): String {
+        return "$major.$minor.${calculateTechnicalPatch(stage, patch, buildIteration)}"
+    }
+
+    private fun calculateTechnicalPatch(stage: Stage, patch: Int, iteration: Int): Int {
+        val stageOffset = when(stage) {
+            Stage.Alpha -> 1_000
+            Stage.Beta -> 2_000
+            Stage.Rc -> 3_000
+            else -> 4_000 // release
+        }
+        return patch * 10_000 + stageOffset + iteration
+    }
+}
+
+class WebVersion(
+    private val major: Int,
+    private val minor: Int,
+    private val patch: Int,
+    private val stage: AppVersion.Stage,
+    private val buildIteration: Int,
+): AppVersion(major, minor, patch, stage, buildIteration)
+
+class JVMVersion(
+    private val major: Int,
+    private val minor: Int,
+    private val patch: Int,
+    private val stage: AppVersion.Stage,
+    private val buildIteration: Int,
+): AppVersion(major, minor, patch, stage, buildIteration)
+
+/*// Формирование user-friendly версии
+val userVersion = when(stage) {
+    "release" -> "$major.$minor.$patch"
+    else -> "$major.$minor.$patch-$stage.$buildIteration"
+}
+val systemVersion = "$major.$minor.${calculateTechnicalPatch(stage, patch, buildIteration)}"
+fun calculateTechnicalPatch(stage: String, patch: Int, iteration: Int): Int {
+    val stageOffset = when(stage) {
+        "alpha" -> 1_000
+        "beta" -> 2_000
+        "rc" -> 3_000
+        else -> 4_000 // release
+    }
+    return patch * 10_000 + stageOffset + iteration
+}*/

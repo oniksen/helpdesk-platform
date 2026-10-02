@@ -1,12 +1,15 @@
 name: PR Check
 
 on:
+  push:
+    branches:
+      - develop
   pull_request:
     branches:
       - develop
 
 concurrency:
-  group: validate-pr-${{ github.event.pull_request.number }}
+  group: validate-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -28,6 +31,13 @@ jobs:
 
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v6
+        with:
+          # Кэш из PR попадает в refs/pull/N/merge и доступен только повторным
+          # прогонам этого же PR, поэтому пишем кэш только на push в develop.
+          cache-read-only: ${{ github.event_name == 'pull_request' }}
+
+      - name: Check for Gradle deprecations
+        run: ./gradlew --warning-mode=fail help
 
       - name: Run Detekt
         run: ./gradlew detekt
@@ -43,7 +53,7 @@ jobs:
         with:
           name: webapp-js-dist
           path: dist
-          retention-days: 2
+          retention-days: 1
           if-no-files-found: error
 
       - name: Build webShell distribution
@@ -54,5 +64,5 @@ jobs:
         with:
           name: webshell-js-dist
           path: dist-shell
-          retention-days: 2
+          retention-days: 1
           if-no-files-found: error

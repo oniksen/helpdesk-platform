@@ -1,6 +1,8 @@
 package org.lpmti.helpdeskplatform
 
 import AppDefinition
+import AppStartupGate
+import AppUpdater
 import Authorization
 import AuthorizationScreenRoute
 import HomePageContainerModule
@@ -18,6 +20,7 @@ import org.koin.core.module.Module
 import org.koin.dsl.bind
 import org.koin.dsl.module
 import resetInstallReloadAttempts
+import startup.UpdateStartupGate
 
 /**
  * Определение полного приложения: все фичи (задачи, парковка)
@@ -37,22 +40,20 @@ class FullAppDefinition : AppDefinition {
         single { HomePageContainerModule() } bind RootNavModule::class
     }
 
-    override val koinModules: List<Module> = listOf(featuresNavModule, rootNavModule)
+    // Модуль проверок при старте (проверка версии сборки).
+    private val startupModule = module {
+        single<AppStartupGate> { UpdateStartupGate(updater = get<AppUpdater>()) }
+    }
+
+    override val koinModules: List<Module> = listOf(featuresNavModule, rootNavModule, startupModule)
 
     override fun startRoute(koin: Koin): NavKey {
         val authorization = koin.get<Authorization>()
         val installed = isAppInstalled()
         val restored = installed && authorization.restoreAuthState()
-        if (installed && restored) {
+if (installed && restored) {
             resetInstallReloadAttempts()
-            println("[DIAG] full: reload attempts reset")
         }
-        val route = if (installed && restored)
-            TasksPageRoute
-        else
-            AuthorizationScreenRoute
-        println("[DIAG] full startRoute: installed=$installed restored=${if (installed) restored else "skipped"}")
-        println("[DIAG] full startRoute: route=${route::class.simpleName}")
-        return route
+        return if (installed && restored) TasksPageRoute else AuthorizationScreenRoute
     }
 }

@@ -1,17 +1,17 @@
-import kotlinx.coroutines.await
 import jszip.loadAsync
+import kotlinx.coroutines.await
 
-class AppUpdaterImpl : AppUpdater {
+class AppUpdaterImpl(
+    private val appInstallState: AppInstallState,
+) : AppUpdater {
+    override suspend fun checkForUpdate(): UpdateDecision = appInstallState.hasNewVersion()
 
-    override suspend fun downloadAndUnpack(url: String): Map<String, ByteArray> {
-        getCachedBuild(url)?.let {
-            println("[DIAG] updater: cache hit, returning ${it.size} files")
-            return it
+    override suspend fun downloadAndUnpack(url: String, forceRefresh: Boolean): Map<String, ByteArray> {
+        if (!forceRefresh) {
+            getCachedBuild(url)?.let { return it }
         }
 
-        println("[DIAG] updater: fetching $url")
-        val response = fetchJs(url).await()
-        println("[DIAG] updater: fetch status=${response.status}")
+        val response = fetchJs(url, forceRefresh).await()
         check(response.ok) { "Ошибка загрузки обновления: HTTP ${response.status}" }
         val arrayBuffer = arrayBufferJs(response).await()
 
@@ -34,7 +34,6 @@ class AppUpdaterImpl : AppUpdater {
         }
 
         val normalized = normalizeBuildKeys(files)
-        println("[DIAG] updater: unpacked ${files.size} files, normalized to ${normalized.size}, saving to cache")
         saveToCache(url, normalized)
 
         return normalized
@@ -71,7 +70,6 @@ class AppUpdaterImpl : AppUpdater {
 
         val normalized = normalizeBuildKeys(map)
         if (normalized.keys != map.keys) {
-            println("[DIAG] updater: healing cached keys (${map.keys.size} -> ${normalized.keys.size})")
             saveToCache(url, normalized)
         }
         return normalized

@@ -44,7 +44,6 @@ class AuthorizationImpl(
             contentType(ContentType.Application.Json)
             setBody(AuthBody(maxInitData))
         }
-        println("[DIAG] helpdeskAuth: POST status=${response.status.value}")
 
         if (!response.status.isSuccess())
             error(response.bodyAsText().ifBlank { "Неизвестный ответ" })
@@ -55,7 +54,6 @@ class AuthorizationImpl(
     override suspend fun fetchUserData(email: String): UserData {
         val authUserData = baseClient
             .get("https://helpdesk.lpmti.ru/help-desk/v2/users?email=$email&api_key=helpdesk")
-        println("[DIAG] fetchUserData: GET status=${authUserData.status.value}")
 
         if (!authUserData.status.isSuccess())
             error(authUserData.bodyAsText().ifBlank { "Неизвестный ответ" })
@@ -78,14 +76,8 @@ class AuthorizationImpl(
         userData ?: error("Не найдена информация об авторизованном пользователе")
 
     override fun persistAuthState() {
-        val authData = this.authData ?: run {
-            println("[DIAG] persistAuthState: skip (no authData)")
-            return
-        }
-        val userData = this.userData ?: run {
-            println("[DIAG] persistAuthState: skip (no userData)")
-            return
-        }
+        val authData = this.authData ?: return
+        val userData = this.userData ?: return
 
         val stateDto = AuthStateDto(
             maxInitData = authData.maxInitData,
@@ -103,30 +95,21 @@ class AuthorizationImpl(
         )
 
         storage.save(authStateJson.encodeToString(stateDto))
-        println("[DIAG] persistAuthState: saved")
     }
 
     override fun restoreAuthState(): Boolean {
-        val stateJson = storage.load() ?: run {
-            println("[DIAG] restoreAuthState: false (no stored state)")
-            return false
-        }
+        val stateJson = storage.load() ?: return false
         val stateDto = runCatching { authStateJson.decodeFromString<AuthStateDto>(stateJson) }
-            .getOrNull() ?: run {
-            println("[DIAG] restoreAuthState: false (parse failed)")
-            return false
-        }
+            .getOrNull() ?: return false
 
         val restoredAuthData = stateDto.toAuthData()
         val restoredUserData = stateDto.toUserData()
         if (restoredAuthData == null || restoredUserData == null) {
-            println("[DIAG] restoreAuthState: false (mapper null auth=${restoredAuthData != null} user=${restoredUserData != null})")
             return false
         }
 
         authData = restoredAuthData
         userData = restoredUserData
-        println("[DIAG] restoreAuthState: true")
         return true
     }
 }

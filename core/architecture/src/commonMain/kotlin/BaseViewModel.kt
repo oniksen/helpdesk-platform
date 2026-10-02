@@ -30,7 +30,7 @@ abstract class BaseViewModel<State, Effect>(
         effect.tryEmit(block())
     }
 
-    protected fun<T> NetworkResult<out T>.getResultOrSendEffect(
+    protected fun <T> NetworkResult<T>.getResultOrSendEffect(
         callableError: (AppException) -> Unit,
     ): T? {
         return when (this) {

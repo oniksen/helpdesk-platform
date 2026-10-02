@@ -8,11 +8,8 @@ class TokenProviderImpl(
 ) : TokenProvider {
     override fun provide(): String? {
         return try {
-            val token = authorization.getToken()
-            println("[DIAG] TokenProvider: token=present")
-            token
+            authorization.getToken()
         } catch (_: IllegalStateException) {
-            println("[DIAG] TokenProvider: token=null (not authed)")
             null
         }
     }

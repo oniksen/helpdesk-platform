@@ -2,7 +2,9 @@ package presentation.viewmodel
 
 import AppNavigator
 import AppUpdater
+
 import DEFAULT_WEB_APP_URL
+import UpdateDecision
 import UpdateScreenRoute
 import presentation.intent.UpdateScreenIntent
 import kotlinx.coroutines.*
@@ -22,9 +24,20 @@ internal expect suspend fun platformRegisterServiceWorker(): Boolean
 
 internal expect suspend fun platformPushBuild(url: String, files: Map<String, ByteArray>): Boolean
 
+/**
+ * Сообщение о сбое проверки обновлений, когда исключение не описало причину.
+ * */
+private const val MANIFEST_ERROR_MESSAGE = "Не удалось проверить обновление"
+
 internal class UpdateScreenViewModel(
     private val navigator: AppNavigator,
     private val updater: AppUpdater,
+    private val isUpdateSkippable: () -> Boolean = { shouldSkipUpdate() },
+    private val registerServiceWorker: suspend () -> Boolean = { platformRegisterServiceWorker() },
+    private val pushBuild: suspend (url: String, files: Map<String, ByteArray>) -> Boolean =
+        { url, files -> platformPushBuild(url, files) },
+    private val finishInstall: suspend () -> FinishInstallResult = { platformFinishInstall(navigator) },
+    private val backgroundDispatcher: CoroutineDispatcher = Dispatchers.Default,
 ) {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
     private var buildFiles: Map<String, ByteArray>? = null
@@ -49,51 +62,51 @@ internal class UpdateScreenViewModel(
     }
 
     private fun startUpdate() {
-        println("[DIAG] update: start url=$DEFAULT_WEB_APP_URL")
+        scope.launch {
+            val updateDecision = updater.checkForUpdate()
 
-        if (shouldSkipUpdate()) {
-            scope.launch { finishInstall() }
-            return
-        }
-
-        updateState {
-            copy(
-                inProgress = true,
-                status = UpdateStatus.Downloading,
-                message = "Загрузка...",
-            )
-        }
-
-        scope.launch(Dispatchers.Default) {
-            try {
-                val cached = updater.getCachedBuild(DEFAULT_WEB_APP_URL)
-                println(
-                    "[DIAG] update: cache hit=${cached != null} files=${cached?.size} " +
-                        "hasIndexHtml=${cached?.containsKey("index.html")} " +
-                        "keys=${cached?.keys?.take(6)?.joinToString(",")}"
-                )
-                cached?.get("index.html")?.let { html ->
-                    val snippet = html.decodeToString(0, minOf(400, html.size))
-                    val refsWebApp = snippet.contains("webApp.js")
-                    val refsWebShell = snippet.contains("webShell.js")
-                    println(
-                        "[DIAG] cached index.html: refsWebApp=$refsWebApp refsWebShell=$refsWebShell " +
-                            "snippet=$snippet"
-                    )
+            if (isUpdateSkippable()) {
+                // Сборку удерживает Service Worker, поэтому ставить нечего. Если
+                // проверка обновлений не удалась, сообщаем об этом и оставляем
+                // пользователю возможность повторить, а не молча уходим с экрана.
+                if (updateDecision is UpdateDecision.ManifestError) {
+                    showError(updateDecision.error.message ?: MANIFEST_ERROR_MESSAGE)
+                    return@launch
                 }
-                buildFiles = cached ?: downloadBuild()
-                applyUpdate()
-            } catch (e: CancellationException) {
-                throw e
-            } catch (e: Throwable) {
-                showError(e.message ?: "Ошибка обновления")
+
+                if (updateDecision !is UpdateDecision.UpdateAvailable) {
+                    scope.launch { completeInstall() }
+                    return@launch
+                }
+            }
+
+            updateState {
+                copy(
+                    inProgress = true,
+                    status = UpdateStatus.Downloading,
+                    message = "Загрузка...",
+                )
+            }
+
+            scope.launch(backgroundDispatcher) {
+                try {
+                    val hasNewVersion = updateDecision is UpdateDecision.UpdateAvailable
+                    val cached = if (hasNewVersion) null else updater.getCachedBuild(DEFAULT_WEB_APP_URL)
+                    // При найденном обновлении кэш игнорируется: иначе в Service Worker
+                    // уедет уже знакомая сборка и перезагрузка вернёт прежнюю версию.
+                    buildFiles = cached ?: downloadBuild(forceRefresh = hasNewVersion)
+                    applyUpdate()
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (e: Throwable) {
+                    showError(e.message ?: "Ошибка обновления")
+                }
             }
         }
     }
 
-    private suspend fun downloadBuild(): Map<String, ByteArray> {
-        val files = updater.downloadAndUnpack(DEFAULT_WEB_APP_URL)
-        println("[DIAG] update: downloaded ok files=${files.size}")
+    private suspend fun downloadBuild(forceRefresh: Boolean): Map<String, ByteArray> {
+        val files = updater.downloadAndUnpack(DEFAULT_WEB_APP_URL, forceRefresh)
 
         updateState {
             copy(
@@ -107,7 +120,6 @@ internal class UpdateScreenViewModel(
     }
 
     private suspend fun applyUpdate() {
-        println("[DIAG] update: applyUpdate started")
         updateState {
             copy(
                 status = UpdateStatus.Installing,
@@ -115,8 +127,7 @@ internal class UpdateScreenViewModel(
             )
         }
 
-        val swControlled = platformRegisterServiceWorker()
-        println("[DIAG] update: registerServiceWorker called controlled=$swControlled")
+        val swControlled = registerServiceWorker()
         if (!swControlled) {
             showError("Service Worker недоступен: установка не может завершиться")
             return
@@ -124,15 +135,11 @@ internal class UpdateScreenViewModel(
 
         val files = buildFiles
         if (files != null) {
-            println("[DIAG] update: pushing build to SW (${files.size} files)")
-            val pushed = platformPushBuild(DEFAULT_WEB_APP_URL, files)
-            println("[DIAG] update: build pushed via SW=$pushed")
+            val pushed = pushBuild(DEFAULT_WEB_APP_URL, files)
             if (!pushed) {
                 showError("Не удалось передать сборку в Service Worker")
                 return
             }
-        } else {
-            println("[DIAG] update: no build files, skipping SW push")
         }
 
         updateState {
@@ -144,19 +151,17 @@ internal class UpdateScreenViewModel(
         }
 
         delay(1_000.milliseconds)
-        println("[DIAG] update: calling finishInstall")
-        finishInstall()
+        completeInstall()
     }
 
-    private suspend fun finishInstall() {
-        val result = platformFinishInstall(navigator)
+    private suspend fun completeInstall() {
+        val result = finishInstall()
         if (result == FinishInstallResult.Failed) {
             showError("Установка завершена, но приложение не переключилось на новую сборку. Обновите страницу вручную.")
         }
     }
 
     private fun showError(message: String) {
-        println("[DIAG] update: error $message")
         effect.tryEmit(UpdateScreenEffect.ShowSnackBar(message))
 
         updateState {

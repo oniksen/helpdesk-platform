@@ -27,3 +27,18 @@ expect fun resetInstallReloadAttempts()
  * контролирует текущую страницу, то есть приложение уже доступно.
  * */
 fun shouldSkipUpdate(): Boolean = isAppInstalled() && isServiceWorkerControlled()
+
+/**
+ * В следующих патчах все методы будут перенесены в AppInstallState интерфейс.
+ * */
+interface AppInstallState {
+    /**
+     * Проверка существования новой, более высокой версии.
+     *
+     * **Внимание!**
+     * На данном этапе этот метод глушит все возможные ошибки
+     * при получении и обработке версии приложения из манифеста.
+     * */
+    @TemporaryArchitectureStab
+    suspend fun hasNewVersion(): UpdateDecision
+}

@@ -46,24 +46,15 @@ class ShellAppDefinition : AppDefinition {
         val restored = installed && authorization.restoreAuthState()
         val controlled = installed && isServiceWorkerControlled()
 
-        if (installed && restored && controlled) {
+if (installed && restored && controlled) {
             val attempts = incrementInstallReloadAttempts()
             if (attempts <= MAX_HANDOFF_ATTEMPTS) {
-                println("[DIAG] shell: handoff to SW via reload (attempt $attempts)")
                 window.location.reload()
             } else {
                 resetInstallReloadAttempts()
-                println("[DIAG] shell: handoff aborted after $attempts attempts, reinstall")
             }
         }
 
-        val route = if (installed && restored)
-            UpdateScreenRoute
-        else
-            AuthorizationScreenRoute
-        println("[DIAG] shell startRoute: installed=$installed restored=${if (installed) restored else "skipped"}")
-        println("[DIAG] shell startRoute: swControlled=${if (installed) controlled else "skipped"}")
-        println("[DIAG] shell startRoute: route=${route::class.simpleName}")
-        return route
+        return if (installed && restored) UpdateScreenRoute else AuthorizationScreenRoute
     }
 }

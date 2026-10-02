@@ -2,7 +2,7 @@ import com.codingfeline.buildkonfig.compiler.FieldSpec
 import com.codingfeline.buildkonfig.gradle.BuildKonfigExtension
 import javax.xml.parsers.DocumentBuilderFactory
 
-val webVersion = WebVersion(0, 2, 0, AppVersion.Stage.Alpha, 5)
+val webVersion = WebVersion(0, 2, 0, AppVersion.Stage.Alpha, 6)
 val jvmVersion = JVMVersion(0, 1, 0, AppVersion.Stage.Alpha, 0)
 
 plugins {

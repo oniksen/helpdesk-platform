@@ -217,6 +217,59 @@ class UpdateScreenViewModelTest {
         assertSuccess(viewModel)
     }
 
+    @Test
+    fun `reports a manifest error instead of silently leaving the screen`() = runTest {
+        val dispatcher = mainDispatcher()
+        val updater = updaterReturning(MANIFEST_ERROR)
+        val installs = CountingFinishInstall()
+        val viewModel = createViewModel(
+            updater = updater,
+            isUpdateSkippable = { true },
+            finishInstall = installs.install,
+            dispatcher = dispatcher,
+        )
+
+        advanceUntilIdle()
+
+        assertError(viewModel, NO_INTERNET_MESSAGE)
+        assertEquals(0, installs.count, "Установка не должна запускаться при сбое проверки обновлений")
+    }
+
+    @Test
+    fun `falls back to the default message when a manifest error has no reason`() = runTest {
+        val dispatcher = mainDispatcher()
+        val updater = updaterReturning(UNEXPLAINED_MANIFEST_ERROR)
+        val viewModel = createViewModel(
+            updater = updater,
+            isUpdateSkippable = { true },
+            dispatcher = dispatcher,
+        )
+
+        advanceUntilIdle()
+
+        assertError(viewModel, MANIFEST_ERROR_MESSAGE)
+    }
+
+    @Test
+    fun `retries the version check after a manifest error`() = runTest {
+        val dispatcher = mainDispatcher()
+        val updater = updaterReturning(MANIFEST_ERROR, CACHED_BUILD)
+        val push = RecordingBuildPush()
+        val viewModel = createViewModel(
+            updater = updater,
+            isUpdateSkippable = { false },
+            pushBuild = push.push,
+            dispatcher = dispatcher,
+        )
+
+        advanceUntilIdle()
+        viewModel.sendIntent(UpdateScreenIntent.StartUpdate)
+        advanceUntilIdle()
+
+        verifySuspend(exactly(2)) { updater.checkForUpdate() }
+        assertSuccess(viewModel)
+    }
+
     /**
      * Диспетчеры экрана и фоновой работы привязаны к планировщику теста: иначе
      * `advanceUntilIdle` не дождётся виртуальных задержек распаковки и установки.
@@ -297,9 +350,14 @@ class UpdateScreenViewModelTest {
         const val UPDATE_URL = "https://helpdesk.lpmti.ru/helpdesk-app/build.zip"
         const val SUCCESS_MESSAGE = "Успешная установка"
         const val ERROR_MESSAGE = "Ошибка обновления. Повторите снова"
+        const val NO_INTERNET_MESSAGE = "Нет подключения к интернету"
+        const val MANIFEST_ERROR_MESSAGE = "Не удалось проверить обновление"
 
         val MANIFEST_ERROR = UpdateDecision.ManifestError(
-            AppException.Network.NoInternet("Нет подключения к интернету"),
+            AppException.Network.NoInternet(NO_INTERNET_MESSAGE),
+        )
+        val UNEXPLAINED_MANIFEST_ERROR = UpdateDecision.ManifestError(
+            AppException.Unknown(cause = null),
         )
         val DOWNLOAD_ERROR = IllegalStateException("Ошибка загрузки обновления: HTTP 503")
         val CACHED_BUILD = mapOf("index.html" to "cached".encodeToByteArray())

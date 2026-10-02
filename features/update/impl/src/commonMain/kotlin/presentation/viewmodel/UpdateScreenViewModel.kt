@@ -24,6 +24,11 @@ internal expect suspend fun platformRegisterServiceWorker(): Boolean
 
 internal expect suspend fun platformPushBuild(url: String, files: Map<String, ByteArray>): Boolean
 
+/**
+ * Сообщение о сбое проверки обновлений, когда исключение не описало причину.
+ * */
+private const val MANIFEST_ERROR_MESSAGE = "Не удалось проверить обновление"
+
 internal class UpdateScreenViewModel(
     private val navigator: AppNavigator,
     private val updater: AppUpdater,
@@ -59,10 +64,20 @@ internal class UpdateScreenViewModel(
     private fun startUpdate() {
         scope.launch {
             val updateDecision = updater.checkForUpdate()
-            // TODO("Обработать остальные состояния UpdateDecision")
-            if (isUpdateSkippable() && updateDecision !is UpdateDecision.UpdateAvailable) {
-                scope.launch { completeInstall() }
-                return@launch
+
+            if (isUpdateSkippable()) {
+                // Сборку удерживает Service Worker, поэтому ставить нечего. Если
+                // проверка обновлений не удалась, сообщаем об этом и оставляем
+                // пользователю возможность повторить, а не молча уходим с экрана.
+                if (updateDecision is UpdateDecision.ManifestError) {
+                    showError(updateDecision.error.message ?: MANIFEST_ERROR_MESSAGE)
+                    return@launch
+                }
+
+                if (updateDecision !is UpdateDecision.UpdateAvailable) {
+                    scope.launch { completeInstall() }
+                    return@launch
+                }
             }
 
             updateState {

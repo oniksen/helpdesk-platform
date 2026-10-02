@@ -18,6 +18,7 @@ kotlin {
         commonMain.dependencies {
             implementation(projects.features.update.api)
             implementation(projects.core.update.api)
+            implementation(projects.core.exception)
             implementation(projects.core.navigation.api)
             implementation(projects.features.tasks.api)
             implementation(projects.core.uiadaptive)

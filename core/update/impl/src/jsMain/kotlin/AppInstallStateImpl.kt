@@ -1,9 +1,16 @@
-import data.dto.manifest.v1.UpdateManifestDto
+import data.dto.manifest.v2.UpdateManifestDto
 import data.mapper.toDomain
-import domain.models.manifest.v1.UpdateManifest
+import domain.models.manifest.v2.UpdateManifest
 import io.ktor.client.call.*
 import io.ktor.client.request.*
 import io.ktor.http.*
+
+/**
+ * Ветка обновлений, за которой следит веб-приложение.
+ *
+ * Пока prod не опубликован, приложение получает сборки из canary.
+ * */
+private const val WEB_TARGET_PATH = "channels.dev.canary.web"
 
 actual class AppInstallStateImpl(
     client: KtorClient,
@@ -18,7 +25,7 @@ actual class AppInstallStateImpl(
                 url {
                     protocol = URLProtocol.HTTPS
                     host = "helpdesk.lpmti.ru"
-                    path("helpdesk-app","update-manifest-v3.json")
+                    path("helpdesk-app", "v2", "update-manifest-v4.json")
                 }
             }.body<UpdateManifestDto>().toDomain()
         }
@@ -28,12 +35,15 @@ actual class AppInstallStateImpl(
                 UpdateDecision.ManifestError(networkResult.exception)
             }
             is NetworkResult.Success<UpdateManifest> -> {
-                val prod = networkResult.data.channels.prod
+                val target = networkResult.data.channels.dev.canary.web ?: return UpdateDecision.ManifestError(
+                    AppException.ValidationError.MappingFailed(WEB_TARGET_PATH)
+                )
+
                 val remoteVersion = try {
-                    prod.lastVersion.normalizeFromTechnical()
+                    target.version.normalizeFromTechnical()
                 } catch (_: IllegalStateException) {
                     return UpdateDecision.ManifestError(
-                        AppException.ValidationError.MappingFailed("last_version")
+                        AppException.ValidationError.MappingFailed("$WEB_TARGET_PATH.version")
                     )
                 }
 
@@ -41,11 +51,7 @@ actual class AppInstallStateImpl(
                     return UpdateDecision.UpToDate
                 }
 
-                val web = prod.web ?: return UpdateDecision.ManifestError(
-                    AppException.ValidationError.MappingFailed("web")
-                )
-
-                UpdateDecision.UpdateAvailable(web.link)
+                UpdateDecision.UpdateAvailable(target.link)
             }
         }
     }

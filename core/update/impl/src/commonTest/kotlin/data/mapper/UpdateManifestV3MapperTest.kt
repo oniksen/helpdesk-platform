@@ -1,4 +1,4 @@
-package data.mapper
+﻿package data.mapper
 
 import data.dto.manifest.v1.ChannelsDto
 import data.dto.manifest.v1.CurrentDto
@@ -25,7 +25,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertNull
 
-class UpdateManifestMapperTest {
+class UpdateManifestV3MapperTest {
 
     @Test
     fun `maps a complete manifest to domain models`() {

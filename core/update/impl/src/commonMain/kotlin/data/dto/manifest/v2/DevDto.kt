@@ -5,7 +5,7 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class DevDto(
-    @SerialName("canary") val canaryDto: TargetDataDto? = null,
-    @SerialName("rc") val rcDto: TargetDataDto? = null,
+    @SerialName("canary") val canaryDto: ReleaseDto? = null,
+    @SerialName("rc") val rcDto: ReleaseDto? = null,
     @SerialName("last_rejection") val lastRejectionDto: LastRejectionDto? = null,
 )

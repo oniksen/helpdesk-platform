@@ -3,14 +3,14 @@ package data.mapper
 import data.dto.manifest.v2.ChannelsDto
 import data.dto.manifest.v2.DevDto
 import data.dto.manifest.v2.LastRejectionDto
-import data.dto.manifest.v2.ProdDto
+import data.dto.manifest.v2.ReleaseDto
 import data.dto.manifest.v2.TargetDataDto
 import data.dto.manifest.v2.UpdateManifestDto
 import domain.ManifestSupported
 import domain.models.manifest.v2.Channels
 import domain.models.manifest.v2.Dev
 import domain.models.manifest.v2.LastRejection
-import domain.models.manifest.v2.Prod
+import domain.models.manifest.v2.Release
 import domain.models.manifest.v2.TargetData
 import domain.models.manifest.v2.UpdateManifest
 
@@ -27,17 +27,19 @@ private const val MAX_UNPUBLISHED_SIZE = 0
  *
  * - Патч-ноуты и теги (для них отсутствие значения равносильно пустому списку).
  * - Версия схемы, которая должна быть положительным числом.
+ * - Дата и причина отклонения: сервер не заполняет их, пока отклонение не случилось.
  * - Таргет, который считается неопубликованным при пустом хеше или
- * размере равном [MAX_UNPUBLISHED_SIZE].
+ * неположительном размере: неопубликованный таргет переносится как [null]
+ * и его поля не проверяются, потому что сервер их не присылает.
  * */
 internal fun UpdateManifestDto.toDomain(): UpdateManifest = UpdateManifest(
     channels = this.channelsDto.required("channels").toDomain(),
-    schemaVersionDto = this.schemaVersionDto.toDomain()
+    schemaVersion = this.schemaVersionDto.schemaVersion("schema_version"),
 )
 
 private fun ChannelsDto.toDomain(): Channels = Channels(
     dev = this.devDto.required("channels.dev").toDomain(),
-    prod = this.prodDto.required("channels.prod").toDomain(),
+    prod = this.prodDto.required("channels.prod").toDomain("channels.prod"),
 )
 
 private fun DevDto.toDomain(): Dev = Dev(
@@ -46,30 +48,55 @@ private fun DevDto.toDomain(): Dev = Dev(
     lastRejection = this.lastRejectionDto.required("channels.dev.last_rejection").toDomain(),
 )
 
-private fun ProdDto.toDomain(): Prod = Prod(
-    macosDto = this.macosDto.required("channels.prod.macos").toDomain("channels.prod.macos"),
-    webDto = this.webDto.required("channels.prod.web").toDomain("channels.prod.web"),
-    windowsDto = this.windowsDto.required("channels.prod.windows").toDomain("channels.prod.windows"),
+private fun ReleaseDto.toDomain(path: String): Release = Release(
+    macos = this.macosDto.required("$path.macos").toDomain("$path.macos"),
+    web = this.webDto.required("$path.web").toDomain("$path.web"),
+    windows = this.windowsDto.required("$path.windows").toDomain("$path.windows"),
 )
 
 private fun LastRejectionDto.toDomain(): LastRejection = LastRejection(
-    dateDto = this.dateDto.required("channels.dev.last_rejection.date"),
-    lastVersionDto = this.lastVersionDto.required("channels.dev.last_rejection.last_version"),
-    reasonDto = this.reasonDto.required("channels.dev.last_rejection.reason"),
+    date = this.dateDto,
+    lastVersion = this.lastVersionDto.required("channels.dev.last_rejection.last_version"),
+    reason = this.reasonDto,
 )
 
-private fun TargetDataDto.toDomain(path: String): TargetData = TargetData(
-    dateDto = this.dateDto.required("$path.date"),
-    lastVersionDto = this.lastVersionDto.required("$path.last_version"),
-    patchNoteDto = this.patchNoteDto.required("$path.patch_note"),
-    tagsDto = this.tagsDto ?: emptyList(),
-    link = this.linkDto.required("$path.link"),
-    hash = this.hashDto.required("$path.hash"),
-    size = this.sizeDto.required("$path.size"),
-)
+/**
+ * Таргет переносится на доменную модель только когда он опубликован, то есть
+ * сервер прислал непустой хеш и положительный размер. Неопубликованный таргет
+ * возвращает [null], а его остальные поля не проверяются: сервер их не присылает.
+ * */
+private fun TargetDataDto.toDomain(path: String): TargetData? {
+    val hash = this.hashDto.orEmpty()
+    val size = this.sizeDto
 
-private fun<T> T?.required(path: String): T = this ?: error("$MISSING_FIELD_ERROR: $path")
+    if (hash.isBlank() || size == null || size <= MAX_UNPUBLISHED_SIZE) return null
 
-private fun Int?.toDomain(): Int {
-    TODO()
+    return TargetData(
+        version = this.versionDto.required("$path.version"),
+        patchNote = this.patchNoteDto.orEmptyList(),
+        tags = this.tagsDto.orEmptyList(),
+        date = this.dateDto.required("$path.date"),
+        link = this.linkDto.required("$path.link"),
+        hash = hash,
+        size = size,
+    )
 }
+
+/**
+ * Обязательное поле манифеста: [null] означает, что сервер его не прислал.
+ * */
+private fun <T> T?.required(path: String): T = this ?: error("$MISSING_FIELD_ERROR: $path")
+
+/**
+ * Версия схемы манифеста: должна быть не меньше версии, описанной DTO.
+ * */
+private fun Int?.schemaVersion(path: String): Int {
+    val version = this ?: error("$MISSING_FIELD_ERROR: $path")
+    if (version < SCHEMA_VERSION) error("$INVALID_FIELD_ERROR: $path = $version")
+    return version
+}
+
+/**
+ * Патч-ноуты и теги опциональны: отсутствие значения равносильно пустому списку.
+ * */
+private fun List<String>?.orEmptyList(): List<String> = this ?: emptyList()

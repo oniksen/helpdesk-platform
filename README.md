@@ -3,7 +3,7 @@
 Web-приложение для управления задачами и сервисными обращениями, построенное на Kotlin Multiplatform с Compose Multiplatform.
 
 [![PR Check](https://github.com/oniksen/helpdesk-platform/actions/workflows/pr-check.yml/badge.svg)](https://github.com/oniksen/helpdesk-platform/actions/workflows/pr-check.yml)
-[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
+[![License](https://img.shields.io/badge/License-LPMTI%20Proprietary-lightgrey.svg)](LICENSE)
 ![Coverage](coverage-badge.svg)
 
 ## Проблема

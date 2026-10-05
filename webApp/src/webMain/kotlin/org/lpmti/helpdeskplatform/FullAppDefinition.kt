@@ -12,6 +12,7 @@ import androidx.navigation3.runtime.NavKey
 import isAppInstalled
 import navigation.AuthorizationScreenModule
 import navigation.ParkingModule
+import navigation.SettingsModule
 import navigation.TasksPageModule
 import navigation.TasksPageRoute
 import navigation.UpdateScreenModule
@@ -31,6 +32,7 @@ class FullAppDefinition : AppDefinition {
     private val featuresNavModule = module {
         single { ParkingModule() } bind FeatureNavModule::class
         single { TasksPageModule() } bind FeatureNavModule::class
+        single { SettingsModule() } bind SettingsModule::class
     }
 
     // Модуль рутовой навигации (Auth ↔ Update ↔ Home)
@@ -51,9 +53,7 @@ class FullAppDefinition : AppDefinition {
         val authorization = koin.get<Authorization>()
         val installed = isAppInstalled()
         val restored = installed && authorization.restoreAuthState()
-if (installed && restored) {
-            resetInstallReloadAttempts()
-        }
+        if (installed && restored) { resetInstallReloadAttempts() }
         return if (installed && restored) TasksPageRoute else AuthorizationScreenRoute
     }
 }

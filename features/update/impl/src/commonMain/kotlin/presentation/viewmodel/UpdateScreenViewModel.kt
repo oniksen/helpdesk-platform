@@ -3,7 +3,7 @@ package presentation.viewmodel
 import AppNavigator
 import AppUpdater
 
-import DEFAULT_WEB_APP_URL
+import CANARY_WEB_BUILD_URL
 import UpdateDecision
 import UpdateScreenRoute
 import presentation.intent.UpdateScreenIntent
@@ -42,6 +42,9 @@ internal class UpdateScreenViewModel(
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
     private var buildFiles: Map<String, ByteArray>? = null
 
+    // Адрес сборки: по умолчанию первичный канал, но манифест всегда побеждает.
+    private var buildUrl: String = CANARY_WEB_BUILD_URL
+
     val state: StateFlow<UpdateState>
         field = MutableStateFlow(UpdateState())
     val effect: SharedFlow<UpdateScreenEffect>
@@ -64,6 +67,8 @@ internal class UpdateScreenViewModel(
     private fun startUpdate() {
         scope.launch {
             val updateDecision = updater.checkForUpdate()
+
+            if (updateDecision is UpdateDecision.UpdateAvailable) buildUrl = updateDecision.url
 
             if (isUpdateSkippable()) {
                 // Сборку удерживает Service Worker, поэтому ставить нечего. Если
@@ -91,10 +96,10 @@ internal class UpdateScreenViewModel(
             scope.launch(backgroundDispatcher) {
                 try {
                     val hasNewVersion = updateDecision is UpdateDecision.UpdateAvailable
-                    val cached = if (hasNewVersion) null else updater.getCachedBuild(DEFAULT_WEB_APP_URL)
+                    val cached = if (hasNewVersion) null else updater.getCachedBuild(buildUrl)
                     // При найденном обновлении кэш игнорируется: иначе в Service Worker
                     // уедет уже знакомая сборка и перезагрузка вернёт прежнюю версию.
-                    buildFiles = cached ?: downloadBuild(forceRefresh = hasNewVersion)
+                    buildFiles = cached ?: downloadBuild()
                     applyUpdate()
                 } catch (e: CancellationException) {
                     throw e
@@ -105,8 +110,12 @@ internal class UpdateScreenViewModel(
         }
     }
 
-    private suspend fun downloadBuild(forceRefresh: Boolean): Map<String, ByteArray> {
-        val files = updater.downloadAndUnpack(DEFAULT_WEB_APP_URL, forceRefresh)
+    /**
+     * Качает сборку всегда без HTTP-кэша: архив канала отдаётся с долгим max-age,
+     * поэтому фетч из кэша принёс бы прежнюю сборку под новой версией.
+     * */
+    private suspend fun downloadBuild(): Map<String, ByteArray> {
+        val files = updater.downloadAndUnpack(buildUrl, forceRefresh = true)
 
         updateState {
             copy(
@@ -135,7 +144,7 @@ internal class UpdateScreenViewModel(
 
         val files = buildFiles
         if (files != null) {
-            val pushed = pushBuild(DEFAULT_WEB_APP_URL, files)
+            val pushed = pushBuild(buildUrl, files)
             if (!pushed) {
                 showError("Не удалось передать сборку в Service Worker")
                 return

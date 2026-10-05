@@ -3,7 +3,7 @@ package presentation.viewmodel
 import AppNavigator
 import AppUpdater
 import AppException
-import DEFAULT_WEB_APP_URL
+import CANARY_WEB_BUILD_URL
 import UpdateDecision
 import dev.mokkery.MockMode.autoUnit
 import dev.mokkery.answering.returns
@@ -83,6 +83,49 @@ class UpdateScreenViewModelTest {
 
         verifySuspend(not) { updater.downloadAndUnpack(any(), any()) }
         assertEquals(CACHED_BUILD, push.build, "В Service Worker должна уйти сборка из кэша")
+        assertEquals(CANARY_WEB_BUILD_URL, push.url, "Сборка из кэша должна лежать по первичному адресу канала")
+        assertSuccess(viewModel)
+    }
+
+    @Test
+    fun `downloads the build from the manifest link`() = runTest {
+        val dispatcher = mainDispatcher()
+        val updater = updaterReturning(UpdateDecision.UpdateAvailable(UPDATE_URL))
+        val push = RecordingBuildPush()
+        val viewModel = createViewModel(
+            updater = updater,
+            isUpdateSkippable = { true },
+            pushBuild = push.push,
+            dispatcher = dispatcher,
+        )
+
+        advanceUntilIdle()
+
+        verifySuspend { updater.downloadAndUnpack(UPDATE_URL, true) }
+        assertEquals(UPDATE_URL, push.url, "В Service Worker должна уйти сборка по ссылке из манифеста")
+        assertSuccess(viewModel)
+    }
+
+    @Test
+    fun `falls back to the canary channel link when the manifest has none`() = runTest {
+        val dispatcher = mainDispatcher()
+        val updater = updaterReturning(UpdateDecision.UpToDate)
+        val push = RecordingBuildPush()
+        val viewModel = createViewModel(
+            updater = updater,
+            isUpdateSkippable = { false },
+            pushBuild = push.push,
+            dispatcher = dispatcher,
+        )
+
+        advanceUntilIdle()
+
+        verifySuspend { updater.downloadAndUnpack(CANARY_WEB_BUILD_URL, true) }
+        assertEquals(
+            CANARY_WEB_BUILD_URL,
+            push.url,
+            "Без ссылки из манифеста установка должна идти по первичному адресу канала",
+        )
         assertSuccess(viewModel)
     }
 
@@ -101,7 +144,7 @@ class UpdateScreenViewModelTest {
         advanceUntilIdle()
 
         verifySuspend(not) { updater.getCachedBuild(any()) }
-        verifySuspend { updater.downloadAndUnpack(DEFAULT_WEB_APP_URL, true) }
+        verifySuspend { updater.downloadAndUnpack(UPDATE_URL, true) }
         assertEquals(DOWNLOADED_BUILD, push.build, "В Service Worker должна уйти свежескачанная сборка")
         assertSuccess(viewModel)
     }
@@ -165,7 +208,7 @@ class UpdateScreenViewModelTest {
         val dispatcher = mainDispatcher()
         val updater = mock<AppUpdater>(autoUnit) {
             everySuspend { checkForUpdate() } returns UpdateDecision.UpdateAvailable(UPDATE_URL)
-            everySuspend { getCachedBuild(DEFAULT_WEB_APP_URL) } returns null
+            everySuspend { getCachedBuild(UPDATE_URL) } returns null
             everySuspend { downloadAndUnpack(any(), any()) } throws DOWNLOAD_ERROR
         }
         val viewModel = createViewModel(
@@ -213,7 +256,7 @@ class UpdateScreenViewModelTest {
         advanceUntilIdle()
 
         verifySuspend(exactly(2)) { updater.checkForUpdate() }
-        verifySuspend(exactly(2)) { updater.downloadAndUnpack(DEFAULT_WEB_APP_URL, true) }
+        verifySuspend(exactly(2)) { updater.downloadAndUnpack(UPDATE_URL, true) }
         assertSuccess(viewModel)
     }
 
@@ -297,10 +340,13 @@ class UpdateScreenViewModelTest {
     private fun updaterReturning(
         decision: UpdateDecision,
         cachedBuild: Map<String, ByteArray>? = null,
-    ) = mock<AppUpdater>(autoUnit) {
-        everySuspend { checkForUpdate() } returns decision
-        everySuspend { getCachedBuild(DEFAULT_WEB_APP_URL) } returns cachedBuild
-        everySuspend { downloadAndUnpack(DEFAULT_WEB_APP_URL, any()) } returns DOWNLOADED_BUILD
+    ): AppUpdater {
+        val url = (decision as? UpdateDecision.UpdateAvailable)?.url ?: CANARY_WEB_BUILD_URL
+        return mock<AppUpdater>(autoUnit) {
+            everySuspend { checkForUpdate() } returns decision
+            everySuspend { getCachedBuild(url) } returns cachedBuild
+            everySuspend { downloadAndUnpack(url, any()) } returns DOWNLOADED_BUILD
+        }
     }
 
     private fun assertSuccess(viewModel: UpdateScreenViewModel) {
@@ -340,7 +386,11 @@ class UpdateScreenViewModelTest {
         var build: Map<String, ByteArray>? = null
             private set
 
-        val push: suspend (String, Map<String, ByteArray>) -> Boolean = { _, files ->
+        var url: String? = null
+            private set
+
+        val push: suspend (String, Map<String, ByteArray>) -> Boolean = { url, files ->
+            this.url = url
             build = files
             true
         }

@@ -1,0 +1,5 @@
+<resources>
+    <string name="settings_page_title">Настройки</string>
+    <string name="settings_version_title">Версия</string>
+    <string name="settings_undefined">Ошибка чтения</string>
+</resources>

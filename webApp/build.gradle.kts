@@ -35,6 +35,8 @@ kotlin {
             implementation(projects.features.tasks.impl)
             implementation(projects.features.update.api)
             implementation(projects.features.update.impl)
+            implementation(projects.features.settings.api)
+            implementation(projects.features.settings.impl)
 
             implementation(libs.compose.ui)
             implementation(libs.bundles.compose)

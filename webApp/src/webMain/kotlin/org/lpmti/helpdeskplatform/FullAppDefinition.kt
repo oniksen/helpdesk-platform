@@ -32,7 +32,7 @@ class FullAppDefinition : AppDefinition {
     private val featuresNavModule = module {
         single { ParkingModule() } bind FeatureNavModule::class
         single { TasksPageModule() } bind FeatureNavModule::class
-        single { SettingsModule() } bind SettingsModule::class
+        single { SettingsModule() } bind FeatureNavModule::class
     }
 
     // Модуль рутовой навигации (Auth ↔ Update ↔ Home)

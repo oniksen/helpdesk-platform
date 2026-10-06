@@ -1,68 +1,43 @@
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
-import data.TokenProviderImpl
-import data.repository.AuthorizationImpl
-import data.storage.createAuthStateStorage
-import org.koin.core.context.GlobalContext.startKoin
+import org.koin.core.KoinApplication
+import org.koin.core.context.startKoin as startKoinContext
+import org.koin.core.module.Module
 import org.koin.dsl.module
 
 /**
- * Точка входа в граф зависимостей.
+ * Точка входа в граф зависимостей полного приложения.
  *
- * Регистрирует только инфраструктурные модули (MAX-мост, авторизация,
- * сеть, обновления), а состав приложения (фичи и стартовый экран)
+ * Регистрирует инфраструктурные модули ([InfraModules]) и провайдер
+ * версии приложения, а состав приложения (фичи и стартовый экран)
  * задаётся через [AppDefinition].
+ *
+ * Лёгкий гейт webShell [DiProvider] не использует — он поднимает Koin
+ * сам через [InfraModules] без Compose.
  */
 class DiProvider(
     private val definition: AppDefinition,
 ) {
-    private val maxMiniAppModule = module {
-        single<QrCodeScanner> { createQrCodeScanner() }
-        single<MaxAuthorization> { createAuthorizationObject() }
-    }
-
-    // Модуль кор-авторизации используя MAX API.
-    private val authorizationModule = module {
-        single<Authorization> {
-            AuthorizationImpl(
-                maxAuthorization = get(),
-                client = get(),
-                storage = createAuthStateStorage(),
-            )
-        }
-        single<TokenProvider> {
-            TokenProviderImpl(
-                authorization = get()
-            )
-        }
-    }
-
-    // Модуль для предоставления платформо-зависимых реализаций сетевых Ktor клиентов.
-    private val networkModule = module {
-        single<KtorClient> { createKtorClient(inject()) }
-    }
-
-    // Модуль обновлений (загрузка сборок с сервера)
+    // Модуль версии приложения (отображение в настройках).
     private val updateModule = module {
-        single<AppUpdater> { createAppUpdater(get()) }
-        single<AppInstallState> { AppInstallStateImpl(get(), get()) }
         single<AppVersionProvider> { AppVersionProviderImpl() }
     }
 
-    @Composable
-    fun MainKoinApplication() {
-        val koinApplication = remember {
-            startKoin {
-                modules(
-                    maxMiniAppModule,
-                    authorizationModule,
-                    networkModule,
-                    updateModule,
-                    *definition.koinModules.toTypedArray(),
-                )
-            }
-        }
+    /**
+     * Поднимает граф зависимостей приложения вне Compose —
+     * это позволяет проверить сессию до первого кадра интерфейса.
+     */
+    fun startKoin(): KoinApplication = startKoinContext {
+        modules(
+            *InfraModules.all.toTypedArray(),
+            updateModule,
+            *definition.koinModules.toTypedArray(),
+        )
+    }
 
+    /** Compose-корень приложения: стартовый маршрут и рутовая навигация. */
+    @Composable
+    fun MainKoinApplication(koinApplication: KoinApplication) {
         val startRoute = remember {
             definition.startRoute(koinApplication.koin)
         }

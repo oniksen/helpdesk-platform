@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#ffffff">
+    <link rel="manifest" href="manifest.webmanifest">
+    <title>Helpdesk</title>
+    <link type="text/css" rel="stylesheet" href="styles.css">
+</head>
+<body class="gate-body">
+<div class="gate-container">
+    <!-- Круговой индикатор M3 -->
+    <div class="m3-circular-loading" role="progressbar" aria-label="Загрузка...">
+        <svg viewBox="0 0 40 40">
+            <circle class="track" cx="20" cy="20" r="18"></circle>
+            <circle class="active-indicator" cx="20" cy="20" r="18"></circle>
+        </svg>
+    </div>
+    <ol id="gate-steps" class="gate-steps">
+        <li data-step="auth">Авторизация</li>
+        <li data-step="channel">Определение канала</li>
+        <li data-step="load">Загрузка приложения</li>
+    </ol>
+    <div id="gate-status" class="gate-status"></div>
+    <button id="gate-retry" class="gate-retry" type="button" hidden>Повторить</button>
+</div>
+<script>
+    // Тяжёлые скрипты грузятся после первого кадра, чтобы индикатор успел
+    // отрисоваться и крутиться во время загрузки и исполнения бандла.
+    // Порядок сохраняется: мост MAX доступен к моменту main() в webShell.js.
+    (function () {
+        var status = document.getElementById('gate-status');
+
+        function loadScript(src) {
+            return new Promise(function (resolve, reject) {
+                var script = document.createElement('script');
+                script.src = src;
+                script.onload = resolve;
+                script.onerror = function () { reject(new Error('Не загрузился ' + src)); };
+                document.body.appendChild(script);
+            });
+        }
+
+        requestAnimationFrame(function () {
+            loadScript('https://st.max.ru/js/max-web-app.js')
+                .then(function () { return loadScript('webShell.js'); })
+                .catch(function (error) {
+                    status.textContent = error.message + '. Обновите страницу.';
+                });
+        });
+    })();
+</script>
+</body>
+</html>

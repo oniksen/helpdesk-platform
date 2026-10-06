@@ -1,68 +1,43 @@
-const CACHE_DB_NAME = 'app-updates';
-const CACHE_STORE = 'builds';
-const SW_VERSION = 3;
-
-function postToPage(type, payload) {
-    self.clients.matchAll({ type: 'window', includeUncontrolled: true })
-        .then((clients) => {
-            clients.forEach((client) => {
-                client.postMessage({ type, payload });
-            });
-        })
-        .catch(() => {});
-}
+const SW_VERSION = 4;
+const BUILD_CACHE = 'builds-v4';
+const LEGACY_DB_NAME = 'app-updates';
+const BUILD_PATH_SEGMENT = '/channels/';
 
 self.addEventListener('install', (event) => {
-    postToPage('installed', { version: SW_VERSION });
     self.skipWaiting();
 });
 
 self.addEventListener('activate', (event) => {
-    event.waitUntil(clients.claim());
+    event.waitUntil(
+        Promise.all([
+            self.clients.claim(),
+            cleanupLegacyState(),
+        ])
+    );
 });
 
-self.addEventListener('message', (event) => {
-    const data = event.data || {};
-    if (data.type === 'ping') {
-        reply(event, { type: 'pong', version: SW_VERSION });
-        return;
-    }
+// Миграция со старого SW: сборки больше не хранятся в IndexedDB —
+// приложение разворачивается на сервере в папку версии, а гейт только
+// делает редирект. Локальную базу удаляем, чужие/устаревшие кэши чистим.
+function cleanupLegacyState() {
+    const deleteLegacyDb = new Promise((resolve) => {
+        try {
+            const request = indexedDB.deleteDatabase(LEGACY_DB_NAME);
+            request.onsuccess = () => resolve();
+            request.onerror = () => resolve();
+            request.onblocked = () => resolve();
+        } catch (_) {
+            resolve();
+        }
+    });
 
-    if (data.type === 'has-build') {
-        openDatabase()
-            .then((db) => getBuildByUrl(db, data.url))
-            .then((build) => {
-                const ok = !!build;
-                postToPage('has-build', { url: data.url, ok });
-                reply(event, { type: 'has-build', ok, url: data.url });
-            })
-            .catch((e) => {
-                reply(event, { type: 'has-build', ok: false, url: data.url, error: String(e) });
-            });
-        return;
-    }
+    const deleteStaleCaches = caches.keys()
+        .then((keys) => Promise.all(
+            keys.filter((key) => key !== BUILD_CACHE).map((key) => caches.delete(key))
+        ))
+        .catch(() => {});
 
-    if (data.type === 'store-build') {
-        const payload = data.payload || {};
-        openDatabase()
-            .then((db) => putBuildInDb(db, payload.url, payload.files))
-            .then(() => {
-                postToPage('build-stored', { url: payload.url });
-                reply(event, { type: 'build-stored', ok: true, url: payload.url });
-            })
-            .catch((e) => {
-                reply(event, { type: 'build-stored', ok: false, url: payload.url, error: String(e) });
-            });
-        return;
-    }
-});
-
-function reply(event, message) {
-    if (event.ports && event.ports[0]) {
-        event.ports[0].postMessage(message);
-    } else {
-        postToPage(message.type, message.payload || {});
-    }
+    return Promise.all([deleteLegacyDb, deleteStaleCaches]);
 }
 
 self.addEventListener('fetch', (event) => {
@@ -71,167 +46,60 @@ self.addEventListener('fetch', (event) => {
     if (event.request.method !== 'GET') return;
     if (url.origin !== self.location.origin) return;
 
+    // Навигация: всегда сеть (гейт и сборки отдаются с no-cache),
+    // офлайн — последняя успешно открытая страница.
     if (event.request.mode === 'navigate') {
-        postToPage('navigate', { path: url.pathname + url.search });
+        event.respondWith(networkFirst(event.request));
+        return;
     }
 
-    event.respondWith(
-        openDatabase()
-            .then((db) => getActiveBuild(db))
-            .then((build) => {
-                if (!build) {
-                    postToPage('no build', { path: url.pathname });
-                    return fetch(event.request);
-                }
+    // Сборки приложения (.../channels/канал/версия/...) неизменяемы:
+    // cache-first ускоряет повторные открытия и работает офлайн.
+    // Путь может быть вложенным (например /helpdesk-app/v2/channels/...),
+    // поэтому сравниваем не начало pathname, а наличие сегмента channels.
+    if (url.pathname.includes(BUILD_PATH_SEGMENT)) {
+        event.respondWith(cacheFirst(event.request));
+    }
 
-                const path = url.pathname;
-                const base = new URL(self.registration.scope).pathname;
-                const fileName = resolveCacheFileName(path, base);
-                const cachedKey = findCachedKey(build, fileName);
-                const rawData = cachedKey ? build.files[cachedKey] : null;
-                const fileData = toBufferSource(rawData);
-
-                if (fileData) {
-                    postToPage('serving', { key: cachedKey, path: url.pathname });
-                    const contentType = getContentType(cachedKey);
-                    return new Response(fileData, {
-                        headers: { 'Content-Type': contentType }
-                    });
-                }
-
-                postToPage('no cache', { fileName, path: url.pathname });
-                const keys = Object.keys(build.files || {});
-                postToPage('build keys', { keys: keys.slice(0, 10), count: keys.length });
-                return fetch(event.request);
-            })
-            .catch((e) => {
-                postToPage('db error', { error: String(e), path: url.pathname });
-                return fetch(event.request);
-            })
-    );
+    // Остальное (сам гейт, манифест, channels.json, API) — мимо кэша.
 });
 
-function toBufferSource(raw) {
-    if (raw == null) return null;
-    if (raw instanceof ArrayBuffer) return new Uint8Array(raw);
-    if (ArrayBuffer.isView(raw)) return new Uint8Array(raw.buffer, raw.byteOffset, raw.byteLength);
-    if (raw instanceof Blob) return raw;
-    if (typeof raw === 'string') return raw;
-    postToPage('response data type', { type: typeof raw });
-    return null;
-}
+async function cacheFirst(request) {
+    const cache = await caches.open(BUILD_CACHE);
+    const cached = await cache.match(normalizeKey(request));
+    if (cached) return cached;
 
-function openDatabase() {
-    return new Promise((resolve, reject) => {
-        const request = indexedDB.open(CACHE_DB_NAME, 2);
-        request.onupgradeneeded = (event) => {
-            const db = event.target.result;
-            if (!db.objectStoreNames.contains(CACHE_STORE)) {
-                db.createObjectStore(CACHE_STORE, { keyPath: 'url' });
-            }
-        };
-        request.onsuccess = (event) => resolve(event.target.result);
-        request.onerror = (event) => reject(event.target.error);
-        request.onblocked = (event) => {
-            reject(new Error('IndexedDB open blocked'));
-        };
-    });
-}
-
-function getActiveBuild(db) {
-    return new Promise((resolve, reject) => {
-        const tx = db.transaction(CACHE_STORE, 'readonly');
-        const store = tx.objectStore(CACHE_STORE);
-        const request = store.getAll();
-        request.onsuccess = (event) => {
-            const builds = event.target.result;
-            if (builds && builds.length > 0) {
-                // Return the most recent build
-                const latest = builds.sort((a, b) => b.timestamp - a.timestamp)[0];
-                resolve(latest);
-            } else {
-                resolve(null);
-            }
-            db.close();
-        };
-        request.onerror = (event) => {
-            db.close();
-            reject(event.target.error);
-        };
-    });
-}
-
-function getBuildByUrl(db, url) {
-    return new Promise((resolve, reject) => {
-        const tx = db.transaction(CACHE_STORE, 'readonly');
-        const store = tx.objectStore(CACHE_STORE);
-        const request = store.get(url);
-        request.onsuccess = () => {
-            db.close();
-            resolve(request.result || null);
-        };
-        request.onerror = () => {
-            db.close();
-            reject(request.error);
-        };
-    });
-}
-
-function putBuildInDb(db, url, files) {
-    return new Promise((resolve, reject) => {
-        const tx = db.transaction(CACHE_STORE, 'readwrite');
-        const store = tx.objectStore(CACHE_STORE);
-        store.put({ url: url, files: files, timestamp: Date.now() });
-        tx.oncomplete = () => {
-            db.close();
-            resolve();
-        };
-        tx.onerror = () => {
-            db.close();
-            reject(tx.error);
-        };
-    });
-}
-
-function resolveCacheFileName(path, base) {
-    if (path === base || path === base.replace(/\/$/, '') || path === '/') {
-        return 'index.html';
+    const response = await fetch(request);
+    if (response && response.ok) {
+        await cache.put(normalizeKey(request), response.clone());
     }
-    if (base.length > 1 && path.startsWith(base)) {
-        return path.substring(base.length) || 'index.html';
-    }
-    return path.substring(1) || 'index.html';
+    return response;
 }
 
-function findCachedKey(build, fileName) {
-    const files = build.files || {};
-    if (files[fileName]) return fileName;
-
-    const suffix = '/' + fileName;
-    const keys = Object.keys(files);
-    for (let i = 0; i < keys.length; i++) {
-        const key = keys[i];
-        if (key.startsWith('__MACOSX')) continue;
-        if (key !== fileName && key.endsWith(suffix)) {
-            return key;
+async function networkFirst(request) {
+    try {
+        const response = await fetch(request);
+        if (response && response.ok) {
+            const cache = await caches.open(BUILD_CACHE);
+            await cache.put(normalizeKey(request), response.clone());
         }
+        return response;
+    } catch (_) {
+        const cached = await caches.open(BUILD_CACHE)
+            .then((cache) => cache.match(normalizeKey(request)));
+        if (cached) return cached;
+
+        return new Response('Нет соединения', {
+            status: 503,
+            headers: { 'Content-Type': 'text/plain; charset=utf-8' },
+        });
     }
-    return null;
 }
 
-function getContentType(fileName) {
-    if (fileName.endsWith('.html')) return 'text/html';
-    if (fileName.endsWith('.js')) return 'application/javascript';
-    if (fileName.endsWith('.css')) return 'text/css';
-    if (fileName.endsWith('.json')) return 'application/json';
-    if (fileName.endsWith('.wasm')) return 'application/wasm';
-    if (fileName.endsWith('.png')) return 'image/png';
-    if (fileName.endsWith('.jpg') || fileName.endsWith('.jpeg')) return 'image/jpeg';
-    if (fileName.endsWith('.svg')) return 'image/svg+xml';
-    if (fileName.endsWith('.ico')) return 'image/x-icon';
-    if (fileName.endsWith('.map')) return 'application/json';
-    if (fileName.endsWith('.woff2')) return 'font/woff2';
-    if (fileName.endsWith('.ttf')) return 'font/ttf';
-    if (fileName.endsWith('.webmanifest')) return 'application/manifest+json';
-    return 'application/octet-stream';
+// Ключ кэша без query-строки: параметры cache-busting не должны
+// плодить дубликаты одной и той же сборки.
+function normalizeKey(request) {
+    const url = new URL(request.url);
+    url.search = '';
+    return url.pathname;
 }

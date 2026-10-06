@@ -1,31 +1,26 @@
 package org.lpmti.helpdeskplatform
 
 import AppDefinition
-import AppStartupGate
-import AppUpdater
-import Authorization
-import AuthorizationScreenRoute
 import HomePageContainerModule
 import RootNavModule
 import FeatureNavModule
 import androidx.navigation3.runtime.NavKey
-import isAppInstalled
-import navigation.AuthorizationScreenModule
 import navigation.ParkingModule
 import navigation.SettingsModule
 import navigation.TasksPageModule
 import navigation.TasksPageRoute
-import navigation.UpdateScreenModule
 import org.koin.core.Koin
 import org.koin.core.module.Module
 import org.koin.dsl.bind
 import org.koin.dsl.module
-import resetInstallReloadAttempts
-import startup.UpdateStartupGate
 
 /**
- * Определение полного приложения: все фичи (задачи, парковка)
+ * Определение полного приложения: все фичи (задачи, парковка, настройки)
  * и старт с домашнего экрана.
+ *
+ * Экраны авторизации и обновлений в web-сборку не входят: авторизацию
+ * выполняет гейт webShell, актуальную версию определяет сервер в манифесте,
+ * к которому гейт обращается перед каждым запуском.
  */
 class FullAppDefinition : AppDefinition {
     // Модуль фич-навигации (внутренняя навигация MainNavigation)
@@ -35,25 +30,12 @@ class FullAppDefinition : AppDefinition {
         single { SettingsModule() } bind FeatureNavModule::class
     }
 
-    // Модуль рутовой навигации (Auth ↔ Update ↔ Home)
+    // Модуль рутовой навигации (экраны корня приложения)
     private val rootNavModule = module {
-        single { AuthorizationScreenModule() } bind RootNavModule::class
-        single { UpdateScreenModule() } bind RootNavModule::class
         single { HomePageContainerModule() } bind RootNavModule::class
     }
 
-    // Модуль проверок при старте (проверка версии сборки).
-    private val startupModule = module {
-        single<AppStartupGate> { UpdateStartupGate(updater = get<AppUpdater>()) }
-    }
+    override val koinModules: List<Module> = listOf(featuresNavModule, rootNavModule)
 
-    override val koinModules: List<Module> = listOf(featuresNavModule, rootNavModule, startupModule)
-
-    override fun startRoute(koin: Koin): NavKey {
-        val authorization = koin.get<Authorization>()
-        val installed = isAppInstalled()
-        val restored = installed && authorization.restoreAuthState()
-        if (installed && restored) { resetInstallReloadAttempts() }
-        return if (installed && restored) TasksPageRoute else AuthorizationScreenRoute
-    }
+    override fun startRoute(koin: Koin): NavKey = TasksPageRoute
 }

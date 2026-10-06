@@ -4,8 +4,6 @@ import org.jetbrains.kotlin.gradle.targets.js.dsl.ExperimentalDistributionDsl
 
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
-    alias(libs.plugins.composeMultiplatform)
-    alias(libs.plugins.composeCompiler)
 }
 
 kotlin {
@@ -21,26 +19,20 @@ kotlin {
     sourceSets {
         commonMain.dependencies {
             implementation(projects.core.di)
-
             implementation(projects.core.authorization.api)
-            implementation(projects.core.navigation.api)
-            implementation(projects.core.update.api)
+            implementation(projects.core.network.api)
             implementation(projects.core.update.impl)
-            implementation(projects.features.authorization.api)
-            implementation(projects.features.authorization.impl)
-            implementation(projects.features.update.api)
-            implementation(projects.features.update.impl)
+            implementation(projects.maxminiappapi.api)
 
-            implementation(libs.compose.ui)
-            implementation(libs.bundles.compose)
+            implementation(libs.kotlinx.coroutines.core)
             implementation(libs.koin.core)
+        }
+        jsMain.dependencies {
+            implementation(libs.wrappers.browser)
         }
     }
 }
 
 // Общие веб-ресурсы (Service Worker, стили), разделяемые с webApp.
-// Source set webMain создаётся композ-плагином на поздних этапах конфигурации,
-// поэтому подключаем каталог после evaluation проекта.
-gradle.projectsEvaluated {
-    kotlin.sourceSets.getByName("webMain").resources.srcDir(rootProject.projectDir.resolve("webResources"))
-}
+kotlin.sourceSets.getByName("jsMain")
+    .resources.srcDir(rootProject.projectDir.resolve("webResources"))

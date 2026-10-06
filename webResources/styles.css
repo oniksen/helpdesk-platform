@@ -5,3 +5,40 @@ html, body {
     padding: 0;
     overflow: hidden;
 }
+
+/* DOM-интерфейс гейта (webShell): контейнер спиннера, статус и повтор. */
+.gate-body {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #fff;
+}
+
+.gate-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+}
+
+.gate-status {
+    min-height: 20px;
+    font-family: sans-serif;
+    font-size: 14px;
+    color: #555;
+    text-align: center;
+}
+
+.gate-retry {
+    padding: 8px 20px;
+    border: 1px solid #333;
+    border-radius: 6px;
+    background: #fff;
+    font-size: 14px;
+    color: #333;
+    cursor: pointer;
+}
+
+.gate-retry:hover {
+    background: #f2f2f2;
+}

@@ -1,6 +1,5 @@
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
-    alias(libs.plugins.kotlinSerialization)
     alias(libs.plugins.kotlinx.kover)
 }
 
@@ -9,15 +8,14 @@ kotlin {
 
     sourceSets {
         commonMain.dependencies {
-            implementation(projects.core.network.api)
             implementation(projects.core.authorization.api)
+            implementation(projects.core.authorization.impl)
+            implementation(projects.core.network.api)
+            implementation(projects.core.network.impl)
             implementation(projects.maxminiappapi.api)
+            implementation(projects.maxminiappapi.impl)
 
-            implementation(libs.bundles.ktor)
-        }
-        jsMain.dependencies {
-            implementation(libs.bundles.ktorJs)
-            implementation(libs.wrappers.browser)
+            implementation(libs.koin.core)
         }
     }
 }

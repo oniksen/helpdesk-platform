@@ -47,16 +47,13 @@ internal class GateApp(
     }
 
     private suspend fun proceed() {
-        ui.showStep(GateUi.STEP_AUTH)
-        ui.nextPaint()
+        ui.showStatus("Авторизация...")
         ensureAuthorized()
 
-        ui.showStep(GateUi.STEP_CHANNEL)
-        ui.nextPaint()
+        ui.showStatus("Определение канала")
         val link = resolveLink(authorization.getUserData().email)
 
-        ui.showStep(GateUi.STEP_LOAD)
-        ui.nextPaint()
+        ui.showStatus("Загрузка приложения")
         ensureServiceWorker()
 
         window.location.replace(link)
@@ -76,10 +73,10 @@ internal class GateApp(
             is MaxAuthorizationResult.Success -> result.initData
         }
 
-        ui.showDetail("Авторизация на сервере")
+        ui.showStatus("Авторизация на сервере")
         val authResponse = authorization.helpdeskAuth(maxInitData)
 
-        ui.showDetail("Получение данных пользователя")
+        ui.showStatus("Получение данных пользователя")
         val userData = authorization.fetchUserData(authResponse.email)
 
         authorization.saveAuthData(

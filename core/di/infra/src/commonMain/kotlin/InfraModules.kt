@@ -8,7 +8,7 @@ import org.koin.dsl.module
  * Инфраструктурные Koin-модули: MAX-мост, авторизация, сеть.
  *
  * Не зависят от Compose и навигации, поэтому используются и полным
- * приложением (через [DiProvider]), и лёгким гейтом webShell,
+ * приложением (через DiProvider из core:di), и лёгким гейтом webShell,
  * у которого собственная точка входа без Compose.
  */
 object InfraModules {

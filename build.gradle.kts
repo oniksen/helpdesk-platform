@@ -2,7 +2,7 @@ import com.codingfeline.buildkonfig.compiler.FieldSpec
 import com.codingfeline.buildkonfig.gradle.BuildKonfigExtension
 import javax.xml.parsers.DocumentBuilderFactory
 
-val webVersion = WebVersion(0, 3, 0, AppVersion.Stage.Alpha, 1)
+val webVersion = WebVersion(0, 3, 0, AppVersion.Stage.Alpha, 2)
 val jvmVersion = JVMVersion(0, 1, 0, AppVersion.Stage.Alpha, 0)
 
 plugins {
@@ -50,6 +50,7 @@ val coverageModules = listOf(
     ":core:architecture",
     ":core:authorization:impl",
     ":core:di",
+    ":core:di:infra",
     ":core:exception",
     ":core:network:impl",
     ":core:navigation:impl",

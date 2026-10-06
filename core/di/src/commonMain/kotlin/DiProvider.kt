@@ -12,8 +12,8 @@ import org.koin.dsl.module
  * версии приложения, а состав приложения (фичи и стартовый экран)
  * задаётся через [AppDefinition].
  *
- * Лёгкий гейт webShell [DiProvider] не использует — он поднимает Koin
- * сам через [InfraModules] без Compose.
+ * Лёгкий гейт webShell DiProvider не использует — он поднимает Koin сам
+ * через InfraModules (модуль core:di:infra) без Compose.
  */
 class DiProvider(
     private val definition: AppDefinition,

@@ -14,17 +14,16 @@ private fun swPath(): String = js(
  * Регистрирует Service Worker и ждёт, пока он будет готов обслуживать запросы.
  *
  * Вызывается перед редиректом на сборку, чтобы первый заход в приложение
- * уже перехватывался SW и попадал в кэш. [registration.update] дополнительно
- * форсирует проверку обновления SW — так существующие клиенты быстрее
- * получают новую версию SW с миграцией.
+ * уже перехватывался SW и попадал в кэш. Отдельная проверка обновления
+ * (`registration.update()`) не выполняется: сам `register()` запускает
+ * проверку обновления и не блокирует этим редирект.
  *
  * @return true, если SW готов; false — регистрация не удалась
  * (не блокирует редирект: приложение откроется напрямую с сервера).
  */
 internal suspend fun ensureServiceWorker(): Boolean {
     return try {
-        val registration = window.navigator.serviceWorker.register(swPath()).await()
-        registration.update().await()
+        window.navigator.serviceWorker.register(swPath()).await()
 
         withTimeoutOrNull(SW_READY_TIMEOUT_MS) {
             window.navigator.serviceWorker.ready.await()

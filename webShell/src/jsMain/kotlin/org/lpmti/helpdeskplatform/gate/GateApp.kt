@@ -9,6 +9,8 @@ import domain.targetFor
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.browser.window
 
@@ -45,13 +47,16 @@ internal class GateApp(
     }
 
     private suspend fun proceed() {
-        ui.showStatus("Авторизация...")
+        ui.showStep(GateUi.STEP_AUTH)
+        ui.nextPaint()
         ensureAuthorized()
 
-        ui.showStatus("Определение канала")
+        ui.showStep(GateUi.STEP_CHANNEL)
+        ui.nextPaint()
         val link = resolveLink(authorization.getUserData().email)
 
-        ui.showStatus("Загрузка приложения")
+        ui.showStep(GateUi.STEP_LOAD)
+        ui.nextPaint()
         ensureServiceWorker()
 
         window.location.replace(link)
@@ -71,10 +76,10 @@ internal class GateApp(
             is MaxAuthorizationResult.Success -> result.initData
         }
 
-        ui.showStatus("Авторизация на сервере")
+        ui.showDetail("Авторизация на сервере")
         val authResponse = authorization.helpdeskAuth(maxInitData)
 
-        ui.showStatus("Получение данных пользователя")
+        ui.showDetail("Получение данных пользователя")
         val userData = authorization.fetchUserData(authResponse.email)
 
         authorization.saveAuthData(
@@ -91,26 +96,29 @@ internal class GateApp(
     /**
      * Определяет ссылку на сборку: канал из файла каналов → таргет из манифеста.
      *
+     * Файлы каналов и манифеста запрашиваются параллельно — манифест не
+     * зависит от выбранного канала, поэтому ждать по очереди незачем.
+     *
      * Файл каналов недоступен → используется последний известный канал,
      * иначе канал по умолчанию ([ChannelSelection.DEFAULT_CHANNEL]).
      * Манифест недоступен или в нём нет публикации → открывается последняя
      * известная сборка ([GateStorage.lastUrl]); если и её нет — ошибка.
      */
-    private suspend fun resolveLink(email: String): String {
-        val access = runCatching { dataSource.fetchChannelsFile() }
-            .getOrNull()
-            ?.accessFor(email)
+    private suspend fun resolveLink(email: String): String = coroutineScope {
+        val channelsDeferred = async { runCatching { dataSource.fetchChannelsFile() }.getOrNull() }
+        val manifestDeferred = async { runCatching { dataSource.fetchManifest() }.getOrNull() }
 
+        val access = channelsDeferred.await()?.accessFor(email)
         val channel = ChannelSelection.select(access, storage.lastChannel)
 
-        val manifest = runCatching { dataSource.fetchManifest() }.getOrNull()
-            ?: return storage.lastUrl ?: error("Сервер обновлений недоступен")
+        val manifest = manifestDeferred.await()
+            ?: return@coroutineScope storage.lastUrl ?: error("Сервер обновлений недоступен")
 
         val target = manifest.targetFor(channel)
-            ?: return storage.lastUrl ?: error("Для канала «$channel» нет опубликованной сборки")
+            ?: return@coroutineScope storage.lastUrl ?: error("Для канала «$channel» нет опубликованной сборки")
 
         storage.lastChannel = channel
         storage.lastUrl = target.link
-        return target.link
+        target.link
     }
 }

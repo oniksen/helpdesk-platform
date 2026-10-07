@@ -40,6 +40,6 @@ class UpdateDataSource(client: KtorClient) {
     private companion object {
         const val HOST = "helpdesk.lpmti.ru"
         const val MANIFEST_PATH = "helpdesk-app/v2/update-manifest-v4.json"
-        const val CHANNELS_PATH = "channels.json"
+        const val CHANNELS_PATH = "helpdesk-app/v2/users-settings/channels.json"
     }
 }

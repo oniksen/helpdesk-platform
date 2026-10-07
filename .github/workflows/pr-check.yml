@@ -1,12 +1,9 @@
 name: PR Check
 
 on:
-  push:
-    branches:
-      - develop
   pull_request:
     branches:
-      - develop
+      - main
 
 concurrency:
   group: validate-${{ github.ref }}

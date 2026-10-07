@@ -6,7 +6,7 @@ html, body {
     overflow: hidden;
 }
 
-/* DOM-интерфейс гейта (webShell): индикатор, этапы, статус и повтор. */
+/* DOM-интерфейс гейта (webShell): индикатор, статус и повтор. */
 .gate-body {
     display: flex;
     align-items: center;
@@ -21,7 +21,7 @@ html, body {
     gap: 16px;
     /* Фирменные цвета Material 3 (светлая тема) */
     --md-sys-color-primary: #6750A4;
-    --md-sys-color-surface-container-highest: #E6E1E5;
+    --md-sys-color-secondary-container: #E8DEF8;
 }
 
 .gate-status {
@@ -32,96 +32,52 @@ html, body {
     text-align: center;
 }
 
-/* Круговой индикатор M3. Анимация идёт через CSS-трансформации, поэтому
-   продолжает крутиться даже во время длинных задач главного потока. */
-.m3-circular-loading {
-    position: relative;
+/* Круговой индикатор M3 Expressive (wavy). Трек и активный сегмент описаны
+   путями в index.html: r(θ)=20+2·sin(8θ), обводка 4, контейнер 48. */
+.m3-wavy-loading {
     width: 48px;
     height: 48px;
-    /* Главное вращение всего контейнера */
-    animation: m3-rotate 2s linear infinite;
+    transform-origin: 24px 24px;
+    /* Оборот ровно за 8 секунд: одна длина волны проходится за секунду */
+    animation: m3-wavy-spin 8s linear infinite;
 }
 
-.m3-circular-loading svg {
+.m3-wavy-loading svg {
     width: 100%;
     height: 100%;
 }
 
 /* Фоновый трек */
-.m3-circular-loading .track {
-    stroke: var(--md-sys-color-surface-container-highest);
+.m3-wavy-track {
+    stroke: var(--md-sys-color-secondary-container);
     stroke-width: 4px;
     fill: none;
 }
 
-/* Активный индикатор */
-.m3-circular-loading .active-indicator {
+/* Активный сегмент */
+.m3-wavy-active {
     stroke: var(--md-sys-color-primary);
     stroke-width: 4px;
     stroke-linecap: round;
     fill: none;
-    /* Длина окружности при r=18 равна 2 * PI * 18 ≈ 113.1 */
-    stroke-dasharray: 113.1;
-    stroke-dashoffset: 113.1;
-    /* Асимметричное сжатие/растяжение линии */
-    animation: m3-dash 1.5s ease-in-out infinite;
+    /* Длина пути 143.77 при pathLength="100": зазор в 8 dp пути
+       (4 dp плюс по 2 dp на скруглённые концы) — это 5.56 единицы даша */
+    stroke-dasharray: 94.44 5.56;
+    /* Сдвиг даша на полную длину пути: зазор обходит волновую траекторию
+       ровно за один оборот */
+    animation: m3-wavy-sweep 2s linear infinite;
 }
 
-@keyframes m3-rotate {
+@keyframes m3-wavy-spin {
     100% {
         transform: rotate(360deg);
     }
 }
 
-@keyframes m3-dash {
-    0% {
-        stroke-dashoffset: 113.1;
-    }
-    50% {
-        stroke-dashoffset: 28.2; /* Заполнено на 75% */
-        transform: rotate(135deg);
-    }
+@keyframes m3-wavy-sweep {
     100% {
-        stroke-dashoffset: 113.1;
-        transform: rotate(450deg);
+        stroke-dashoffset: -100;
     }
-}
-
-/* Список этапов загрузки гейта */
-.gate-steps {
-    margin: 0;
-    padding: 0;
-    list-style: none;
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-    font-family: sans-serif;
-    font-size: 14px;
-    color: #9e9e9e;
-}
-
-.gate-steps li::before {
-    content: "○";
-    margin-right: 8px;
-}
-
-.gate-steps li[data-state="active"] {
-    color: #111;
-    font-weight: 600;
-}
-
-.gate-steps li[data-state="active"]::before {
-    content: "●";
-    color: var(--md-sys-color-primary);
-}
-
-.gate-steps li[data-state="done"] {
-    color: #555;
-}
-
-.gate-steps li[data-state="done"]::before {
-    content: "✓";
-    color: #2e7d32;
 }
 
 .gate-retry {

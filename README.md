@@ -32,6 +32,7 @@ Web-приложение для управления задачами и сер�
 | Модуль | Назначение |
 |--------|------------|
 | `core/di` | DI-провайдер (Koin), точка входа в граф зависимостей |
+| `core/di/infra` | Инфраструктурные Koin-модули (MAX-мост, авторизация, сеть) |
 | `core/navigation/api` | Интерфейс `FeatureNavModule` для фич |
 | `core/navigation/impl` | `BasicDslContainer` — навигационный контейнер |
 | `features/*/api` | Маршруты фич (`@Serializable data object : NavKey`) |

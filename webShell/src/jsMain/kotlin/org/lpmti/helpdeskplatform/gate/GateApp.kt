@@ -107,6 +107,10 @@ internal class GateApp(
 
         val access = channelsDeferred.await()?.accessFor(email)
         val channel = ChannelSelection.select(access, storage.lastChannel)
+        console.log(
+            "[gate] Каналы пользователя: email=$email, allowed=${access?.allowed.orEmpty()}, " +
+                "selected=${access?.selected}, channel=$channel",
+        )
 
         val manifest = manifestDeferred.await()
             ?: return@coroutineScope storage.lastUrl ?: error("Сервер обновлений недоступен")

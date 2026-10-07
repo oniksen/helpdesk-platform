@@ -22,7 +22,8 @@ class SettingsModule: FeatureNavModule {
         navigator: AppNavigator
     ): NavEntry<out NavKey> = NavEntry(key = key as SettingsScreenRoute) {
         val settingsScreenViewModel = SettingsScreenViewModel(
-            appVersionProvider = koinInject()
+            appVersionProvider = koinInject(),
+            currentChannelProvider = koinInject(),
         )
 
         SettingsScreen(

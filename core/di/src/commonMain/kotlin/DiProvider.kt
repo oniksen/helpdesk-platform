@@ -21,6 +21,7 @@ class DiProvider(
     // Модуль версии приложения (отображение в настройках).
     private val updateModule = module {
         single<AppVersionProvider> { AppVersionProviderImpl() }
+        single<CurrentChannelProvider> { CurrentChannelProviderImpl() }
     }
 
     /**

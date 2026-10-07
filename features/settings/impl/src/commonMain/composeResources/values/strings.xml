@@ -2,4 +2,7 @@
     <string name="settings_page_title">Настройки</string>
     <string name="settings_version_title">Версия</string>
     <string name="settings_undefined">Ошибка чтения</string>
+    <string name="settings_channel_prod">Prod</string>
+    <string name="settings_channel_canary">Canary</string>
+    <string name="settings_channel_rc">RC</string>
 </resources>

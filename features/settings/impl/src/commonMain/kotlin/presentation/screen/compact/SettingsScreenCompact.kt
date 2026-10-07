@@ -22,6 +22,7 @@ import presentation.effect.SettingsEffect
 import presentation.screen.compact.components.appbar.AppBar
 import presentation.screen.shared.version.VersionCard
 import presentation.state.SettingsUiState
+import presentation.utils.channelDisplayName
 
 @Composable
 fun SettingsScreenCompact(
@@ -60,7 +61,8 @@ fun SettingsScreenCompact(
         ) {
             VersionCard(
                 modifier = Modifier.fillMaxWidth(),
-                uiVersion = state.projectUiVersion ?: stringResource(resource = Res.string.settings_undefined)
+                uiVersion = state.projectUiVersion ?: stringResource(resource = Res.string.settings_undefined),
+                channel = channelDisplayName(code = state.currentChannel),
             )
         }
     }

@@ -1,5 +1,6 @@
 package org.lpmti.helpdeskplatform.gate
 
+import ChannelStorage
 import kotlinx.browser.localStorage
 
 /**
@@ -16,8 +17,8 @@ internal class GateStorage {
         set(value) = setItem(KEY_LAST_URL, value)
 
     var lastChannel: String?
-        get() = localStorage.getItem(KEY_LAST_CHANNEL)
-        set(value) = setItem(KEY_LAST_CHANNEL, value)
+        get() = localStorage.getItem(ChannelStorage.LAST_CHANNEL_KEY)
+        set(value) = setItem(ChannelStorage.LAST_CHANNEL_KEY, value)
 
     private fun setItem(key: String, value: String?) {
         if (value == null) {
@@ -29,6 +30,5 @@ internal class GateStorage {
 
     private companion object {
         const val KEY_LAST_URL = "helpdesk.gate.lastUrl"
-        const val KEY_LAST_CHANNEL = "helpdesk.gate.lastChannel"
     }
 }

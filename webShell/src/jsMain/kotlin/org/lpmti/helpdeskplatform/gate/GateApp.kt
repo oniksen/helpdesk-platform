@@ -11,6 +11,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.browser.window
 
@@ -51,12 +52,19 @@ internal class GateApp(
         ensureAuthorized()
 
         ui.showStatus("Определение канала")
-        val link = resolveLink(authorization.getUserData().email)
+        val resolved = resolveLink(authorization.getUserData().email)
 
         ui.showStatus("Загрузка приложения")
         ensureServiceWorker()
 
-        window.location.replace(link)
+        // Уведомление о фолбэке показываем до редиректа: после replace
+        // страница гейта исчезнет вместе с сообщением.
+        resolved.notice?.let {
+            ui.showNotice(it)
+            delay(NOTICE_VISIBLE_MS)
+        }
+
+        window.location.replace(resolved.link)
     }
 
     /**
@@ -99,9 +107,10 @@ internal class GateApp(
      * Файл каналов недоступен → используется последний известный канал,
      * иначе канал по умолчанию ([ChannelSelection.DEFAULT_CHANNEL]).
      * Манифест недоступен или в нём нет публикации → открывается последняя
-     * известная сборка ([GateStorage.lastUrl]); если и её нет — ошибка.
+     * известная сборка ([GateStorage.lastUrl]) с уведомлением о редиректе;
+     * если и её нет — ошибка.
      */
-    private suspend fun resolveLink(email: String): String = coroutineScope {
+    private suspend fun resolveLink(email: String): ResolvedLink = coroutineScope {
         val channelsDeferred = async { runCatching { dataSource.fetchChannelsFile() }.getOrNull() }
         val manifestDeferred = async { runCatching { dataSource.fetchManifest() }.getOrNull() }
 
@@ -113,13 +122,35 @@ internal class GateApp(
         )
 
         val manifest = manifestDeferred.await()
-            ?: return@coroutineScope storage.lastUrl ?: error("Сервер обновлений недоступен")
+            ?: return@coroutineScope lastUrlFallback("Сервер обновлений недоступен")
 
         val target = manifest.targetFor(channel)
-            ?: return@coroutineScope storage.lastUrl ?: error("Для канала «$channel» нет опубликованной сборки")
+            ?: return@coroutineScope lastUrlFallback(
+                "Для канала «$channel» нет опубликованной версии",
+            )
 
         storage.lastChannel = channel
         storage.lastUrl = target.link
-        target.link
+        ResolvedLink(link = target.link, notice = null)
+    }
+
+    /**
+     * Фолбэк на последнюю известную сборку: без неё — ошибка,
+     * с ней — ссылка и уведомление о редиректе с причиной [reason].
+     */
+    private fun lastUrlFallback(reason: String): ResolvedLink {
+        val lastUrl = storage.lastUrl ?: error("$reason. Нет последней известной сборки")
+        return ResolvedLink(
+            link = lastUrl,
+            notice = "$reason — выполнен редирект на последнюю известную сборку",
+        )
+    }
+
+    /** Ссылка для редиректа и необязательное уведомление о фолбэке. */
+    private data class ResolvedLink(val link: String, val notice: String?)
+
+    private companion object {
+        /** Сколько миллисекунд уведомление видно до редиректа. */
+        const val NOTICE_VISIBLE_MS = 3_000L
     }
 }

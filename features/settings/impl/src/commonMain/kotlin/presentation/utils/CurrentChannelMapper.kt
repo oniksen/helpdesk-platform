@@ -17,8 +17,8 @@ import org.jetbrains.compose.resources.stringResource
 @Composable
 internal fun channelDisplayName(code: String?): String = when (code) {
     null -> stringResource(resource = Res.string.settings_undefined)
-    UpdateChannel.DEV_CANARY -> "${stringResource(resource = Res.string.settings_channel_canary)} ($code)"
-    UpdateChannel.DEV_RC -> "${stringResource(resource = Res.string.settings_channel_rc)} ($code)"
-    UpdateChannel.PROD -> "${stringResource(resource = Res.string.settings_channel_prod)} ($code)"
+    UpdateChannel.DEV_CANARY -> stringResource(resource = Res.string.settings_channel_canary)
+    UpdateChannel.DEV_RC -> stringResource(resource = Res.string.settings_channel_rc)
+    UpdateChannel.PROD -> stringResource(resource = Res.string.settings_channel_prod)
     else -> code
 }

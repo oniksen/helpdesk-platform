@@ -1,93 +1,26 @@
 # Helpdesk Platform
 
-Web-приложение для управления задачами и сервисными обращениями, построенное на Kotlin Multiplatform с Compose Multiplatform.
+Web-приложение для управления задачами и сервисными обращениями. Объединяет обработку обращений, управление парковочными местами и отслеживание задач в одном интерфейсе, чтобы сервисные команды работали в едином процессе вместо разрозненных инструментов.
+
+Проект построен на Kotlin Multiplatform с Compose Multiplatform (UI), Koin (DI) и Navigation3 (навигация). Целевая платформа — Web (JS), дополнительно есть JVM-таргет для превью и тестов.
 
 [![PR Check](https://github.com/oniksen/helpdesk-platform/actions/workflows/pr-check.yml/badge.svg)](https://github.com/oniksen/helpdesk-platform/actions/workflows/pr-check.yml)
 [![License](https://img.shields.io/badge/License-LPMTI%20Proprietary-lightgrey.svg)](LICENSE)
 ![Coverage](coverage-badge.svg)
 
-## Проблема
+## Документация
 
-Сервисные команды нуждаются в едином интерфейсе для обработки обращений, управления парковочными местами и отслеживания задач. Helpdesk Platform объединяет эти процессы в одном web-приложении с modern UI и модульной архитектурой.
+Подробная документация — в [WiKi проекта](https://github.com/oniksen/helpdesk-platform/wiki):
 
-## Быстрый старт
-
-### Требования
-
-- JDK 21
-- Gradle (используется wrapper)
-
-### Запуск
-
-```bash
-# Wasm (быстрее, современные браузеры)
-./gradlew :webApp:wasmJsBrowserDevelopmentRun
-
-# JS (для старых браузеров)
-./gradlew :webApp:jsBrowserDevelopmentRun
-```
-
-## Модули
-
-| Модуль | Назначение |
-|--------|------------|
-| `core/di` | DI-провайдер (Koin), точка входа в граф зависимостей |
-| `core/di/infra` | Инфраструктурные Koin-модули (MAX-мост, авторизация, сеть) |
-| `core/navigation/api` | Интерфейс `FeatureNavModule` для фич |
-| `core/navigation/impl` | `BasicDslContainer` — навигационный контейнер |
-| `features/*/api` | Маршруты фич (`@Serializable data object : NavKey`) |
-| `features/*/impl` | Реализация экранов и модулей фич |
-| `maxminiappapi/api` | Интерфейсы API (мост к внешней платформе) |
-| `maxminiappapi/impl` | Платформенные реализации API |
-| `shared` | Общий код (`App.kt`, `Platform.kt`) |
-| `webApp` | Точка входа Web-приложения |
-
-## Команды
-
-```bash
-# Запуск
-./gradlew :webApp:wasmJsBrowserDevelopmentRun    # Web (Wasm)
-./gradlew :webApp:jsBrowserDevelopmentRun       # Web (JS)
-
-# Тесты
-./gradlew :shared:wasmJsTest                     # Wasm-тесты
-./gradlew allTests                               # Все тесты
-
-# Линтер
-./gradlew detekt
-
-# Покрытие тестами
-./gradlew koverXmlReportsAll                     # XML-отчёты по модулям
-./gradlew generateCoverageBadge                  # Генерация badge SVG
-```
-
-## Покрытие тестами
-
-Проект использует [Kotlinx Kover](https://github.com/Kotlin/kotlinx-kover) для сбора метрик покрытия.
-
-```bash
-# Собрать XML-отчёты по всем модулям
-./gradlew koverXmlReportsAll
-
-# Сгенерировать badge с процентом покрытия
-./gradlew generateCoverageBadge
-
-# HTML-отчёт по конкретному модулю
-./gradlew :features:parking:impl:koverHtmlReport
-```
-
-## Добавление фичи
-
-1. Создать `features/<name>/api` с маршрутом (`@Serializable data object ... : NavKey`)
-2. Создать `features/<name>/impl` с `FeatureNavModule` и экранами
-3. Зарегистрировать модуль в `DiProvider`
-4. Добавить модули в `settings.gradle.kts`
+- [Быстрый старт](https://github.com/oniksen/helpdesk-platform/wiki/Быстрый-старт) — запуск, тесты, линтер
+- [Архитектура](https://github.com/oniksen/helpdesk-platform/wiki/Архитектура) — модули, паттерны, структура
+- [Добавление фичи](https://github.com/oniksen/helpdesk-platform/wiki/Добавление-фичи) — пошаговая инструкция
+- [CI/CD](https://github.com/oniksen/helpdesk-platform/wiki/CI-CD) — пайплайн и проверки
+- [Конвенции](https://github.com/oniksen/helpdesk-platform/wiki/Конвенции) — стиль кода, коммиты, PR
 
 ## Контрибьюция
 
-- Базовая ветка: `develop`
-- Требования: JDK 21
-- Перед отправкой PR: `./gradlew detekt && ./gradlew allTests`
+Требуется JDK 21. Перед отправкой PR: `./gradlew detekt && ./gradlew allTests`. Правила оформления кода, коммитов и PR — в разделе [Конвенции](https://github.com/oniksen/helpdesk-platform/wiki/Конвенции).
 
 ## Лицензия
 

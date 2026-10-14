@@ -39,7 +39,7 @@ PR должен содержать следующие разделы:
 
 ### Процесс
 
-1. Используй скилы обдумывания и планирования — `brainstorming` (уточнение требований) и `writing-plans` (декомпозиция) — до формирования текста.
+1. До формирования текста загрузи через инструмент `skill` и строго следуй процессным скилам superpowers: `brainstorming` — уточнение требований, `writing-plans` — декомпозиция. Общее правило — `using-superpowers`: если скил применим к задаче, используй его.
 2. Собери иерархию: 1 Epic → N User Stories → задачи (Tasks) для каждой User Story.
 3. Заполняй шаблоны из `.github/ISSUE_TEMPLATE`: `epic.md`, `user-story.md`, `task.md`.
 4. Выдавай результат поэтапно с согласованием на каждом уровне: сначала Epic, затем User Stories, затем Tasks. После каждого уровня дождись одобрения.
@@ -47,6 +47,18 @@ PR должен содержать следующие разделы:
 6. Указывай связи между уровнями: в Task — родительская User Story, в User Story — Epic. Ссылайся по названию (номера присваивает трекер).
 7. Приоритизация в бэклоге идёт по правилу P0 > P1 > P2 > P3: при конфликте задач в первую очередь выполняются более высокие приоритеты; задачи одного приоритета — по порядку в бэклоге.
 8. Текст — на русском языке.
+
+### Декомпозиция User Story → Tasks
+
+Правила, одинаково понятные человеку и агенту:
+
+- Каждая таска оформляется строго по обновлённому шаблону `.github/ISSUE_TEMPLATE/task.md`.
+- Раздел «Технический контекст и ограничения» — только архитектурные рамки и связанные модули. Это не пошаговый план: не описывай, какие методы, классы или файлы создавать.
+- Раздел «Критерии приёмки» — наблюдаемый конечный результат (что должно работать), а не последовательность действий исполнителя.
+- Не навязывай исполнителю реализацию: конкретные решения и структура кода остаются за разработчиком.
+
+Формулировка-триггер для агента:
+«Декомпозируй эту User Story на таски по обновлённому шаблону. В разделе „Технический контекст“ укажи только архитектурные ограничения и связанные модули. В разделе „Критерии приёмки“ сфокусируйся на конечном результате (что должно работать), а не на последовательности действий. Не расписывай, какие методы создавать в коде.»
 
 ### Лейблы задач
 
@@ -124,24 +136,31 @@ SP назначаются только Task'ам (не US и Epic). Исполь
 
 ## Обзор проекта
 
-Kotlin Multiplatform (KMP) проект — Web-приложение (JS + Wasm). UI на Compose Multiplatform, DI через Koin, навигация через Navigation3.
+Kotlin Multiplatform (KMP) проект — Web-приложение (JS) с JVM-таргетом для превью и тестов. UI на Compose Multiplatform, DI через Koin, навигация через Navigation3.
 
 ## Модули
 
 | Модуль | Назначение |
 |--------|------------|
-| `core/di` | DI-провайдер (Koin), точка входа в граф зависимостей |
-| `core/di/infra` | Инфраструктурные Koin-модули (MAX-мост, авторизация, сеть) |
-| `core/navigation/api` | Интерфейс `FeatureNavModule` для фич |
-| `core/navigation/impl` | `BasicDslContainer` — навигационный контейнер |
-| `features/*/api` | Маршруты фич (`@Serializable data object : NavKey`) |
-| `features/*/impl` | Реализация экранов и модулей фич |
-| `maxminiappapi/api` | Интерфейсы API (мост к внешней платформе) |
-| `maxminiappapi/impl` | Платформенные реализации API |
-| `core/update/api` | Контракт механизма динамического обновления приложения |
-| `core/update/impl` | Загрузка и применение обновлений, разбор манифестов |
-| `webApp` | Точка входа Web-приложения |
-| `webShell` | Бутстрап-оболочка с авторизацией и проверкой версии |
+| `core/architecture` | Базовые архитектурные примитивы (`BaseViewModel`) |
+| `core/exception` | Базовая модель исключений (`AppException`) |
+| `core/di` | DI-провайдер (Koin), точка входа в граф зависимостей (`DiProvider`, `AppDefinition`) |
+| `core/di/infra` | Инфраструктурные Koin-модули (`InfraModules`: MAX-мост, авторизация, сеть) |
+| `core/authorization/api` | Контракты авторизации (`Authorization`, `AuthData`, `UserData`, роли/уровни доступа) |
+| `core/authorization/impl` | Реализация авторизации (DTO, мапперы, репозиторий, хранение состояния, `TokenProvider`) |
+| `core/network/api` | Контракты сети (`KtorClient`, `TokenProvider`, `NetworkResult`, `safeNetworkCall`) |
+| `core/network/impl` | Реализация HTTP-клиента (Ktor, expect/actual `CreateKtorClient`) |
+| `core/navigation/api` | Контракты навигации (`FeatureNavModule`, `RootNavModule`, `AppNavigator`, `AppStartupGate`) |
+| `core/navigation/impl` | Навигационные контейнеры (`AdaptiveNavigationContainer`, `MainNavigation`, `RootNavigation`) |
+| `core/uiadaptive` | Адаптивная вёрстка (`AdaptiveLayoutWrapper`) |
+| `core/update/api` | Контракт механизма обновления (`AppUpdater`, `AppVersion`, каналы, состояние установки) |
+| `core/update/impl` | Загрузка и применение обновлений, разбор манифестов (v1/v2), Service Worker, IndexedDB, JSZip |
+| `maxminiappapi/api` | Интерфейсы моста к внешней платформе MAX (`MaxAuthorization`, `QrCodeScanner`) |
+| `maxminiappapi/impl` | Платформенные реализации моста (expect/actual фабрики) |
+| `features/*/api` | Маршруты фич (`@Serializable data object : NavKey`); фичи: authorization, parking, tasks, settings, update |
+| `features/*/impl` | Экраны, ViewModel и навигационные модули фич |
+| `webApp` | Точка входа Web-приложения (JS) |
+| `webShell` | Бутстрап-оболочка с авторизацией и проверкой версии (JS) |
 
 ## Паттерны
 
@@ -153,11 +172,12 @@ Kotlin Multiplatform (KMP) проект — Web-приложение (JS + Wasm)
 ## Команды
 
 ```bash
-# Web (Wasm — быстрее)
-./gradlew :webApp:wasmJsBrowserDevelopmentRun
-
-# Web (JS — для старых браузеров)
+# Запуск Web-приложения (JS)
 ./gradlew :webApp:jsBrowserDevelopmentRun
+
+# Сборка JS-дистрибутивов
+./gradlew build-web-app
+./gradlew build-web-shell
 
 # Тесты
 ./gradlew allTests
@@ -175,13 +195,13 @@ Kotlin Multiplatform (KMP) проект — Web-приложение (JS + Wasm)
 
 ## CI/CD
 
-`pr-check.yml` запускается на PR в `develop` и на push в `develop` (JDK 21).
+`pr-check.yml` запускается только на PR в `main` (JDK 21); триггера на push нет.
 Шаги: `help` с `--warning-mode=fail` → `detekt` → `allTests` → сборка JS-дистрибутивов
-`webApp` и `webShell` с выгрузкой артефактов.
+`:webApp` (в `dist`) и `:webShell` (в `dist-shell`) с выгрузкой артефактов.
 
-Кэш Gradle пишется только на push в `develop` (`cache-read-only` для PR-прогонов),
-так как кэш из `pull_request` доступен лишь повторным прогонам того же PR.
-`cleanup-caches.yml` удаляет записи кэша старше 14 дней.
+`cache-read-only` включён для PR-прогонов, так как кэш из `pull_request` доступен лишь
+повторным прогонам того же PR; при единственном PR-триггере запись кэша сейчас не происходит.
+`cleanup-caches.yml` раз в сутки (и по кнопке) удаляет записи кэша старше 14 дней.
 
 ## Конвенции
 

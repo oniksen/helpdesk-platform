@@ -32,12 +32,19 @@ Powered by the `memory` MCP server (`@modelcontextprotocol/server-memory`) and t
 3. Link them (`memory_create_relations`, `memory_delete_relations`).
 4. Remove obsolete nodes with `memory_delete_entities`.
 
-## Project baseline (max-helpdesk)
+## Project baseline (helpdesk-platform)
 - Multi-module Kotlin Multiplatform + Compose Multiplatform app.
-- Targets: `jvm()` (Desktop) and `js { browser() }` (Web) — see
-  `core/uiadaptive/build.gradle.kts`.
-- Sourcesets: `commonMain`, `jvmMain`, `jsMain` (+ `webMain` under `webApp`).
-- Stack: Kotlin 2.4.10, Compose Multiplatform 1.12.0, Koin 4.0.2,
-  kotlinx.serialization, kotlin-wrappers, expect/actual (e.g. `QrCodeScannerFactory`).
-- Modules: `webApp`, `core` (di, uiadaptive, navigation:api/impl),
-  `features` (home:api/impl, parking:api/impl), `maxminiappapi` (api/impl).
+- Targets: `js { browser() }` (Web; entry points `webApp`, `webShell`) and
+  `jvm()` (Desktop — previews and tests only).
+- Sourcesets: `commonMain`, `jsMain`, `jvmMain` (+ `webMain` under `webApp`).
+- Stack: Kotlin 2.4.20, Compose Multiplatform 1.12.0, Koin 4.0.2,
+  kotlinx.serialization, Ktor 3.5.2, Navigation3, kotlin-wrappers, expect/actual
+  (e.g. `QrCodeScannerFactory`, `CreateKtorClient`).
+- Modules:
+  - `webApp`, `webShell` — JS entry points (app / bootstrap shell).
+  - `core`: `architecture`, `exception`, `di`, `di/infra`, `uiadaptive`,
+    `authorization/{api,impl}`, `network/{api,impl}`, `navigation/{api,impl}`,
+    `update/{api,impl}`.
+  - `features`: `authorization`, `parking`, `tasks`, `settings`, `update`
+    (each `api`/`impl`).
+  - `maxminiappapi/{api,impl}` — bridge to the MAX platform.

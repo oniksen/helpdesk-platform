@@ -24,4 +24,4 @@ fun main() {
     }
 }
 
-private const val GATE_PATH = "/"
+private const val GATE_PATH = "/helpdesk-app/pwa/"

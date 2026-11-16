@@ -11,6 +11,8 @@ kotlin {
         binaries.executable()
     }
 
+    jvm()
+
     sourceSets {
         commonMain.dependencies {
             implementation(projects.core.di.infra)

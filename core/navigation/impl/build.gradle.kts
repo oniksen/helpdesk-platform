@@ -11,6 +11,7 @@ kotlin {
         browser()
         binaries.executable()
     }
+    jvm()
 
     sourceSets {
         commonMain.dependencies {

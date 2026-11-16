@@ -6,6 +6,7 @@ plugins {
 
 kotlin {
     js { browser() }
+    jvm()
 
     sourceSets {
         commonMain.dependencies {

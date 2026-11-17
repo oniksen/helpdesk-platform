@@ -15,5 +15,10 @@ kotlin {
         commonMain.dependencies {
             implementation(projects.core.network.api)
         }
+
+        jvmMain.dependencies {
+            implementation(libs.okio)
+            implementation(libs.slf4j.simple)
+        }
     }
 }

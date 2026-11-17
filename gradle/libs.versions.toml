@@ -14,6 +14,8 @@ jb-compose-material-icons = "1.7.3"
 ktor = "3.5.2"
 buildkonfig = "0.23.0"
 mokkery = "3.5.0"
+okio = "3.17.0"
+slf4j = "2.0.17"
 
 [libraries]
 # Compose core
@@ -50,6 +52,10 @@ ktor-negotiation = { module = "io.ktor:ktor-client-content-negotiation", version
 ktor-serialization = { module = "io.ktor:ktor-serialization-kotlinx-json", version.ref = "ktor" }
 ktor-js-client = { module = "io.ktor:ktor-client-js", version.ref = "ktor" }
 ktor-auth = { module = "io.ktor:ktor-client-auth", version.ref = "ktor" }
+
+# Файлы и логирование JVM-клиента
+okio = { module = "com.squareup.okio:okio", version.ref = "okio" }
+slf4j-simple = { module = "org.slf4j:slf4j-simple", version.ref = "slf4j" }
 
 # Test
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }

@@ -22,7 +22,7 @@ kotlin {
             implementation(projects.core.architecture)
             implementation(projects.core.exception)
             implementation(projects.core.network.api)
-            implementation(projects.core.update.api)
+            api(projects.core.update.api)
 
             implementation(libs.bundles.ktor)
             implementation(libs.kotlinx.coroutines.core)

@@ -1,3 +1,2 @@
-actual fun createAppUpdater(appInstallState: AppInstallState): AppUpdater {
-    TODO("Not yet implemented")
-}
+actual fun createAppUpdater(appInstallState: AppInstallState): AppUpdater =
+    AppUpdaterImpl(appInstallState)

@@ -11,6 +11,8 @@ kotlin {
             implementation(projects.core.architecture)
             implementation(projects.core.exception)
 
+            api(projects.core.network.api)
+
             api(libs.kotlinx.coroutines.core)
         }
         jsMain.dependencies {

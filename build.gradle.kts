@@ -5,6 +5,9 @@ import javax.xml.parsers.DocumentBuilderFactory
 val webVersion = WebVersion(0, 3, 0, AppVersion.Stage.Alpha, 6)
 val jvmVersion = JVMVersion(0, 1, 0, AppVersion.Stage.Alpha, 0)
 
+// Техническая версия JVM-приложения для упаковки (nativeDistributions.packageVersion).
+extra["jvmSystemVersion"] = jvmVersion.createSystemVersion()
+
 plugins {
     // this is necessary to avoid the plugins to be loaded multiple times
     // in each subproject's classloader

@@ -1,10 +1,16 @@
+import org.jetbrains.compose.desktop.application.dsl.TargetFormat
+
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
     alias(libs.plugins.composeMultiplatform)
     alias(libs.plugins.composeCompiler)
 }
 
+// Техническая версия JVM-сборки, задаётся в корневом build.gradle.kts.
+val jvmSystemVersion = rootProject.extra["jvmSystemVersion"] as String
+
 kotlin {
+    jvmToolchain(21)
     jvm()
 
     sourceSets {
@@ -32,6 +38,61 @@ kotlin {
             implementation(projects.core.update.api)
             implementation(projects.core.update.impl)
             implementation(projects.core.di.infra)
+        }
+    }
+}
+
+compose.desktop {
+    application {
+        mainClass = "org.lpmti.helpdeskplatform.MainKt"
+
+        nativeDistributions {
+            targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb, TargetFormat.Exe)
+            packageName = "com.lpmti.helpdesk"
+            packageVersion = jvmSystemVersion
+            vendor = "LPMTI"
+
+            windows {
+                perUserInstall = true
+
+                iconFile.set(project.file("src/commonMain/composeResources/drawable/app_icon.ico"))
+
+                // Флаги доступа для рефлексии и внутренних вызовов JVM
+                jvmArgs(
+                    "--add-opens", "java.base/java.lang=ALL-UNNAMED",
+                    "--add-opens", "java.base/java.lang.reflect=ALL-UNNAMED",
+                    "--add-opens", "java.base/java.util=ALL-UNNAMED",
+                    "--add-opens", "java.desktop/java.awt=ALL-UNNAMED",
+                    "--add-opens", "java.desktop/sun.awt=ALL-UNNAMED",
+                    "--add-opens", "java.desktop/sun.java2d=ALL-UNNAMED",
+                    "--add-opens", "java.base/java.io=ALL-UNNAMED",
+                    "--add-opens", "java.base/java.nio=ALL-UNNAMED",
+                    "--add-opens", "java.base/sun.security.ssl=ALL-UNNAMED",
+                )
+
+                jvmArgs("-Dcompose.application.showConsole=true")
+            }
+
+            // В сборку укладывается своё JDK, поэтому нужен явный список модулей
+            modules(
+                "java.desktop", // AWT/Skiko для Compose Desktop
+                "java.prefs", // настройки пользователя
+                "java.xml",
+                "java.naming",
+                "java.management",
+                "java.sql",
+                "java.logging",
+                "jdk.unsupported",
+                "java.scripting",
+            )
+        }
+
+        buildTypes {
+            release {
+                proguard {
+                    isEnabled = false
+                }
+            }
         }
     }
 }

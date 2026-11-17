@@ -1,5 +1,6 @@
 import com.codingfeline.buildkonfig.compiler.FieldSpec
 import com.codingfeline.buildkonfig.gradle.BuildKonfigExtension
+import org.gradle.api.tasks.bundling.Zip
 import javax.xml.parsers.DocumentBuilderFactory
 
 val webVersion = WebVersion(0, 3, 0, AppVersion.Stage.Alpha, 6)
@@ -94,6 +95,81 @@ tasks.register("build-web-app") { description = "Сборка основного
 
 tasks.register("build-web-shell") { description = "Сборка бутстрап оболочки с авторизацией и проверкой версии"
     dependsOn(":webShell:jsBrowserDevelopmentExecutableDistribution") }
+
+/** Образ приложения, который создаёт :jvmApp:createReleaseDistributable. */
+val jvmAppImageRoot = layout.projectDirectory.asFile
+    .resolve("jvmApp/build/compose/binaries/main-release/app")
+
+/** Готовые к деплою архивы. */
+val updateArchiveDir = layout.buildDirectory.dir("distributions/update")
+
+/** Служебные файлы macOS: resource forks, расширенные атрибуты, настройки Finder. */
+val osMetadataExcludes = listOf("**/.DS_Store", "**/__MACOSX/**", "**/._*")
+
+/** Хост-платформа: JVM-таргет собирается только под ту ОС, на которой идёт сборка. */
+val hostOsName = System.getProperty("os.name").orEmpty().lowercase()
+val isMacHost = hostOsName.contains("mac")
+val isWindowsHost = hostOsName.contains("win")
+
+/** macOS упаковывает приложение в бандл `*.app`, Windows — в папку с `.exe`. */
+val jvmAppImageDirName = if (isMacHost) "com.lpmti.helpdesk.app" else "com.lpmti.helpdesk"
+val jvmAppContentPattern = if (isMacHost) "Contents/**" else "**"
+val jvmAppArchiveSuffix = if (isMacHost) "macos" else "windows"
+val jvmAppImageDir = jvmAppImageRoot.resolve(jvmAppImageDirName)
+
+tasks.register<Zip>("build-jvm-app") {
+    description = "Сборка JVM таргета текущей ОС и zip-архива для обновления"
+    dependsOn(":jvmApp:createReleaseDistributable")
+
+    // Локальные значения: замыкания задач не должны ссылаться на скрипт (Configuration Cache)
+    val imageDir = jvmAppImageDir
+    val windowsHost = isWindowsHost
+    val macHost = isMacHost
+
+    // Корень архива — директория установки: папка с .exe (Windows) либо Contents/ бандла (macOS)
+    from(imageDir) {
+        include(jvmAppContentPattern)
+        exclude(osMetadataExcludes)
+    }
+
+    archiveFileName.set("helpdesk-jvm-$jvmAppArchiveSuffix-${jvmVersion.createSystemVersion()}.zip")
+    destinationDirectory.set(updateArchiveDir)
+    includeEmptyDirs = false
+    isPreserveFileTimestamps = false
+    isReproducibleFileOrder = true
+
+    doFirst {
+        if (!windowsHost && !macHost) {
+            throw GradleException(
+                "build-jvm-app собирает JVM таргет текущей ОС: поддерживаются только Windows и macOS, " +
+                    "текущая ОС — ${System.getProperty("os.name")}",
+            )
+        }
+        if (!imageDir.isDirectory) {
+            throw GradleException(
+                "Нет образа приложения: $imageDir. " +
+                    "Сначала должна пройти :jvmApp:createReleaseDistributable.",
+            )
+        }
+    }
+
+    // hash и size нужны манифесту обновления (update-manifest-v4.json)
+    doLast {
+        val zip = archiveFile.get().asFile
+        val digest = java.security.MessageDigest.getInstance("SHA-256")
+        zip.inputStream().buffered().use { input ->
+            val buffer = ByteArray(8192)
+            var read = input.read(buffer)
+            while (read != -1) {
+                digest.update(buffer, 0, read)
+                read = input.read(buffer)
+            }
+        }
+        logger.lifecycle("Архив:   ${zip.absolutePath}")
+        logger.lifecycle("Размер:  ${zip.length()} байт")
+        logger.lifecycle("SHA-256: ${digest.digest().joinToString("") { "%02x".format(it) }}")
+    }
+}
 
 /**
  * Собирает единый бейдж покрытия по XML-отчётам Kover всех подключённых модулей.
@@ -214,7 +290,6 @@ class WebVersion(
     private val stage: AppVersion.Stage,
     private val buildIteration: Int,
 ): AppVersion(major, minor, patch, stage, buildIteration)
-
 class JVMVersion(
     private val major: Int,
     private val minor: Int,
@@ -222,19 +297,3 @@ class JVMVersion(
     private val stage: AppVersion.Stage,
     private val buildIteration: Int,
 ): AppVersion(major, minor, patch, stage, buildIteration)
-
-/*// Формирование user-friendly версии
-val userVersion = when(stage) {
-    "release" -> "$major.$minor.$patch"
-    else -> "$major.$minor.$patch-$stage.$buildIteration"
-}
-val systemVersion = "$major.$minor.${calculateTechnicalPatch(stage, patch, buildIteration)}"
-fun calculateTechnicalPatch(stage: String, patch: Int, iteration: Int): Int {
-    val stageOffset = when(stage) {
-        "alpha" -> 1_000
-        "beta" -> 2_000
-        "rc" -> 3_000
-        else -> 4_000 // release
-    }
-    return patch * 10_000 + stageOffset + iteration
-}*/

@@ -452,7 +452,7 @@
 - [ ] Модуль компилируется, detekt проходит.
 
 #### 🔗 Ссылки и артефакты
-- DI в `webApp`: `FullAppDefinition.kt`, модули `core/di/infra`
+- DI в `webApp`: `WebAppDefinition.kt`, модули `core/di/infra`
 
 **Связь:** TASK-5.1 → US-5
 

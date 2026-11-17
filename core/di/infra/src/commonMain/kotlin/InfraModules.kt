@@ -13,10 +13,10 @@ import org.koin.dsl.module
  */
 object InfraModules {
     /** Модуль MAX-моста (инициализация Mini App, авторизация MAX). */
-    private val maxMiniAppModule = module {
+    /*private val maxMiniAppModule = module {
         single<QrCodeScanner> { createQrCodeScanner() }
         single<MaxAuthorization> { createAuthorizationObject() }
-    }
+    }*/
 
     /** Модуль кор-авторизации. */
     private val authorizationModule = module {
@@ -40,5 +40,5 @@ object InfraModules {
     }
 
     /** Полный набор инфраструктурных модулей. */
-    val all: List<Module> = listOf(maxMiniAppModule, authorizationModule, networkModule)
+    val all: List<Module> = listOf(authorizationModule, networkModule)
 }

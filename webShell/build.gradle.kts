@@ -24,6 +24,7 @@ kotlin {
             implementation(projects.core.network.api)
             implementation(projects.core.update.impl)
             implementation(projects.maxminiappapi.api)
+            implementation(projects.maxminiappapi.impl)
 
             implementation(libs.kotlinx.coroutines.core)
             implementation(libs.koin.core)

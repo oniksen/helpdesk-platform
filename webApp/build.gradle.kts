@@ -33,6 +33,8 @@ kotlin {
             implementation(projects.features.tasks.impl)
             implementation(projects.features.settings.api)
             implementation(projects.features.settings.impl)
+            implementation(projects.maxminiappapi.api)
+            implementation(projects.maxminiappapi.impl)
 
             implementation(libs.compose.ui)
             implementation(libs.bundles.compose)

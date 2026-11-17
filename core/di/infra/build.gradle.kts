@@ -13,8 +13,6 @@ kotlin {
             implementation(projects.core.authorization.impl)
             implementation(projects.core.network.api)
             implementation(projects.core.network.impl)
-            implementation(projects.maxminiappapi.api)
-            implementation(projects.maxminiappapi.impl)
 
             implementation(libs.koin.core)
         }

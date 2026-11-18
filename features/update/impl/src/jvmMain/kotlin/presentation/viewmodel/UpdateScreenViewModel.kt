@@ -17,12 +17,7 @@ import kotlinx.coroutines.flow.update
 import presentation.effect.UpdateScreenEffect
 import presentation.state.UpdateState
 import presentation.state.UpdateStatus
-import shouldSkipUpdate
 import kotlin.time.Duration.Companion.milliseconds
-
-internal expect suspend fun platformRegisterServiceWorker(): Boolean
-
-internal expect suspend fun platformPushBuild(url: String, files: Map<String, ByteArray>): Boolean
 
 /**
  * Сообщение о сбое проверки обновлений, когда исключение не описало причину.
@@ -32,7 +27,7 @@ private const val MANIFEST_ERROR_MESSAGE = "Не удалось проверит
 internal class UpdateScreenViewModel(
     private val navigator: AppNavigator,
     private val updater: AppUpdater,
-    private val isUpdateSkippable: () -> Boolean = { shouldSkipUpdate() },
+    private val isUpdateSkippable: () -> Boolean,
     private val registerServiceWorker: suspend () -> Boolean = { platformRegisterServiceWorker() },
     private val pushBuild: suspend (url: String, files: Map<String, ByteArray>) -> Boolean =
         { url, files -> platformPushBuild(url, files) },
@@ -71,9 +66,9 @@ internal class UpdateScreenViewModel(
             if (updateDecision is UpdateDecision.UpdateAvailable) buildUrl = updateDecision.url
 
             if (isUpdateSkippable()) {
-                // Сборку удерживает Service Worker, поэтому ставить нечего. Если
-                // проверка обновлений не удалась, сообщаем об этом и оставляем
-                // пользователю возможность повторить, а не молча уходим с экрана.
+                // Установка выполняется платформой, поэтому при актуальной версии
+                // ставить нечего. Если проверка не удалась, сообщаем об этом и
+                // оставляем пользователю возможность повторить.
                 if (updateDecision is UpdateDecision.ManifestError) {
                     showError(updateDecision.error.message ?: MANIFEST_ERROR_MESSAGE)
                     return@launch
@@ -136,9 +131,9 @@ internal class UpdateScreenViewModel(
             )
         }
 
-        val swControlled = registerServiceWorker()
-        if (!swControlled) {
-            showError("Service Worker недоступен: установка не может завершиться")
+        val canInstall = registerServiceWorker()
+        if (!canInstall) {
+            showError("Платформа не готова к установке: установка не может завершиться")
             return
         }
 
@@ -146,7 +141,7 @@ internal class UpdateScreenViewModel(
         if (files != null) {
             val pushed = pushBuild(buildUrl, files)
             if (!pushed) {
-                showError("Не удалось передать сборку в Service Worker")
+                showError("Не удалось передать сборку платформе")
                 return
             }
         }

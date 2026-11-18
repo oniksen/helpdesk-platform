@@ -19,17 +19,11 @@ kotlin {
 
     sourceSets {
         commonMain.dependencies {
-            implementation(projects.core.architecture)
-            implementation(projects.core.exception)
             implementation(projects.core.network.api)
             api(projects.core.update.api)
 
             implementation(libs.bundles.ktor)
             implementation(libs.kotlinx.coroutines.core)
-        }
-        jsMain.dependencies {
-            implementation(npm("jszip", "3.10.1"))
-            implementation(libs.wrappers.browser)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)

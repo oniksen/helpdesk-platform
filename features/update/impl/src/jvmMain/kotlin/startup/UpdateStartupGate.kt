@@ -6,22 +6,18 @@ import UpdateDecision
 import UpdateScreenRoute
 import androidx.navigation3.runtime.NavKey
 import kotlinx.coroutines.CancellationException
-import shouldSkipUpdate
 
 /**
  * Проверка версии сборки при каждом запуске приложения.
  *
- * Экран обновления доступен только когда приложение запущено из shell, поэтому
- * для уже установленной сборки проверка выполняется здесь: если сервер отдаёт
- * более новую версию, приложение открывает экран обновления.
+ * Если сервер отдаёт более новую версию, приложение открывает экран обновления.
  *
  * @param updater источник данных о наличии обновления.
- * @param isUpdateSkippable определяет, обслуживает ли Service Worker текущую
- * страницу собственной сборкой. Если нет, запуск решает shell.
+ * @param isUpdateSkippable определяет, нужно ли выполнять проверку при запуске.
  */
 class UpdateStartupGate(
     private val updater: AppUpdater,
-    private val isUpdateSkippable: () -> Boolean = { shouldSkipUpdate() },
+    private val isUpdateSkippable: () -> Boolean,
 ) : AppStartupGate {
     private var checked = false
 

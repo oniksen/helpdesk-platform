@@ -1,4 +1,4 @@
-import web.storage.localStorage
+import kotlinx.browser.localStorage
 
 actual class CurrentChannelProviderImpl : CurrentChannelProvider {
     actual override fun provide(): String? {

@@ -169,7 +169,7 @@ class UpdateScreenViewModelTest {
     }
 
     @Test
-    fun `reports an error when service worker does not take control`() = runTest {
+    fun `reports an error when the platform is not ready to install`() = runTest {
         val dispatcher = mainDispatcher()
         val updater = updaterReturning(UpdateDecision.UpdateAvailable(UPDATE_URL))
         val push = RecordingBuildPush()
@@ -183,12 +183,12 @@ class UpdateScreenViewModelTest {
 
         advanceUntilIdle()
 
-        assertNull(push.build, "Без контроля Service Worker сборка не должна передаваться")
-        assertError(viewModel, "Service Worker недоступен: установка не может завершиться")
+        assertNull(push.build, "Без готовности платформы сборка не должна передаваться")
+        assertError(viewModel, "Платформа не готова к установке: установка не может завершиться")
     }
 
     @Test
-    fun `reports an error when the build cannot be handed to service worker`() = runTest {
+    fun `reports an error when the build cannot be handed to the platform`() = runTest {
         val dispatcher = mainDispatcher()
         val updater = updaterReturning(UpdateDecision.UpdateAvailable(UPDATE_URL))
         val viewModel = createViewModel(
@@ -200,7 +200,7 @@ class UpdateScreenViewModelTest {
 
         advanceUntilIdle()
 
-        assertError(viewModel, "Не удалось передать сборку в Service Worker")
+        assertError(viewModel, "Не удалось передать сборку платформе")
     }
 
     @Test

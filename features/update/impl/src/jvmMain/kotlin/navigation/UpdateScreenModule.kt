@@ -26,7 +26,8 @@ class UpdateScreenModule : RootNavModule {
     ): NavEntry<*> = NavEntry(key = key as UpdateScreenRoute) {
         val viewModel = UpdateScreenViewModel(
             navigator = navigator,
-            updater = koinInject()
+            updater = koinInject(),
+            isUpdateSkippable = { true },
         )
 
         UpdateScreen(

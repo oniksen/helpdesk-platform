@@ -8,14 +8,10 @@ plugins {
 }
 
 kotlin {
-    js {
-        browser()
-        binaries.executable()
-    }
     jvm()
 
     sourceSets {
-        commonMain.dependencies {
+        jvmMain.dependencies {
             implementation(projects.features.update.api)
             implementation(projects.core.update.api)
             implementation(projects.core.exception)
@@ -29,15 +25,10 @@ kotlin {
             implementation(libs.bundles.koin)
             implementation(libs.kotlinx.coroutines.core)
         }
-        jsMain.dependencies {
-            implementation(projects.core.update.impl)
-        }
-        commonTest.dependencies {
+        jvmTest.dependencies {
             implementation(projects.core.exception)
             implementation(libs.kotlin.test)
             implementation(libs.kotlinx.coroutines.test)
-        }
-        jvmTest.dependencies {
             implementation(libs.junit)
         }
     }

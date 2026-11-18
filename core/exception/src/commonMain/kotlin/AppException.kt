@@ -1,5 +1,3 @@
-// domain/exception/AppException.kt
-// domain/exception/AppException.kt
 sealed class AppException(
     message: String? = null,
     val userMessageId: Int? = null,
@@ -66,6 +64,49 @@ sealed class AppException(
         class InvalidArgument(
             message: String
         ) : ValidationError(message = message)
+    }
+
+    sealed class UpdateError(
+        message: String? = null,
+        userMessageId: Int? = null,
+        cause: Throwable? = null
+    ) : AppException(message, userMessageId, cause) {
+
+        /**
+         * Ошибка при проверке обновлений или работе с каналами/манифестом (например, канал не найден или устарел).
+         */
+        class CheckFailed(
+            val channel: String? = null,
+            message: String? = "Не удалось проверить наличие обновлений",
+            userMessageId: Int? = null,
+            cause: Throwable? = null
+        ) : UpdateError(message, userMessageId, cause)
+
+        /**
+         * Ошибка при скачивании файла обновления (например, обрыв загрузки, нехватка места на диске).
+         */
+        class DownloadFailed(
+            message: String? = "Ошибка при загрузке обновления",
+            userMessageId: Int? = null,
+            cause: Throwable? = null
+        ) : UpdateError(message, userMessageId, cause)
+
+        /**
+         * Файл скачался, но поврежден (не совпала контрольная сумма / хэш или подпись).
+         */
+        class CorruptedPackage(
+            message: String? = "Файл обновления поврежден",
+            userMessageId: Int? = null
+        ) : UpdateError(message, userMessageId)
+
+        /**
+         * Ошибка при установке (например, нет разрешений на установку из неизвестных источников или отказ системы).
+         */
+        class InstallFailed(
+            message: String? = "Не удалось установить обновление",
+            userMessageId: Int? = null,
+            cause: Throwable? = null
+        ) : UpdateError(message, userMessageId, cause)
     }
 
 

@@ -8,8 +8,9 @@ kotlin {
 
     sourceSets {
         commonMain.dependencies {
-            api(projects.core.network.api)
+            implementation(projects.core.exception)
 
+            api(projects.core.network.api)
             api(libs.kotlinx.coroutines.core)
         }
         jvmMain.dependencies {

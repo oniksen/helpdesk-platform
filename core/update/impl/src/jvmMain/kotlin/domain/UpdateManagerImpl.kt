@@ -66,6 +66,16 @@ class UpdateManagerImpl(
         println("[UpdateManager] Проверка обновлений не выполнена: ${error.message}")
     }.getOrNull()
 
+    override suspend fun hasNewVersion(currentSystemVersion: String, userEmail: String): Boolean {
+        val channelsManifest = updateDownloader.downloadChannelsManifest() ?: return false
+        val accessedChannels = channelsManifest.users[userEmail] ?: channelsManifest.default ?: return false
+
+        accessedChannels.selected?.let { channel ->
+            TODO()
+        }
+        TODO()
+    }
+
     override fun performUpdate(
         updateUrl: String,
         expectedHash: String,

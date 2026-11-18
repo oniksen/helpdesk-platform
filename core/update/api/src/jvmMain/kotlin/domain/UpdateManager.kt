@@ -30,6 +30,8 @@ interface UpdateManager {
      */
     suspend fun loadManifest(currentSystemVersion: String): UpdateManifest?
 
+    suspend fun hasNewVersion(currentSystemVersion: String, userEmail: String): Boolean
+
     /**
      * Запускает процесс установки обновления.
      *

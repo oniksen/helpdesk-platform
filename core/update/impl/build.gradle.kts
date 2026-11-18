@@ -19,6 +19,7 @@ kotlin {
 
     sourceSets {
         commonMain.dependencies {
+            implementation(projects.core.exception)
             implementation(projects.core.network.api)
             api(projects.core.update.api)
 

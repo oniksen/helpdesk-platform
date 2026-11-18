@@ -1,6 +1,7 @@
 package domain.port
 
 import DownloadStatus
+import domain.models.channels.ChannelsFile
 import domain.models.manifest.v2.UpdateManifest
 import kotlinx.coroutines.flow.Flow
 
@@ -19,6 +20,8 @@ interface UpdateDownloader {
      * если манифест недоступен или произошла ошибка.
      */
     suspend fun downloadUpdateManifest(): UpdateManifest?
+
+    suspend fun downloadChannelsManifest(): ChannelsFile?
 
     /**
      * Скачивает файл обновления по URL с отслеживанием прогресса.

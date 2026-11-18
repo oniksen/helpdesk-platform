@@ -3,6 +3,7 @@ package data.impl
 import DownloadStatus
 import KtorClient
 import data.UpdateDataSource
+import domain.models.channels.ChannelsFile
 import domain.models.manifest.v2.UpdateManifest
 import domain.port.UpdateDownloader
 import kotlinx.coroutines.flow.Flow
@@ -23,6 +24,13 @@ class UpdateDownloaderImpl(
         runCatching { dataSource.fetchManifest() }
             .onFailure { error ->
                 println("[UpdateDownloader] Манифест недоступен: ${error.message}")
+            }
+            .getOrNull()
+
+    override suspend fun downloadChannelsManifest(): ChannelsFile? =
+        runCatching { dataSource.fetchChannelsFile() }
+            .onFailure { error ->
+                println("[UpdateDownloader] Файл каналов недоступен: ${error.message}")
             }
             .getOrNull()
 

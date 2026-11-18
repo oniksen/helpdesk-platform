@@ -18,7 +18,7 @@ data class ChannelAccess(
  * @property users доступ по email пользователя (ключи в нижнем регистре).
  */
 data class ChannelsFile(
-    val default: ChannelAccess?,
+    val default: ChannelAccess,
     val users: Map<String, ChannelAccess>,
 ) {
     /**

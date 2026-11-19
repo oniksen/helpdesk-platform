@@ -4,7 +4,7 @@ import org.gradle.api.tasks.bundling.Zip
 import javax.xml.parsers.DocumentBuilderFactory
 
 val webVersion = WebVersion(0, 3, 0, AppVersion.Stage.Alpha, 6)
-val jvmVersion = JVMVersion(0, 1, 0, AppVersion.Stage.Alpha, 0)
+val jvmVersion = JVMVersion(0, 1, 0, AppVersion.Stage.Alpha, 1)
 
 // Техническая версия JVM-приложения для упаковки (nativeDistributions.packageVersion).
 extra["jvmSystemVersion"] = jvmVersion.createSystemVersion()

@@ -4,6 +4,7 @@ plugins {
     alias(libs.plugins.kotlinMultiplatform)
     alias(libs.plugins.composeMultiplatform)
     alias(libs.plugins.composeCompiler)
+    alias(libs.plugins.buildkonfig)
 }
 
 // Техническая версия JVM-сборки, задаётся в корневом build.gradle.kts.

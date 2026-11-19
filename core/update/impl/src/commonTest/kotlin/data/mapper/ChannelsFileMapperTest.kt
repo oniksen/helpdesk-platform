@@ -3,9 +3,9 @@ package data.mapper
 import data.dto.channels.ChannelAccessDto
 import data.dto.channels.ChannelsFileDto
 import data.mapper.toDomain
+import domain.models.channels.ChannelAccess
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertNull
 
 class ChannelsFileMapperTest {
 
@@ -44,11 +44,20 @@ class ChannelsFileMapperTest {
     }
 
     @Test
-    fun `maps missing default and users to empty file`() {
+    fun `maps missing default and users to empty access`() {
         val file = ChannelsFileDto().toDomain()
+        val emptyAccess = ChannelAccess(allowed = emptyList(), selected = null)
 
-        assertNull(file.default, "Отсутствующий default должен маппиться в null")
+        assertEquals(
+            emptyAccess,
+            file.default,
+            "Отсутствующий default должен маппиться в пустой доступ",
+        )
         assertEquals(emptyMap(), file.users, "Отсутствующие users должны маппиться в пустую карту")
-        assertNull(file.accessFor("anyone@corp.ru"), "Без default доступа у неизвестного пользователя нет")
+        assertEquals(
+            emptyAccess,
+            file.accessFor("anyone@corp.ru"),
+            "Без default у неизвестного пользователя должен быть пустой доступ",
+        )
     }
 }

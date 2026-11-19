@@ -32,10 +32,21 @@ object ManifestFixtures {
         macos: String? = null,
         windows: String? = null,
         web: String? = null,
-    ) = Release(
+    ) = releaseWith(
         macos = macos?.let(::target),
         web = web?.let(::target),
         windows = windows?.let(::target),
+    )
+
+    /** Релиз с готовыми таргетами (нужен для проверки hash/size в пайплайне). */
+    fun releaseWith(
+        macos: TargetData? = null,
+        windows: TargetData? = null,
+        web: TargetData? = null,
+    ) = Release(
+        macos = macos,
+        web = web,
+        windows = windows,
     )
 
     fun manifest(

@@ -11,8 +11,9 @@ import kotlinx.coroutines.flow.Flow
 /**
  * Реализация [UpdateDownloader] для JVM-приложения.
  *
- * Манифест читается существующим v4-источником [UpdateDataSource] и на клиенте
- * не кэшируется: каждый вызов [downloadUpdateManifest] — новый запрос.
+ * Манифест и файл каналов читаются существующим v4-источником [UpdateDataSource]
+ * и на клиенте не кэшируются: каждый вызов — новый запрос.
+ * Ошибки не глушатся: причина нужна менеджеру для состояния проверки.
  * Скачивание архива делегируется слою сети.
  */
 class UpdateDownloaderImpl(
@@ -20,19 +21,9 @@ class UpdateDownloaderImpl(
     private val client: KtorClient,
 ) : UpdateDownloader {
 
-    override suspend fun downloadUpdateManifest(): UpdateManifest? =
-        runCatching { dataSource.fetchManifest() }
-            .onFailure { error ->
-                println("[UpdateDownloader] Манифест недоступен: ${error.message}")
-            }
-            .getOrNull()
+    override suspend fun downloadUpdateManifest(): UpdateManifest = dataSource.fetchManifest()
 
-    override suspend fun downloadChannelsManifest(): ChannelsFile? =
-        runCatching { dataSource.fetchChannelsFile() }
-            .onFailure { error ->
-                println("[UpdateDownloader] Файл каналов недоступен: ${error.message}")
-            }
-            .getOrNull()
+    override suspend fun downloadChannelsManifest(): ChannelsFile = dataSource.fetchChannelsFile()
 
     override suspend fun downloadWithProgress(
         url: String,

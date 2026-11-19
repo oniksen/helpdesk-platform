@@ -1,6 +1,5 @@
 package org.lpmti.helpdeskplatform
 
-import CurrentChannelProvider
 import DiProvider
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -10,20 +9,22 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
-import currentTechnicalVersion
-import domain.UpdateChannel
-import domain.UpdateManager
-import domain.currentUpdatePlatform
-import domain.targetFor
+import domain.AppUpdateManager
+import domain.model.CheckUpdateState
 
 fun main() {
     val koinApplication = DiProvider(JvmAppDefinition()).startKoin()
-    val updateManager = koinApplication.koin.get<UpdateManager>()
-    val channelProvider = koinApplication.koin.get<CurrentChannelProvider>()
+    val updateManager = koinApplication.koin.get<AppUpdateManager>()
 
     application {
         LaunchedEffect(Unit) {
-            applyUpdateIfAvailable(updateManager, channelProvider)
+            // Проверка при старте: результат публикуется в checkUpdateState
+            // до возврата из checkUpdate, поэтому его можно прочитать сразу.
+            updateManager.checkUpdate(email = "bardakov.roman99@gmail.com")
+
+            if (updateManager.checkUpdateState.value is CheckUpdateState.Available) {
+                updateManager.startUpdate()
+            }
         }
 
         Window(
@@ -40,27 +41,4 @@ fun main() {
             }
         }
     }
-}
-
-/**
- * Однократная проверка обновления при старте.
- *
- * Любой шаг может не дать результата (манифест недоступен, таргет платформы
- * не опубликован, версия актуальна) — тогда приложение просто работает
- * в текущей версии, без экрана обновления.
- */
-private suspend fun applyUpdateIfAvailable(
-    updateManager: UpdateManager,
-    channelProvider: CurrentChannelProvider,
-) {
-    val manifest = updateManager.loadManifest(currentTechnicalVersion()) ?: return
-    val platform = currentUpdatePlatform() ?: return
-    val channel = channelProvider.provide() ?: UpdateChannel.PROD
-    val target = manifest.targetFor(channel, platform) ?: return
-
-    updateManager.performUpdate(
-        updateUrl = target.link,
-        expectedHash = target.hash,
-        expectedSize = target.size,
-    )
 }

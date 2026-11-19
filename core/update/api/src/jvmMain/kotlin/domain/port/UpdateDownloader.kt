@@ -6,22 +6,19 @@ import domain.models.manifest.v2.UpdateManifest
 import kotlinx.coroutines.flow.Flow
 
 /**
- * Порт для загрузки обновлений.
+ * Порт для загрузки данных обновлений.
  *
- * Определяет контракт для получения манифеста обновления и скачивания
- * архива с отслеживанием прогресса.
+ * Манифест и файл каналов бросают исключение при сетевой ошибке,
+ * не-2xx ответе или ошибке разбора: вызывающий решает, где нужен
+ * fallback, а где — состояние ошибки с причиной.
  */
 interface UpdateDownloader {
 
-    /**
-     * Загружает и парсит манифест обновления с сервера.
-     *
-     * @return [UpdateManifest] с информацией о последней версии, или `null`,
-     * если манифест недоступен или произошла ошибка.
-     */
-    suspend fun downloadUpdateManifest(): UpdateManifest?
+    /** Загружает и парсит манифест обновления. */
+    suspend fun downloadUpdateManifest(): UpdateManifest
 
-    suspend fun downloadChannelsManifest(): ChannelsFile?
+    /** Загружает и парсит файл каналов пользователей. */
+    suspend fun downloadChannelsManifest(): ChannelsFile
 
     /**
      * Скачивает файл обновления по URL с отслеживанием прогресса.
@@ -33,5 +30,5 @@ interface UpdateDownloader {
     suspend fun downloadWithProgress(
         url: String,
         destinationFilePath: String
-    ) : Flow<DownloadStatus>
+    ): Flow<DownloadStatus>
 }

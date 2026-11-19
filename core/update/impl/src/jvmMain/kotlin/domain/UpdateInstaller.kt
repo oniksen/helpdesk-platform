@@ -1,24 +1,14 @@
 package domain
 
-import CurrentChannelProvider
 import DownloadStatus
+import domain.model.AvailableUpdate
 import domain.model.CurrentStageState
 import domain.model.UpdateState
-import domain.model.response.access.DevChannelAccess
-import domain.model.response.action.ActionResponse
-import domain.models.manifest.v2.UpdateManifest
 import domain.port.UpdateDownloader
-import domain.port.VersionActions
 import domain.port.ZipExtractor
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.catch
-import kotlinx.coroutines.launch
-import normalizeFromTechnical
 import platform.AppInstallDirResolver
 import java.io.File
 import java.security.MessageDigest
@@ -27,191 +17,172 @@ import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 
 /**
- * Реализация [UpdateManager] для JVM-приложения.
+ * Полный пайплайн установки обновления JVM-приложения.
  *
- * ## Цикл установки
- * [performUpdate] скачивает архив с прогрессом, после чего [installUpdate]
- * проходит этапы: верификация (размер и SHA-256) → проверка целостности zip →
- * распаковка → замена файлов → очистка → перезапуск.
+ * Перенесён из проверенной реализации `UpdateManagerImpl` без изменения
+ * последовательности этапов: загрузка → верификация (размер и SHA-256) →
+ * проверка целостности zip → распаковка → замена файлов → очистка →
+ * перезапуск.
  *
- * Замена файлов идёт через переименование занятого файла в `.bak` (обход блокировки
- * файлов на Windows) и пропускает встроенную JRE, иначе приложение теряет рантайм.
+ * Замена файлов идёт через переименование занятого файла в `.bak` (обход
+ * блокировки файлов на Windows) и пропускает встроенную JRE, иначе приложение
+ * теряет рантайм.
  *
- * Любая ошибка этапа переводит [updateState] в `Error(message)` и прерывает установку:
- * приложение продолжает работать в текущей версии.
+ * Любая ошибка этапа переводит состояние в `CurrentStageState.Error` и
+ * прерывает установку: приложение продолжает работать в текущей версии.
  */
-class UpdateManagerImpl(
+internal class UpdateInstaller(
     private val updateDownloader: UpdateDownloader,
     private val zipExtractor: ZipExtractor,
     private val appRestarter: AppRestarter,
     private val appInstallDirResolver: AppInstallDirResolver,
-    private val versionActions: VersionActions,
-    private val channelProvider: CurrentChannelProvider,
-    private val platform: UpdatePlatform? = currentUpdatePlatform(),
-    private val scope: CoroutineScope = CoroutineScope(Dispatchers.Default + SupervisorJob()),
-) : UpdateManager {
+    private val platform: UpdatePlatform,
+    private val downloadFileFactory: () -> File = { createDownloadFile(platform) },
+) {
+    /** Приёмник состояний текущей установки. */
+    private var stateSink: (UpdateState) -> Unit = {}
 
-    override val updateState: Flow<UpdateState>
-        field = MutableStateFlow<UpdateState>(UpdateState.Idle(stage = CurrentStageState.Idle))
+    /** Последнее опубликованное состояние — нужно, чтобы не дублировать ошибку этапа. */
+    private var lastEmittedState: UpdateState? = null
 
-    override suspend fun loadManifest(currentSystemVersion: String): UpdateManifest? = runCatching {
-        val manifest = updateDownloader.downloadUpdateManifest() ?: return@runCatching null
-        val currentPlatform = platform ?: return@runCatching null
-        val channel = channelProvider.provide() ?: UpdateChannel.PROD
-        val target = manifest.targetFor(channel, currentPlatform) ?: return@runCatching null
-        val availableVersion = target.version.normalizeFromTechnical()
-        val installedVersion = currentSystemVersion.normalizeFromTechnical()
-        if (availableVersion > installedVersion) manifest else null
-    }.onFailure { error ->
-        println("[UpdateManager] Проверка обновлений не выполнена: ${error.message}")
-    }.getOrNull()
-
-    override suspend fun hasNewVersion(currentSystemVersion: String, userEmail: String): Boolean {
-        val channelsManifest = updateDownloader.downloadChannelsManifest() ?: return false
-        val accessedChannels = channelsManifest.users[userEmail] ?: channelsManifest.default ?: return false
-
-        accessedChannels.selected?.let { channel ->
-            TODO()
-        }
-        TODO()
-    }
-
-    override fun performUpdate(
-        updateUrl: String,
-        expectedHash: String,
-        expectedSize: Long,
+    /**
+     * Запускает установку обновления.
+     *
+     * @param update Данные обновления из манифеста.
+     * @param onState Приёмник состояний процесса.
+     */
+    suspend fun install(
+        update: AvailableUpdate,
+        onState: (UpdateState) -> Unit,
     ) {
-        val destinationFile = createDownloadFile()
-        println("[UpdateManager] Загрузка обновления: $destinationFile")
+        stateSink = onState
 
-        scope.launch {
-            updateDownloader.downloadWithProgress(
-                url = updateUrl,
-                destinationFilePath = destinationFile.path,
-            )
-                .catch { error ->
-                    updateState.emit(UpdateState.Loading(CurrentStageState.Error(error.localizedMessage)))
-                    println("[UpdateManager] Ошибка загрузки обновления: ${error.message}")
-                }
-                .collect { status ->
-                    when (status) {
-                        is DownloadStatus.Progress -> {
-                            val progress = status.percentage * PERCENT_SCALE
-                            updateState.emit(UpdateState.Loading(CurrentStageState.Progress(progress)))
-                        }
+        val destinationFile = try {
+            downloadFileFactory()
+        } catch (e: CancellationException) {
+            throw e
+        } catch (error: Exception) {
+            emit(UpdateState.Loading(CurrentStageState.Error(error.localizedMessage)))
+            println("[UpdateInstaller] Не удалось подготовить файл обновления: ${error.message}")
+            return
+        }
+        println("[UpdateInstaller] Загрузка обновления: $destinationFile")
 
-                        is DownloadStatus.Success -> {
-                            updateState.emit(UpdateState.Loading(CurrentStageState.Success))
-                            delay(STEP_DELAY_MILLIS.milliseconds)
-                            installUpdate(File(status.filePath), expectedHash, expectedSize)
-                        }
+        emit(UpdateState.Loading(CurrentStageState.Progress(0f)))
+
+        updateDownloader.downloadWithProgress(
+            url = update.url,
+            destinationFilePath = destinationFile.path,
+        )
+            .catch { error ->
+                if (error is CancellationException) throw error
+                emit(UpdateState.Loading(CurrentStageState.Error(error.localizedMessage)))
+                println("[UpdateInstaller] Ошибка загрузки обновления: ${error.message}")
+            }
+            .collect { status ->
+                when (status) {
+                    is DownloadStatus.Progress -> {
+                        val progress = status.percentage * PERCENT_SCALE
+                        emit(UpdateState.Loading(CurrentStageState.Progress(progress)))
+                    }
+
+                    is DownloadStatus.Success -> {
+                        emit(UpdateState.Loading(CurrentStageState.Success))
+                        delay(STEP_DELAY_MILLIS.milliseconds)
+                        installArchive(File(status.filePath), update)
                     }
                 }
-        }
+            }
     }
 
-    override suspend fun markAsStable(): ActionResponse? = versionActions.markAsStable()
-
-    override suspend fun reject(reason: String): ActionResponse? = versionActions.reject(reason)
-
-    override suspend fun publish(): ActionResponse? = versionActions.publish()
-
-    override suspend fun devChannelAccess(): DevChannelAccess? = versionActions.devChannelAccess()
-
-    /** Каталог загрузки — тот же, что у desktop-приложения на соответствующей ОС. */
-    private fun createDownloadFile(): File {
-        val userHome = System.getProperty("user.home")
-        val updatesDir = when (platform) {
-            UpdatePlatform.WINDOWS -> File(userHome, WINDOWS_UPDATES_DIR)
-            UpdatePlatform.MACOS -> File(userHome, MACOS_UPDATES_DIR)
-            else -> File(userHome, OTHER_UPDATES_DIR)
-        }
-        updatesDir.mkdirs()
-        return File(updatesDir, UPDATE_FILE_NAME)
-    }
-
-    private suspend fun installUpdate(file: File, expectedHash: String, expectedSize: Long) {
+    private suspend fun installArchive(file: File, update: AvailableUpdate) {
         val tempDir = File(
             System.getProperty("java.io.tmpdir"),
             "app_extracted_${System.currentTimeMillis()}",
         )
-        val installDir = appInstallDirResolver.getAppInstallDir(this::class.java)
 
         try {
-            verifyArchive(file, expectedHash, expectedSize)
+            val installDir = appInstallDirResolver.getAppInstallDir(this::class.java)
+            verifyArchive(file, update.hash, update.size)
             checkArchiveIntegrity(file)
             unpackArchive(file, tempDir)
             replaceFiles(tempDir, installDir)
             cleanupAfterInstall(installDir, tempDir)
             restartApplication()
-        } catch (error: Exception) {
-            println("[UpdateManager] Установка обновления прервана: ${error.message}")
+        } catch (e: CancellationException) {
             if (tempDir.exists()) tempDir.deleteRecursively()
+            throw e
+        } catch (error: Exception) {
+            println("[UpdateInstaller] Установка обновления прервана: ${error.message}")
+            if (tempDir.exists()) tempDir.deleteRecursively()
+            if (!lastEmittedState.hasStageError()) {
+                emit(UpdateState.Installation(CurrentStageState.Error(error.localizedMessage)))
+            }
         }
     }
 
     /** Верификация обязательна: проверяются и размер, и SHA-256 скачанного архива. */
     private suspend fun verifyArchive(file: File, expectedHash: String, expectedSize: Long) {
-        updateState.emit(UpdateState.Verification(CurrentStageState.Progress(0f)))
+        emit(UpdateState.Verification(CurrentStageState.Progress(0f)))
 
         val actualSize = file.length()
         if (actualSize != expectedSize) {
             val message = "Размер архива не совпал: ожидалось $expectedSize байт, получено $actualSize"
-            updateState.emit(UpdateState.Verification(CurrentStageState.Error(message)))
+            emit(UpdateState.Verification(CurrentStageState.Error(message)))
             error(message)
         }
 
         val actualHash = file.computeSha256()
-        updateState.emit(UpdateState.Verification(CurrentStageState.Progress(50f)))
+        emit(UpdateState.Verification(CurrentStageState.Progress(50f)))
         if (!actualHash.equals(expectedHash, ignoreCase = true)) {
             val message = "Хеш архива не совпал: ожидался $expectedHash, получен $actualHash"
-            updateState.emit(UpdateState.Verification(CurrentStageState.Error(message)))
+            emit(UpdateState.Verification(CurrentStageState.Error(message)))
             error(message)
         }
 
-        updateState.emit(UpdateState.Verification(CurrentStageState.Progress(100f)))
+        emit(UpdateState.Verification(CurrentStageState.Progress(100f)))
         delay(STEP_DELAY_MILLIS.milliseconds)
-        updateState.emit(UpdateState.Verification(CurrentStageState.Success))
+        emit(UpdateState.Verification(CurrentStageState.Success))
         delay(STEP_DELAY_MILLIS.milliseconds)
     }
 
     private suspend fun checkArchiveIntegrity(file: File) {
-        updateState.emit(UpdateState.IntegrityChecking(CurrentStageState.Progress(0f)))
+        emit(UpdateState.IntegrityChecking(CurrentStageState.Progress(0f)))
 
         if (!zipExtractor.verify(file)) {
             val message = "Архив обновления повреждён: проверка целостности zip не пройдена"
-            updateState.emit(UpdateState.IntegrityChecking(CurrentStageState.Error(message)))
+            emit(UpdateState.IntegrityChecking(CurrentStageState.Error(message)))
             error(message)
         }
 
-        updateState.emit(UpdateState.IntegrityChecking(CurrentStageState.Progress(100f)))
+        emit(UpdateState.IntegrityChecking(CurrentStageState.Progress(100f)))
         delay(STEP_DELAY_MILLIS.milliseconds)
-        updateState.emit(UpdateState.IntegrityChecking(CurrentStageState.Success))
+        emit(UpdateState.IntegrityChecking(CurrentStageState.Success))
         delay(STEP_DELAY_MILLIS.milliseconds)
     }
 
     private suspend fun unpackArchive(file: File, tempDir: File) {
-        updateState.emit(UpdateState.Unpacking(CurrentStageState.Progress(0f)))
+        emit(UpdateState.Unpacking(CurrentStageState.Progress(0f)))
         tempDir.mkdirs()
 
         if (!zipExtractor.extract(file, tempDir)) {
             val message = "Не удалось распаковать архив обновления"
-            updateState.emit(UpdateState.Unpacking(CurrentStageState.Error(message)))
+            emit(UpdateState.Unpacking(CurrentStageState.Error(message)))
             error(message)
         }
 
-        updateState.emit(UpdateState.Unpacking(CurrentStageState.Progress(100f)))
+        emit(UpdateState.Unpacking(CurrentStageState.Progress(100f)))
         delay(STEP_DELAY_MILLIS.milliseconds)
-        updateState.emit(UpdateState.Unpacking(CurrentStageState.Success))
+        emit(UpdateState.Unpacking(CurrentStageState.Success))
         delay(STEP_DELAY_MILLIS.milliseconds)
     }
 
     private suspend fun replaceFiles(tempDir: File, installDir: File) {
-        updateState.emit(UpdateState.Installation(CurrentStageState.Progress(0f)))
+        emit(UpdateState.Installation(CurrentStageState.Progress(0f)))
         replaceFilesSafely(tempDir, installDir)
-        updateState.emit(UpdateState.Installation(CurrentStageState.Progress(100f)))
+        emit(UpdateState.Installation(CurrentStageState.Progress(100f)))
         delay(STEP_DELAY_MILLIS.milliseconds)
-        updateState.emit(UpdateState.Installation(CurrentStageState.Success))
+        emit(UpdateState.Installation(CurrentStageState.Success))
         delay(STEP_DELAY_MILLIS.milliseconds)
     }
 
@@ -221,11 +192,11 @@ class UpdateManagerImpl(
      * не выполняет `finally`.
      */
     private suspend fun cleanupAfterInstall(installDir: File, tempDir: File) {
-        updateState.emit(UpdateState.CleaningTemporaryFiles(CurrentStageState.Progress()))
+        emit(UpdateState.CleaningTemporaryFiles(CurrentStageState.Progress()))
         cleanupBackupFiles(installDir)
         reSignApplication()
         tempDir.deleteRecursively()
-        updateState.emit(UpdateState.CleaningTemporaryFiles(CurrentStageState.Success))
+        emit(UpdateState.CleaningTemporaryFiles(CurrentStageState.Success))
         delay(STEP_DELAY_MILLIS.milliseconds)
     }
 
@@ -233,7 +204,7 @@ class UpdateManagerImpl(
         var secondsRemaining = RESTART_SECONDS
 
         while (secondsRemaining > 0) {
-            updateState.emit(UpdateState.Restarting(secondsRemaining))
+            emit(UpdateState.Restarting(secondsRemaining))
             secondsRemaining -= 1
             delay(1.seconds)
         }
@@ -262,7 +233,7 @@ class UpdateManagerImpl(
         if (platform != UpdatePlatform.MACOS) return
 
         val appBundle = appInstallDirResolver.getAppBundlePath(this::class.java) ?: return
-        println("[UpdateManager] Переподпись приложения: ${appBundle.absolutePath}")
+        println("[UpdateInstaller] Переподпись приложения: ${appBundle.absolutePath}")
 
         try {
             val process = ProcessBuilder(
@@ -275,12 +246,12 @@ class UpdateManagerImpl(
             ).start()
             val exited = process.waitFor(CODESIGN_TIMEOUT_SECONDS, TimeUnit.SECONDS)
             if (exited && process.exitValue() == 0) {
-                println("[UpdateManager] Переподпись завершена")
+                println("[UpdateInstaller] Переподпись завершена")
             } else {
-                println("[UpdateManager] Предупреждение: codesign вернул код ${process.exitValue()}")
+                println("[UpdateInstaller] Предупреждение: codesign вернул код ${process.exitValue()}")
             }
         } catch (error: Exception) {
-            println("[UpdateManager] Предупреждение: codesign не выполнен: ${error.message}")
+            println("[UpdateInstaller] Предупреждение: codesign не выполнен: ${error.message}")
         }
     }
 
@@ -311,7 +282,7 @@ class UpdateManagerImpl(
             }
 
             progress += fileToPercentage
-            updateState.emit(UpdateState.Installation(CurrentStageState.Progress(progress)))
+            emit(UpdateState.Installation(CurrentStageState.Progress(progress)))
         }
     }
 
@@ -340,12 +311,12 @@ class UpdateManagerImpl(
         path == MACOS_RUNTIME_DIR ||
         path.startsWith("$MACOS_RUNTIME_DIR/")
 
-    private companion object {
-        const val UPDATE_FILE_NAME = "helpdesk-update.zip"
-        const val WINDOWS_UPDATES_DIR = "AppData/Roaming/Helpdesk/updates"
-        const val MACOS_UPDATES_DIR = "Library/Application Support/Helpdesk/updates"
-        const val OTHER_UPDATES_DIR = ".helpdesk/updates"
+    private fun emit(state: UpdateState) {
+        lastEmittedState = state
+        stateSink(state)
+    }
 
+    private companion object {
         const val RUNTIME_DIR = "runtime"
         const val MACOS_RUNTIME_DIR = "Contents/runtime"
         const val BACKUP_SUFFIX = ".bak"
@@ -355,6 +326,23 @@ class UpdateManagerImpl(
         const val RESTART_SECONDS = 5
         const val CODESIGN_TIMEOUT_SECONDS = 30L
     }
+}
+
+private const val UPDATE_FILE_NAME = "helpdesk-update.zip"
+private const val WINDOWS_UPDATES_DIR = "AppData/Roaming/Helpdesk/updates"
+private const val MACOS_UPDATES_DIR = "Library/Application Support/Helpdesk/updates"
+private const val OTHER_UPDATES_DIR = ".helpdesk/updates"
+
+/** Каталог загрузки — тот же, что у desktop-приложения на соответствующей ОС. */
+internal fun createDownloadFile(platform: UpdatePlatform?): File {
+    val userHome = System.getProperty("user.home")
+    val updatesDir = when (platform) {
+        UpdatePlatform.WINDOWS -> File(userHome, WINDOWS_UPDATES_DIR)
+        UpdatePlatform.MACOS -> File(userHome, MACOS_UPDATES_DIR)
+        else -> File(userHome, OTHER_UPDATES_DIR)
+    }
+    updatesDir.mkdirs()
+    return File(updatesDir, UPDATE_FILE_NAME)
 }
 
 /** Вычисляет SHA-256 хеш файла для верификации целостности скачанного архива. */

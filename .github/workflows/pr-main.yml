@@ -217,6 +217,28 @@ jobs:
       - name: Build JVM package
         run: ./gradlew versionsJson build-jvm-app writeJvmMetadata
 
+      - name: Show jpackage diagnostics
+        if: failure()
+        run: |
+          set -euo pipefail
+          echo "== jpackage logs =="
+          find jvmApp/build/compose/logs -type f -name '*.txt' -print -exec cat {} \; || true
+          echo "== jpackage args =="
+          cat jvmApp/build/compose/tmp/createReleaseDistributable.args.txt || true
+          echo "== java =="
+          java -version 2>&1 || true
+          echo "== jpackage =="
+          jpackage --version 2>&1 || true
+
+      - name: Upload jpackage logs
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: jvm-macos-jpackage-logs
+          path: jvmApp/build/compose/logs
+          retention-days: 2
+          if-no-files-found: warn
+
       - name: Upload JVM artifact
         uses: actions/upload-artifact@v4
         with:

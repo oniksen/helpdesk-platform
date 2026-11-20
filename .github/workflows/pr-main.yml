@@ -22,6 +22,7 @@ jobs:
   versions:
     name: Versions
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     outputs:
       web_ui: ${{ steps.versions.outputs.web_ui }}
       jvm_tech: ${{ steps.versions.outputs.jvm_tech }}
@@ -49,12 +50,66 @@ jobs:
           echo "web_ui=$(jq -r '.web.ui' dist/metadata/versions.json)" >> "$GITHUB_OUTPUT"
           echo "jvm_tech=$(jq -r '.jvm.technical' dist/metadata/versions.json)" >> "$GITHUB_OUTPUT"
 
+  cleanup:
+    name: Cleanup artifacts
+    needs: checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      actions: write
+
+    steps:
+      - name: Delete artifacts of previous runs
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          repo="$GITHUB_REPOSITORY"
+          current="$GITHUB_RUN_ID"
+          ids=()
+          page=1
+
+          # Артефакты предыдущих сборок копятся и упираются в бесплатные 500 МБ,
+          # поэтому перед новой сборкой освобождаем место целиком.
+          while :; do
+            body=$(gh api "/repos/${repo}/actions/artifacts?per_page=100&page=${page}")
+            count=$(jq -r '.artifacts | length' <<<"$body")
+            [ "$count" -eq 0 ] && break
+
+            while IFS= read -r id; do
+              if [ -n "$id" ]; then
+                ids+=("$id")
+              fi
+            done < <(jq -r --arg run "$current" '
+              .artifacts[]
+              | select(.expired == false)
+              | select(.workflow_run != null)
+              | select((.workflow_run.id | tostring) != $run)
+              | select(.name | test("^(web-|webshell-|jvm-windows-|jvm-macos-)"))
+              | .id' <<<"$body")
+
+            page=$((page + 1))
+          done
+
+          if [ "${#ids[@]}" -eq 0 ]; then
+            echo "Артефактов предыдущих сборок нет"
+            exit 0
+          fi
+
+          for id in "${ids[@]}"; do
+            gh api -X DELETE "/repos/${repo}/actions/artifacts/${id}" \
+              || echo "Артефакт ${id} уже удалён"
+          done
+          echo "Удалено артефактов: ${#ids[@]}"
+
   web:
     name: Web build
     needs:
-      - checks
+      - cleanup
       - versions
     runs-on: ubuntu-latest
+    timeout-minutes: 30
 
     steps:
       - name: Checkout repository
@@ -72,7 +127,7 @@ jobs:
           cache-read-only: true
 
       - name: Build webApplication and webShell packages
-        run: ./gradlew packageWebApp packageWebShell writeWebAppMetadata writeWebShellMetadata
+        run: ./gradlew versionsJson packageWebApp packageWebShell writeWebAppMetadata writeWebShellMetadata
 
       - name: Upload webApplication artifact
         uses: actions/upload-artifact@v4
@@ -83,7 +138,7 @@ jobs:
             dist/metadata/web-app.metadata.json
             dist/metadata/SHA256SUMS-web.txt
             dist/metadata/versions.json
-          retention-days: 90
+          retention-days: 2
           if-no-files-found: error
 
       - name: Upload webShell artifact
@@ -94,15 +149,16 @@ jobs:
             dist/packages/webshell-*.zip
             dist/metadata/web-shell.metadata.json
             dist/metadata/SHA256SUMS-webshell.txt
-          retention-days: 90
+          retention-days: 2
           if-no-files-found: error
 
   jvm-windows:
     name: JVM build (Windows)
     needs:
-      - checks
+      - cleanup
       - versions
     runs-on: windows-latest
+    timeout-minutes: 30
 
     steps:
       - name: Checkout repository
@@ -121,7 +177,7 @@ jobs:
 
       - name: Build JVM package
         shell: bash
-        run: ./gradlew build-jvm-app writeJvmMetadata
+        run: ./gradlew versionsJson build-jvm-app writeJvmMetadata
 
       - name: Upload JVM artifact
         uses: actions/upload-artifact@v4
@@ -132,15 +188,16 @@ jobs:
             dist/metadata/jvm-windows.metadata.json
             dist/metadata/SHA256SUMS-jvm-windows.txt
             dist/metadata/versions.json
-          retention-days: 90
+          retention-days: 2
           if-no-files-found: error
 
   jvm-macos:
     name: JVM build (macOS)
     needs:
-      - checks
+      - cleanup
       - versions
     runs-on: macos-14
+    timeout-minutes: 30
 
     steps:
       - name: Checkout repository
@@ -158,7 +215,7 @@ jobs:
           cache-read-only: true
 
       - name: Build JVM package
-        run: ./gradlew build-jvm-app writeJvmMetadata
+        run: ./gradlew versionsJson build-jvm-app writeJvmMetadata
 
       - name: Upload JVM artifact
         uses: actions/upload-artifact@v4
@@ -169,5 +226,5 @@ jobs:
             dist/metadata/jvm-macos.metadata.json
             dist/metadata/SHA256SUMS-jvm-macos.txt
             dist/metadata/versions.json
-          retention-days: 90
+          retention-days: 2
           if-no-files-found: error

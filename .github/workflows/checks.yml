@@ -1,0 +1,21 @@
+name: Checks
+
+on:
+  pull_request:
+    branches:
+      - develop
+  push:
+    branches:
+      - develop
+
+concurrency:
+  group: checks-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  checks:
+    uses: ./.github/workflows/_checks.yml
+    with:
+      # Кэш PR доступен только повторным прогонам того же PR, поэтому пишем
+      # его на push в develop.
+      cache-read-only: ${{ github.event_name == 'pull_request' }}

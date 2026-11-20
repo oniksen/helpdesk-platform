@@ -11,7 +11,7 @@ kotlin {
     js {
         browser {
             distribution {
-                outputDirectory.set(projectDir.parentFile.resolve("dist-shell"))
+                outputDirectory.set(projectDir.parentFile.resolve("dist/web-shell"))
             }
         }
         binaries.executable()
@@ -39,7 +39,7 @@ kotlin {
 kotlin.sourceSets.getByName("jsMain")
     .resources.srcDir(rootProject.projectDir.resolve("webResources"))
 
-private val DIST_SHELL_DIR = projectDir.parentFile.resolve("dist-shell")
+private val DIST_SHELL_DIR = projectDir.parentFile.resolve("dist/web-shell")
 
 /**
  * Подставляет контентный хэш сборки в ссылки `index.html` дистрибутива гейта.
@@ -105,7 +105,7 @@ abstract class StampGateIndex : DefaultTask() {
 
 val stampGateIndex = tasks.register<StampGateIndex>("stampGateIndex") {
     group = "build"
-    description = "Проставляет версию гейта в ссылки dist-shell/index.html"
+    description = "Проставляет версию гейта в ссылки dist/web-shell/index.html"
     bundle.set(DIST_SHELL_DIR.resolve("webShell.js"))
     styles.set(DIST_SHELL_DIR.resolve("styles.css"))
     indexFile.set(DIST_SHELL_DIR.resolve("index.html"))

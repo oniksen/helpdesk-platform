@@ -12,7 +12,7 @@ kotlin {
     js {
         browser {
             distribution {
-                outputDirectory.set(projectDir.parentFile.resolve("dist"))
+                outputDirectory.set(projectDir.parentFile.resolve("dist/web"))
             }
         }
         binaries.executable()

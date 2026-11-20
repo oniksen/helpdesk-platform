@@ -1,6 +1,10 @@
 package org.lpmti.helpdeskplatform
 
 import InfraModules
+import MaxAuthorization
+import QrCodeScanner
+import createAuthorizationObject
+import createQrCodeScanner
 import data.UpdateDataSource
 import org.koin.core.context.startKoin
 import org.koin.dsl.module
@@ -29,6 +33,8 @@ fun main() {
                 ui = get(),
             )
         }
+        single<QrCodeScanner> { createQrCodeScanner() }
+        single<MaxAuthorization> { createAuthorizationObject() }
     }
 
     val koin = startKoin {

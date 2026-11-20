@@ -8,7 +8,7 @@ import kotlinx.browser.window
 
 @OptIn(ExperimentalComposeUiApi::class)
 fun main() {
-    val di = DiProvider(FullAppDefinition())
+    val di = DiProvider(WebAppDefinition())
     val koinApplication = di.startKoin()
 
     // Без восстановленной сессии приложение не показываем: возвращаем

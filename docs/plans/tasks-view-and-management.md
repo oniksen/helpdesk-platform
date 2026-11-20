@@ -16,7 +16,7 @@
 ### 🏗 Архитектурные константы и подходы
 - Весь код фичи (`features/tasks/impl`) лежит в `commonMain` — JS-специфика отсутствует, платформенная специфика только через expect/actual в core-модулях.
 - Список: `TasksPageViewModel` (`BaseViewModel`), пагинация page/page_size через `TasksRepository.loadPage` → `GET /help-desk/v3/tasks/listing`.
-- Навигация: `@Serializable data object : NavKey` в `features/tasks/api`, резолв через `FeatureNavModule`, регистрация в Koin (`FullAppDefinition`).
+- Навигация: `@Serializable data object : NavKey` в `features/tasks/api`, резолв через `FeatureNavModule`, регистрация в Koin (`WebAppDefinition`).
 - API управления задачей на бэкенде уже существует — в задачах предусмотрены placeholders под ссылки на спецификацию.
 - Стиль UI — Compose Multiplatform, адаптивность через `AdaptiveLayoutWrapper` (брейкпоинты 600/840 dp), Snackbar для ошибок.
 
@@ -242,7 +242,7 @@ Web-таргет, открытый в MAX-окружении на мобильн
 
 #### 🛠 Технический контекст и ограничения
 - **Связанные компоненты:** `features/tasks/api/src/commonMain/kotlin/navigation/TasksPageRoute.kt` (образец маршрута), `features/tasks/impl/src/commonMain/kotlin/navigation/TasksPageModule.kt` (образец `FeatureNavModule`), `presentation/screen/TasksPage.kt` (action `OpenDetailsPage`), `presentation/viewmodel/TasksPageViewModel.kt` (обработчик `OpenDetailsPage` — сейчас `TODO()`, упадает при вызове), `presentation/screen/compact/TasksPageContentCompact.kt` (`TaskItemCard` — клик сейчас не подключён).
-- **Ограничения:** маршрут — `@Serializable data object ... : NavKey` в `features/tasks/api`; резолв через `FeatureNavModule.canResolve`/`resolve`; регистрация модуля — в Koin (`FullAppDefinition`), следовать существующему паттерну `TasksPageModule`; позиция в back-stack вкладки «Задачи» — через существующий `MainNavigation`.
+- **Ограничения:** маршрут — `@Serializable data object ... : NavKey` в `features/tasks/api`; резолв через `FeatureNavModule.canResolve`/`resolve`; регистрация модуля — в Koin (`WebAppDefinition`), следовать существующему паттерну `TasksPageModule`; позиция в back-stack вкладки «Задачи» — через существующий `MainNavigation`.
 - **Внимание:** ViewModel деталей создавать в `resolve` по образцу `TasksPageModule`; id задачи передавать через параметр маршрута (`@Serializable`), не через глобальное состояние.
 
 #### 🧪 Критерии приёмки
@@ -705,7 +705,7 @@ Web-таргет, открытый в MAX-окружении на мобильн
 - [ ] `./gradlew allTests` и `./gradlew detekt` проходят.
 
 #### 🔗 Ссылки и артефакты
-- `webApp/src/webMain/kotlin/org/lpmti/helpdeskplatform/FullAppDefinition.kt`
+- `../../webApp/src/webMain/kotlin/org/lpmti/helpdeskplatform/WebAppDefinition.kt`
 
 **Связь:** JVM-TASK-1.3 → JVM-US-1
 

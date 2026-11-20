@@ -4,7 +4,7 @@ package domain
  * Описание поддерживаемой версии манифеста относительно описывающих его DTO объектов.
  * */
 object ManifestSupported {
-    private val map = mapOf("v1" to 3, "v2" to 4)
+    private val map = mapOf("v2" to 4)
 
     /**
      * @param dtoVersion Версию DTO смотреть в названии папки в которой они лежат.

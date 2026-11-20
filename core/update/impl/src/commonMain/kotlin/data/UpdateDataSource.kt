@@ -16,12 +16,12 @@ import io.ktor.http.*
  * Ответы с не-2xx статусом и ошибки разбора JSON пробрасываются
  * вызывающей стороне — гейт решает, что делать (fallback или ошибка).
  */
-class UpdateDataSource(client: KtorClient) {
+class UpdateDataSource(client: KtorClient, private val host: String = HOST) {
     private val http = client.baseInstance()
 
     /** Манифест обновлений (update-manifest-v4.json). */
     suspend fun fetchManifest(): UpdateManifest {
-        val response = http.get("https://$HOST/$MANIFEST_PATH")
+        val response = http.get("https://$host/$MANIFEST_PATH")
         if (!response.status.isSuccess()) {
             error("Манифест обновлений недоступен: HTTP ${response.status.value}")
         }
@@ -30,7 +30,7 @@ class UpdateDataSource(client: KtorClient) {
 
     /** Файл каналов пользователей (channels.json). */
     suspend fun fetchChannelsFile(): ChannelsFile {
-        val response = http.get("https://$HOST/$CHANNELS_PATH")
+        val response = http.get("https://$host/$CHANNELS_PATH")
         if (!response.status.isSuccess()) {
             error("Файл каналов недоступен: HTTP ${response.status.value}")
         }

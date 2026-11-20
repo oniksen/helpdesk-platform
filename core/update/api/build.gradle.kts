@@ -8,13 +8,13 @@ kotlin {
 
     sourceSets {
         commonMain.dependencies {
-            implementation(projects.core.architecture)
             implementation(projects.core.exception)
 
+            api(projects.core.network.api)
             api(libs.kotlinx.coroutines.core)
         }
-        jsMain.dependencies {
-            implementation(libs.wrappers.browser)
+        jvmMain.dependencies {
+            implementation(projects.core.exception)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)

@@ -14,6 +14,7 @@ kotlin {
         commonMain.dependencies {
             implementation(projects.core.exception)
             api(libs.bundles.ktor)
+            api(libs.kotlinx.coroutines.core)
         }
         jvmMain.dependencies {
             api(libs.bundles.ktorJvm)

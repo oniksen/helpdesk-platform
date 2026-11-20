@@ -31,6 +31,7 @@ enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
 
 include(":webApp")
 include(":webShell")
+include(":jvmApp")
 include(":core")
 include(":core:di")
 include(":core:di:infra")

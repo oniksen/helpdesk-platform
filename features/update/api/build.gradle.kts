@@ -4,7 +4,6 @@ plugins {
 }
 
 kotlin {
-    js { browser() }
     jvm()
 
     sourceSets {

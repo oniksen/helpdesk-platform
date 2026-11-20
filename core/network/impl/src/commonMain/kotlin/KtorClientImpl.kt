@@ -7,6 +7,7 @@ import io.ktor.client.plugins.auth.providers.bearer
 import io.ktor.client.plugins.contentnegotiation.*
 import io.ktor.client.plugins.logging.*
 import io.ktor.serialization.kotlinx.json.*
+import kotlinx.coroutines.flow.Flow
 import kotlinx.serialization.json.Json
 
 class KtorClientImpl(
@@ -17,11 +18,7 @@ class KtorClientImpl(
         install(Auth) {
             bearer {
                 loadTokens {
-                    val token = tokenProvider.value.provide() ?: run {
-                        println("[DIAG] loadTokens: token=null")
-                        return@loadTokens null
-                    }
-                    println("[DIAG] loadTokens: token=present")
+                    val token = tokenProvider.value.provide() ?: return@loadTokens null
                     BearerTokens(
                         accessToken = token,
                         refreshToken = null,
@@ -45,6 +42,11 @@ class KtorClientImpl(
             })
         }
     }
+
+    override suspend fun downloadFileWithProgress(
+        url: String,
+        destinationFilePath: String,
+    ): Flow<DownloadStatus> = TODO("Not implemented yet")
 
     private companion object {
         const val DEFAULT_CONNECT_TIMEOUT = 10_000L

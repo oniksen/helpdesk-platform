@@ -1,0 +1,4 @@
+# Файл генерируется задачей generateCoverageBadge, которая всегда пишет LF.
+# Без явного правила core.autocrlf=true на Windows превращает его в CRLF,
+# и файл постоянно отображается как изменённый без реального diff.
+coverage-badge.svg text eol=lf

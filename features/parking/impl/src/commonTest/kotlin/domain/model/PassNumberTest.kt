@@ -7,88 +7,70 @@ import kotlin.test.assertFailsWith
 class PassNumberTest {
 
     @Test
-    fun minValues() {
-        val pass = "0/0".toPassNumber().getOrNull()
-        val decimal = pass?.toDecimalNumber()
-        assertEquals("00000000", decimal)
+    fun `converts valid pass numbers to decimal numbers`() {
+        CONVERSION_CASES.forEach { (pass, expected) ->
+            assertEquals(expected, PassNumber(pass).toDecimalNumber(), "Неверная конвертация для '$pass'")
+        }
     }
 
     @Test
-    fun simpleValid() {
-        val pass = PassNumber("1/1").toDecimalNumber()
-        assertEquals("00065537", pass)
-    }
-
-    @Test
-    fun maxValues() {
-        val pass = PassNumber("255/65535").toDecimalNumber()
-        assertEquals("16777215", pass)
-    }
-
-    @Test
-    fun maxFacilityZeroCard() {
-        val pass = PassNumber("255/0").toDecimalNumber()
-        assertEquals("16711680", pass)
-    }
-
-    @Test
-    fun zeroFacilityMaxCard() {
-        val pass = PassNumber("0/65535").toDecimalNumber()
-        assertEquals("00065535", pass)
-    }
-
-    @Test
-    fun emptyStringFails() {
+    fun `rejects empty pass number`() {
         assertFailsWith<IllegalStateException>("Pass number must not be empty") {
             PassNumber("")
         }
     }
 
     @Test
-    fun noDelimiterFails() {
+    fun `rejects pass numbers without a facility delimiter`() {
         assertFailsWith<Exception> {
             PassNumber("12345")
         }
     }
 
     @Test
-    fun facilityExceedsMaxFails() {
-        assertFailsWith<IllegalStateException>("Invalid Facility Number") {
-            PassNumber("256/0")
+    fun `rejects negative facility and card numbers`() {
+        NEGATIVE_CASES.forEach { pass ->
+            assertFailsWith<Exception>("Неожиданно принят номер с отрицательной частью: '$pass'") {
+                PassNumber(pass)
+            }
         }
     }
 
     @Test
-    fun cardNumberExceedsMaxFails() {
-        assertFailsWith<IllegalStateException>("Invalid Card Number") {
-            PassNumber("0/65536")
+    fun `rejects facility and card numbers out of range`() {
+        OUT_OF_RANGE_CASES.forEach { (pass, message) ->
+            assertFailsWith<IllegalStateException>(message) {
+                PassNumber(pass)
+            }
         }
     }
 
     @Test
-    fun negativeFacilityFails() {
-        assertFailsWith<Exception> {
-            PassNumber("-1/0")
-        }
+    fun `reports parsing outcome through Result`() {
+        val valid = "1/1".toPassNumber()
+        assertEquals(true, valid.isSuccess)
+        assertEquals("00065537", valid.getOrNull()?.toDecimalNumber())
+
+        assertEquals(true, "".toPassNumber().isFailure)
     }
 
-    @Test
-    fun negativeCardNumberFails() {
-        assertFailsWith<Exception> {
-            PassNumber("0/-1")
-        }
-    }
+    private companion object {
+        val CONVERSION_CASES = listOf(
+            "0/0" to "00000000",
+            "1/1" to "00065537",
+            "255/65535" to "16777215",
+            "255/0" to "16711680",
+            "0/65535" to "00065535",
+        )
 
-    @Test
-    fun toPassNumberValid() {
-        val result = "1/1".toPassNumber()
-        assertEquals(true, result.isSuccess)
-        assertEquals("00065537", result.getOrNull()?.toDecimalNumber())
-    }
+        val NEGATIVE_CASES = listOf(
+            "-1/0",
+            "0/-1",
+        )
 
-    @Test
-    fun toPassNumberInvalid() {
-        val result = "".toPassNumber()
-        assertEquals(true, result.isFailure)
+        val OUT_OF_RANGE_CASES = listOf(
+            "256/0" to "Invalid Facility Number",
+            "0/65536" to "Invalid Card Number",
+        )
     }
 }

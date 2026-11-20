@@ -1,5 +1,6 @@
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
+    alias(libs.plugins.kotlinx.kover)
 }
 
 kotlin {
@@ -13,6 +14,11 @@ kotlin {
     sourceSets {
         commonMain.dependencies {
             implementation(projects.core.network.api)
+        }
+
+        jvmMain.dependencies {
+            implementation(libs.okio)
+            implementation(libs.slf4j.simple)
         }
     }
 }

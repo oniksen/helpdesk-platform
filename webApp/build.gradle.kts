@@ -12,7 +12,7 @@ kotlin {
     js {
         browser {
             distribution {
-                outputDirectory.set(projectDir.parentFile.resolve("dist"))
+                outputDirectory.set(projectDir.parentFile.resolve("dist/web"))
             }
         }
         binaries.executable()
@@ -25,16 +25,14 @@ kotlin {
             implementation(projects.core.authorization.api)
             implementation(projects.core.navigation.api)
             implementation(projects.core.navigation.impl)
-            implementation(projects.core.update.api)
-            implementation(projects.core.update.impl)
-            implementation(projects.features.authorization.api)
-            implementation(projects.features.authorization.impl)
             implementation(projects.features.parking.api)
             implementation(projects.features.parking.impl)
             implementation(projects.features.tasks.api)
             implementation(projects.features.tasks.impl)
-            implementation(projects.features.update.api)
-            implementation(projects.features.update.impl)
+            implementation(projects.features.settings.api)
+            implementation(projects.features.settings.impl)
+            implementation(projects.maxminiappapi.api)
+            implementation(projects.maxminiappapi.impl)
 
             implementation(libs.compose.ui)
             implementation(libs.bundles.compose)

@@ -5,3 +5,123 @@ html, body {
     padding: 0;
     overflow: hidden;
 }
+
+/* DOM-интерфейс гейта (webShell): индикатор, статус и повтор. */
+.gate-body {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #fff;
+}
+
+.gate-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+    /* Фирменные цвета Material 3 (светлая тема) */
+    --md-sys-color-primary: #6750A4;
+    --md-sys-color-secondary-container: #E8DEF8;
+}
+
+.gate-status {
+    min-height: 20px;
+    font-family: sans-serif;
+    font-size: 14px;
+    color: #555;
+    text-align: center;
+}
+
+/* Круговой индикатор M3 Expressive (wavy). Трек и активный сегмент описаны
+   путями в index.html: r(θ)=20+2·sin(8θ), обводка 4, контейнер 48. */
+.m3-wavy-loading {
+    width: 48px;
+    height: 48px;
+    transform-origin: 24px 24px;
+    /* Оборот ровно за 8 секунд: одна длина волны проходится за секунду */
+    animation: m3-wavy-spin 8s linear infinite;
+}
+
+.m3-wavy-loading svg {
+    width: 100%;
+    height: 100%;
+}
+
+/* Фоновый трек */
+.m3-wavy-track {
+    stroke: var(--md-sys-color-secondary-container);
+    stroke-width: 4px;
+    fill: none;
+}
+
+/* Активный сегмент */
+.m3-wavy-active {
+    stroke: var(--md-sys-color-primary);
+    stroke-width: 4px;
+    stroke-linecap: round;
+    fill: none;
+    /* Длина пути 143.77 при pathLength="100": зазор в 8 dp пути
+       (4 dp плюс по 2 dp на скруглённые концы) — это 5.56 единицы даша */
+    stroke-dasharray: 94.44 5.56;
+    /* Сдвиг даша на полную длину пути: зазор обходит волновую траекторию
+       ровно за один оборот */
+    animation: m3-wavy-sweep 2s linear infinite;
+}
+
+@keyframes m3-wavy-spin {
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+@keyframes m3-wavy-sweep {
+    100% {
+        stroke-dashoffset: -100;
+    }
+}
+
+.gate-retry {
+    padding: 8px 20px;
+    border: 1px solid #333;
+    border-radius: 6px;
+    background: #fff;
+    font-size: 14px;
+    color: #333;
+    cursor: pointer;
+}
+
+.gate-retry:hover {
+    background: #f2f2f2;
+}
+
+/* Всплывающее уведомление гейта (редирект при фолбэке): тост внизу
+   экрана на тональной поверхности M3, поверх содержимого контейнера. */
+.gate-notice {
+    position: fixed;
+    left: 16px;
+    right: 16px;
+    bottom: 24px;
+    max-width: 480px;
+    margin: 0 auto;
+    padding: 12px 16px;
+    border-radius: 12px;
+    background: var(--md-sys-color-secondary-container);
+    color: #1D1B20;
+    font-family: sans-serif;
+    font-size: 14px;
+    line-height: 20px;
+    text-align: center;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15), 0 4px 8px rgba(0, 0, 0, 0.1);
+    animation: gate-notice-in 0.2s ease-out;
+}
+
+@keyframes gate-notice-in {
+    from {
+        opacity: 0;
+        transform: translateY(8px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}

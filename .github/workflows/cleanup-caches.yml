@@ -11,7 +11,7 @@ permissions:
 
 jobs:
   cleanup:
-    name: Clean caches older than 2 days
+    name: Clean caches older than 14 days
     runs-on: ubuntu-latest
     steps:
       - name: Delete stale caches
@@ -19,7 +19,7 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -euo pipefail
-          max_age_days=2
+          max_age_days=14
           repo="$GITHUB_REPOSITORY"
           cutoff=$(date -d "-${max_age_days} days" +%s)
           page=1

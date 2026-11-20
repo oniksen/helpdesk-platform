@@ -1,3 +1,4 @@
 package presentation.viewmodel
 
-actual suspend fun platformRegisterServiceWorker(): Boolean = true
+@Suppress("FunctionOnlyReturningConstant")
+suspend fun platformRegisterServiceWorker(): Boolean = true

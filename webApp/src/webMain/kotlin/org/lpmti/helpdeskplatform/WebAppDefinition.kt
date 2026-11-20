@@ -1,0 +1,51 @@
+package org.lpmti.helpdeskplatform
+
+import AppDefinition
+import HomePageContainerModule
+import RootNavModule
+import FeatureNavModule
+import MaxAuthorization
+import QrCodeScanner
+import androidx.navigation3.runtime.NavKey
+import createAuthorizationObject
+import createQrCodeScanner
+import navigation.ParkingModule
+import navigation.SettingsModule
+import navigation.TasksPageModule
+import navigation.TasksPageRoute
+import org.koin.core.Koin
+import org.koin.core.module.Module
+import org.koin.dsl.bind
+import org.koin.dsl.module
+
+/**
+ * Определение полного приложения: все фичи (задачи, парковка, настройки)
+ * и старт с домашнего экрана.
+ *
+ * Экраны авторизации и обновлений в web-сборку не входят: авторизацию
+ * выполняет гейт webShell, актуальную версию определяет сервер в манифесте,
+ * к которому гейт обращается перед каждым запуском.
+ */
+class WebAppDefinition : AppDefinition {
+    // Модуль фич-навигации (внутренняя навигация MainNavigation)
+    private val featuresNavModule = module {
+        single { ParkingModule() } bind FeatureNavModule::class
+        single { TasksPageModule() } bind FeatureNavModule::class
+        single { SettingsModule() } bind FeatureNavModule::class
+    }
+
+    /** Модуль MAX-моста (инициализация Mini App, авторизация MAX). */
+    private val maxMiniAppModule = module {
+        single<QrCodeScanner> { createQrCodeScanner() }
+        single<MaxAuthorization> { createAuthorizationObject() }
+    }
+
+    // Модуль рутовой навигации (экраны корня приложения)
+    private val rootNavModule = module {
+        single { HomePageContainerModule() } bind RootNavModule::class
+    }
+
+    override val koinModules: List<Module> = listOf(featuresNavModule, rootNavModule, maxMiniAppModule)
+
+    override fun startRoute(koin: Koin): NavKey = TasksPageRoute
+}

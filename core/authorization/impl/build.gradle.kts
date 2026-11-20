@@ -1,10 +1,12 @@
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
     alias(libs.plugins.kotlinSerialization)
+    alias(libs.plugins.kotlinx.kover)
 }
 
 kotlin {
     js { browser() }
+    jvm()
 
     sourceSets {
         commonMain.dependencies {
@@ -12,7 +14,6 @@ kotlin {
             implementation(projects.core.authorization.api)
             implementation(projects.maxminiappapi.api)
 
-            implementation(libs.bundles.koin)
             implementation(libs.bundles.ktor)
         }
         jsMain.dependencies {

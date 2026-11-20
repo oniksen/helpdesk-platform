@@ -3,6 +3,7 @@ plugins {
     alias(libs.plugins.composeCompiler)
     alias(libs.plugins.composeMultiplatform)
     alias(libs.plugins.kotlinSerialization)
+    alias(libs.plugins.kotlinx.kover)
 }
 
 kotlin {
@@ -17,8 +18,6 @@ kotlin {
             implementation(projects.core.authorization.api)
             implementation(projects.features.authorization.api)
             implementation(projects.features.tasks.api)
-            implementation(projects.features.update.api)
-            implementation(projects.core.update.api)
             implementation(projects.core.uiadaptive)
 
             implementation(libs.bundles.koin)

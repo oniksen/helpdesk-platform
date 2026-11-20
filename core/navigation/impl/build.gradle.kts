@@ -3,6 +3,7 @@ plugins {
     alias(libs.plugins.kotlinSerialization)
     alias(libs.plugins.composeCompiler)
     alias(libs.plugins.composeMultiplatform)
+    alias(libs.plugins.kotlinx.kover)
 }
 
 kotlin {
@@ -10,6 +11,7 @@ kotlin {
         browser()
         binaries.executable()
     }
+    jvm()
 
     sourceSets {
         commonMain.dependencies {
@@ -17,6 +19,7 @@ kotlin {
             implementation(projects.core.uiadaptive)
             implementation(projects.features.parking.api)
             implementation(projects.features.tasks.api)
+            implementation(projects.features.settings.api)
             implementation(libs.jetbrains.navigation3.ui)
 
             implementation(libs.bundles.koin)

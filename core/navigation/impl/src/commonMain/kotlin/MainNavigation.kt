@@ -31,6 +31,7 @@ fun MainNavigation(startRoute: NavKey) {
 
         val parkingBackStack = rememberNavBackStack(appNavConfig, AppDestination.PARKING.route)
         val tasksBackStack = rememberNavBackStack(appNavConfig, AppDestination.TASKS.route)
+        val settingsBackStack = rememberNavBackStack(appNavConfig, AppDestination.SETTINGS.route)
 
         val initialTab = remember(startRoute) {
             AppDestination.entries.firstOrNull { it.route == startRoute } ?: AppDestination.TASKS
@@ -40,6 +41,7 @@ fun MainNavigation(startRoute: NavKey) {
         val activeBackStack = when (currentTab) {
             AppDestination.PARKING -> parkingBackStack
             AppDestination.TASKS -> tasksBackStack
+            AppDestination.SETTINGS -> settingsBackStack
         }
 
         val navigator = remember(activeBackStack) {

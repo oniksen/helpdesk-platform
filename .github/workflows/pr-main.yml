@@ -1,0 +1,252 @@
+name: PR to main
+
+on:
+  pull_request:
+    branches:
+      - main
+
+concurrency:
+  group: pr-main-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  checks:
+    uses: ./.github/workflows/_checks.yml
+    with:
+      # Кэш PR не переиспользуется между прогонами, пишем его только на push.
+      cache-read-only: true
+
+  versions:
+    name: Versions
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    outputs:
+      web_ui: ${{ steps.versions.outputs.web_ui }}
+      jvm_tech: ${{ steps.versions.outputs.jvm_tech }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup JDK 21
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v6
+        with:
+          cache-read-only: true
+
+      - name: Resolve versions
+        id: versions
+        run: |
+          set -euo pipefail
+          ./gradlew versionsJson
+          echo "web_ui=$(jq -r '.web.ui' dist/metadata/versions.json)" >> "$GITHUB_OUTPUT"
+          echo "jvm_tech=$(jq -r '.jvm.technical' dist/metadata/versions.json)" >> "$GITHUB_OUTPUT"
+
+  cleanup:
+    name: Cleanup artifacts
+    needs: checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      actions: write
+
+    steps:
+      - name: Delete artifacts of previous runs
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          repo="$GITHUB_REPOSITORY"
+          current="$GITHUB_RUN_ID"
+          ids=()
+          page=1
+
+          # Артефакты предыдущих сборок копятся и упираются в бесплатные 500 МБ,
+          # поэтому перед новой сборкой освобождаем место целиком.
+          while :; do
+            body=$(gh api "/repos/${repo}/actions/artifacts?per_page=100&page=${page}")
+            count=$(jq -r '.artifacts | length' <<<"$body")
+            [ "$count" -eq 0 ] && break
+
+            while IFS= read -r id; do
+              if [ -n "$id" ]; then
+                ids+=("$id")
+              fi
+            done < <(jq -r --arg run "$current" '
+              .artifacts[]
+              | select(.expired == false)
+              | select(.workflow_run != null)
+              | select((.workflow_run.id | tostring) != $run)
+              | select(.name | test("^(web-|webshell-|jvm-windows-|jvm-macos-)"))
+              | .id' <<<"$body")
+
+            page=$((page + 1))
+          done
+
+          if [ "${#ids[@]}" -eq 0 ]; then
+            echo "Артефактов предыдущих сборок нет"
+            exit 0
+          fi
+
+          for id in "${ids[@]}"; do
+            gh api -X DELETE "/repos/${repo}/actions/artifacts/${id}" \
+              || echo "Артефакт ${id} уже удалён"
+          done
+          echo "Удалено артефактов: ${#ids[@]}"
+
+  web:
+    name: Web build
+    needs:
+      - cleanup
+      - versions
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup JDK 21
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v6
+        with:
+          cache-read-only: true
+
+      - name: Build webApplication and webShell packages
+        run: ./gradlew versionsJson packageWebApp packageWebShell writeWebAppMetadata writeWebShellMetadata
+
+      - name: Upload webApplication artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: web-${{ needs.versions.outputs.web_ui }}
+          path: |
+            dist/packages/web-*.zip
+            dist/metadata/web-app.metadata.json
+            dist/metadata/SHA256SUMS-web.txt
+            dist/metadata/versions.json
+          retention-days: 2
+          if-no-files-found: error
+
+      - name: Upload webShell artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: webshell-${{ needs.versions.outputs.web_ui }}
+          path: |
+            dist/packages/webshell-*.zip
+            dist/metadata/web-shell.metadata.json
+            dist/metadata/SHA256SUMS-webshell.txt
+          retention-days: 2
+          if-no-files-found: error
+
+  jvm-windows:
+    name: JVM build (Windows)
+    needs:
+      - cleanup
+      - versions
+    runs-on: windows-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup JDK 21
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v6
+        with:
+          cache-read-only: true
+
+      - name: Build JVM package
+        shell: bash
+        run: ./gradlew versionsJson build-jvm-app writeJvmMetadata
+
+      - name: Upload JVM artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: jvm-windows-${{ needs.versions.outputs.jvm_tech }}
+          path: |
+            dist/packages/helpdesk-jvm-windows-*.zip
+            dist/metadata/jvm-windows.metadata.json
+            dist/metadata/SHA256SUMS-jvm-windows.txt
+            dist/metadata/versions.json
+          retention-days: 2
+          if-no-files-found: error
+
+  jvm-macos:
+    name: JVM build (macOS)
+    needs:
+      - cleanup
+      - versions
+    runs-on: macos-15
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup JDK 21
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v6
+        with:
+          cache-read-only: true
+
+      - name: Build JVM package
+        run: ./gradlew versionsJson build-jvm-app writeJvmMetadata
+
+      - name: Show jpackage diagnostics
+        if: failure()
+        run: |
+          set -euo pipefail
+          echo "== jpackage logs =="
+          find jvmApp/build/compose/logs -type f -name '*.txt' -print -exec cat {} \; || true
+          echo "== jpackage args =="
+          cat jvmApp/build/compose/tmp/createReleaseDistributable.args.txt || true
+          echo "== java =="
+          java -version 2>&1 || true
+          echo "== jpackage =="
+          jpackage --version 2>&1 || true
+
+      - name: Upload jpackage logs
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: jvm-macos-jpackage-logs
+          path: jvmApp/build/compose/logs
+          retention-days: 2
+          if-no-files-found: warn
+
+      - name: Upload JVM artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: jvm-macos-${{ needs.versions.outputs.jvm_tech }}
+          path: |
+            dist/packages/helpdesk-jvm-macos-*.zip
+            dist/metadata/jvm-macos.metadata.json
+            dist/metadata/SHA256SUMS-jvm-macos.txt
+            dist/metadata/versions.json
+          retention-days: 2
+          if-no-files-found: error

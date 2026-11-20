@@ -11,6 +11,9 @@ val jvmVersion = JVMVersion(0, 1, 0, AppVersion.Stage.Alpha, 2)
 // Техническая версия JVM-приложения для упаковки (nativeDistributions.packageVersion).
 extra["jvmSystemVersion"] = jvmVersion.createSystemVersion()
 
+// Версия для упаковщика macOS: jpackage не принимает первый компонент, равный нулю.
+extra["jvmMacPackageVersion"] = jvmVersion.createMacPackageVersion()
+
 plugins {
     // this is necessary to avoid the plugins to be loaded multiple times
     // in each subproject's classloader
@@ -392,6 +395,18 @@ abstract class AppVersion(
         Stage.Alpha, Stage.Beta -> "canary"
         Stage.Rc -> "rc"
         Stage.Release -> "prod"
+    }
+
+    /**
+     * Версия для упаковщика macOS.
+     *
+     * `jpackage` на macOS требует, чтобы первый компонент `app-version` был не меньше
+     * единицы, а техническая версия приложения начинается с нуля. Меняется только
+     * метка бандла: версия, которую видит система обновлений, остаётся технической.
+     */
+    fun createMacPackageVersion(): String {
+        val macMajor = if (major == 0) 1 else major
+        return "$macMajor.$minor.${calculateTechnicalPatch(stage, patch, buildIteration)}"
     }
 
     private fun calculateTechnicalPatch(stage: Stage, patch: Int, iteration: Int): Int {

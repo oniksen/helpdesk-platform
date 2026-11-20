@@ -108,6 +108,8 @@ Fallback: если `outputBaseDir` поведёт себя нестабильн�
 
 Правила маппинга зашиты в одном месте: `Alpha/Beta → canary`, `Rc → rc`, `Release → prod`; `prerelease = stage != Release`. YAML читает файл через `jq` и не парсит `build.gradle.kts`.
 
+Отдельно учитывается ограничение `jpackage` на macOS: первый компонент `app-version` не может быть нулём. Для macOS-бандла передаётся `createMacPackageVersion()` (`0.x.y → 1.x.y`), при этом техническая версия приложения и версия в манифесте обновлений не меняются.
+
 ### 5.2 `packageWebApp` и `packageWebShell`
 
 `Zip`-задачи с детерминированными параметрами (`isPreserveFileTimestamps = false`, `isReproducibleFileOrder = true`, исключения служебных файлов ОС — как в `build-jvm-app`):

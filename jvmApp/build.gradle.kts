@@ -10,6 +10,9 @@ plugins {
 // Техническая версия JVM-сборки, задаётся в корневом build.gradle.kts.
 val jvmSystemVersion = rootProject.extra["jvmSystemVersion"] as String
 
+// Версия бандла для macOS: jpackage требует первый компонент версии не меньше единицы.
+val jvmMacPackageVersion = rootProject.extra["jvmMacPackageVersion"] as String
+
 kotlin {
     jvmToolchain(21)
     jvm()
@@ -54,6 +57,11 @@ compose.desktop {
             packageName = "com.lpmti.helpdesk"
             packageVersion = jvmSystemVersion
             vendor = "LPMTI"
+
+            macOS {
+                // jpackage на macOS не принимает app-version, начинающийся с нуля
+                packageVersion = jvmMacPackageVersion
+            }
 
             windows {
                 perUserInstall = true

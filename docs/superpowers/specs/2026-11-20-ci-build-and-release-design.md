@@ -159,7 +159,7 @@ Fallback: если `outputBaseDir` поведёт себя нестабильн�
 - `cache-read-only: true` на PR; запись кэша — на push в `develop`/`main`.
 - `concurrency` по ref с `cancel-in-progress: true`.
 - `checks.yml` не собирает дистрибутивы: компиляцию покрывает `allTests`, лишние минуты не тратятся.
-- `jvm-windows` — `windows-latest`, `jvm-macos` — `macos-14` (arm64); оба с `actions/setup-java` (temurin 21) и `gradle/actions/setup-gradle`.
+- `jvm-windows` — `windows-latest`, `jvm-macos` — `macos-15` (arm64); оба с `actions/setup-java` (temurin 21) и `gradle/actions/setup-gradle`.
 - `pr-check.yml` удаляется.
 
 Артефакты прогона PR:

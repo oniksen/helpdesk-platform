@@ -1,0 +1,301 @@
+name: Release
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: Что выполнить
+        type: choice
+        options:
+          - releases
+          - tags
+        default: releases
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  versions:
+    name: Versions
+    runs-on: ubuntu-latest
+    outputs:
+      web_ui: ${{ steps.versions.outputs.web_ui }}
+      web_tech: ${{ steps.versions.outputs.web_tech }}
+      web_tag: ${{ steps.versions.outputs.web_tag }}
+      web_stage: ${{ steps.versions.outputs.web_stage }}
+      web_channel: ${{ steps.versions.outputs.web_channel }}
+      jvm_ui: ${{ steps.versions.outputs.jvm_ui }}
+      jvm_tech: ${{ steps.versions.outputs.jvm_tech }}
+      jvm_tag: ${{ steps.versions.outputs.jvm_tag }}
+      jvm_stage: ${{ steps.versions.outputs.jvm_stage }}
+      jvm_channel: ${{ steps.versions.outputs.jvm_channel }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup JDK 21
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v6
+        with:
+          cache-read-only: true
+
+      - name: Resolve versions
+        id: versions
+        run: |
+          set -euo pipefail
+          ./gradlew versionsJson
+          file=dist/metadata/versions.json
+          for key in ui technical tag stage channel; do
+            echo "web_${key}=$(jq -r ".web.${key}" "$file")" >> "$GITHUB_OUTPUT"
+            echo "jvm_${key}=$(jq -r ".jvm.${key}" "$file")" >> "$GITHUB_OUTPUT"
+          done
+
+  tags:
+    name: Tags
+    needs: versions
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Create missing tags
+        env:
+          WEB_TAG: ${{ needs.versions.outputs.web_tag }}
+          WEB_UI: ${{ needs.versions.outputs.web_ui }}
+          WEB_TECH: ${{ needs.versions.outputs.web_tech }}
+          WEB_CHANNEL: ${{ needs.versions.outputs.web_channel }}
+          JVM_TAG: ${{ needs.versions.outputs.jvm_tag }}
+          JVM_UI: ${{ needs.versions.outputs.jvm_ui }}
+          JVM_TECH: ${{ needs.versions.outputs.jvm_tech }}
+          JVM_CHANNEL: ${{ needs.versions.outputs.jvm_channel }}
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          create_tag() {
+            local tag="$1" name="$2" technical="$3" channel="$4"
+            if git rev-parse -q --verify "refs/tags/$tag" > /dev/null; then
+              echo "Тэг $tag уже существует — пропускаем"
+              return 0
+            fi
+            git tag -a "$tag" -m "$name, техническая $technical, канал $channel"
+            git push origin "$tag"
+          }
+
+          create_tag "$WEB_TAG" "web $WEB_UI" "$WEB_TECH" "$WEB_CHANNEL"
+          create_tag "$JVM_TAG" "jvm $JVM_UI" "$JVM_TECH" "$JVM_CHANNEL"
+
+  drafts:
+    name: Draft releases
+    needs:
+      - versions
+      - tags
+    if: ${{ github.event_name == 'push' || inputs.mode == 'releases' }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Create draft releases for rc and release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          WEB_TAG: ${{ needs.versions.outputs.web_tag }}
+          WEB_UI: ${{ needs.versions.outputs.web_ui }}
+          WEB_TECH: ${{ needs.versions.outputs.web_tech }}
+          WEB_STAGE: ${{ needs.versions.outputs.web_stage }}
+          WEB_CHANNEL: ${{ needs.versions.outputs.web_channel }}
+          JVM_TAG: ${{ needs.versions.outputs.jvm_tag }}
+          JVM_UI: ${{ needs.versions.outputs.jvm_ui }}
+          JVM_TECH: ${{ needs.versions.outputs.jvm_tech }}
+          JVM_STAGE: ${{ needs.versions.outputs.jvm_stage }}
+          JVM_CHANNEL: ${{ needs.versions.outputs.jvm_channel }}
+        run: |
+          set -euo pipefail
+
+          channel_path() {
+            if [ "$1" = "prod" ]; then echo "prod"; else echo "dev/$1"; fi
+          }
+
+          file_suffix() {
+            if [ "$1" = "prod" ]; then echo "latest"; else echo "$1"; fi
+          }
+
+          notes() {
+            local title="$1" ui="$2" technical="$3" channel="$4" paths="$5"
+            printf '%s\n' \
+              "Компонент: $title" \
+              "Версия: $ui · техническая $technical" \
+              "Канал: $channel" \
+              "" \
+              "Целевые пути на сервере:" \
+              "$paths" \
+              "" \
+              "SHA-256, размер и имя файла — в метаданных ассетов (*.metadata.json)." \
+              "Порядок выкладки: страница публикации → загрузить ассеты → обновить update-manifest-v4.json."
+          }
+
+          create_release() {
+            local tag="$1" title="$2" ui="$3" technical="$4" stage="$5" channel="$6" paths="$7"
+            if gh release view "$tag" > /dev/null 2>&1; then
+              echo "Релиз $tag уже существует — пропускаем"
+              return 0
+            fi
+
+            local args=(--draft --title "$title" --notes-file -)
+            if [ "$stage" != "release" ]; then
+              args+=(--prerelease)
+            fi
+
+            notes "$title" "$ui" "$technical" "$channel" "$paths" | gh release create "$tag" "${args[@]}"
+          }
+
+          if [ "$WEB_STAGE" = "rc" ] || [ "$WEB_STAGE" = "release" ]; then
+            web_paths="web: channels-v2/$(channel_path "$WEB_CHANNEL")/web/web-$(file_suffix "$WEB_CHANNEL").zip"$'\n'"gate: helpdesk-app/pwa/"
+            create_release "$WEB_TAG" "Web $WEB_UI" "$WEB_UI" "$WEB_TECH" "$WEB_STAGE" "$WEB_CHANNEL" "$web_paths"
+          else
+            echo "Web: стадия $WEB_STAGE — релиз не создаётся, только тэг"
+          fi
+
+          if [ "$JVM_STAGE" = "rc" ] || [ "$JVM_STAGE" = "release" ]; then
+            jvm_paths="windows: channels-v2/$(channel_path "$JVM_CHANNEL")/windows/windows-$(file_suffix "$JVM_CHANNEL").zip"$'\n'"macos: channels-v2/$(channel_path "$JVM_CHANNEL")/macos/macos-$(file_suffix "$JVM_CHANNEL").zip"
+            create_release "$JVM_TAG" "JVM $JVM_UI" "$JVM_UI" "$JVM_TECH" "$JVM_STAGE" "$JVM_CHANNEL" "$jvm_paths"
+          else
+            echo "JVM: стадия $JVM_STAGE — релиз не создаётся, только тэг"
+          fi
+
+  assets-web:
+    name: Web assets
+    needs:
+      - versions
+      - drafts
+    if: ${{ (github.event_name == 'push' || inputs.mode == 'releases') && (needs.versions.outputs.web_stage == 'rc' || needs.versions.outputs.web_stage == 'release') }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup JDK 21
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v6
+        with:
+          cache-read-only: true
+
+      - name: Build web packages
+        run: ./gradlew packageWebApp packageWebShell writeWebAppMetadata writeWebShellMetadata
+
+      - name: Attach assets to release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          WEB_TAG: ${{ needs.versions.outputs.web_tag }}
+        run: |
+          set -euo pipefail
+          gh release upload "$WEB_TAG" \
+            dist/packages/web-*.zip \
+            dist/packages/webshell-*.zip \
+            dist/metadata/web-app.metadata.json \
+            dist/metadata/web-shell.metadata.json \
+            dist/metadata/SHA256SUMS-web.txt \
+            dist/metadata/SHA256SUMS-webshell.txt \
+            --clobber
+
+  assets-jvm-windows:
+    name: JVM assets (Windows)
+    needs:
+      - versions
+      - drafts
+    if: ${{ (github.event_name == 'push' || inputs.mode == 'releases') && (needs.versions.outputs.jvm_stage == 'rc' || needs.versions.outputs.jvm_stage == 'release') }}
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup JDK 21
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v6
+        with:
+          cache-read-only: true
+
+      - name: Build JVM package
+        shell: bash
+        run: ./gradlew build-jvm-app writeJvmMetadata
+
+      - name: Attach assets to release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          JVM_TAG: ${{ needs.versions.outputs.jvm_tag }}
+        run: |
+          set -euo pipefail
+          gh release upload "$JVM_TAG" \
+            dist/packages/helpdesk-jvm-windows-*.zip \
+            dist/metadata/jvm-windows.metadata.json \
+            dist/metadata/SHA256SUMS-jvm-windows.txt \
+            --clobber
+
+  assets-jvm-macos:
+    name: JVM assets (macOS)
+    needs:
+      - versions
+      - drafts
+    if: ${{ (github.event_name == 'push' || inputs.mode == 'releases') && (needs.versions.outputs.jvm_stage == 'rc' || needs.versions.outputs.jvm_stage == 'release') }}
+    runs-on: macos-14
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup JDK 21
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v6
+        with:
+          cache-read-only: true
+
+      - name: Build JVM package
+        run: ./gradlew build-jvm-app writeJvmMetadata
+
+      - name: Attach assets to release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          JVM_TAG: ${{ needs.versions.outputs.jvm_tag }}
+        run: |
+          set -euo pipefail
+          gh release upload "$JVM_TAG" \
+            dist/packages/helpdesk-jvm-macos-*.zip \
+            dist/metadata/jvm-macos.metadata.json \
+            dist/metadata/SHA256SUMS-jvm-macos.txt \
+            --clobber

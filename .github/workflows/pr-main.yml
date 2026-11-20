@@ -1,0 +1,173 @@
+name: PR to main
+
+on:
+  pull_request:
+    branches:
+      - main
+
+concurrency:
+  group: pr-main-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  checks:
+    uses: ./.github/workflows/_checks.yml
+    with:
+      # Кэш PR не переиспользуется между прогонами, пишем его только на push.
+      cache-read-only: true
+
+  versions:
+    name: Versions
+    runs-on: ubuntu-latest
+    outputs:
+      web_ui: ${{ steps.versions.outputs.web_ui }}
+      jvm_tech: ${{ steps.versions.outputs.jvm_tech }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup JDK 21
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v6
+        with:
+          cache-read-only: true
+
+      - name: Resolve versions
+        id: versions
+        run: |
+          set -euo pipefail
+          ./gradlew versionsJson
+          echo "web_ui=$(jq -r '.web.ui' dist/metadata/versions.json)" >> "$GITHUB_OUTPUT"
+          echo "jvm_tech=$(jq -r '.jvm.technical' dist/metadata/versions.json)" >> "$GITHUB_OUTPUT"
+
+  web:
+    name: Web build
+    needs:
+      - checks
+      - versions
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup JDK 21
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v6
+        with:
+          cache-read-only: true
+
+      - name: Build webApplication and webShell packages
+        run: ./gradlew packageWebApp packageWebShell writeWebAppMetadata writeWebShellMetadata
+
+      - name: Upload webApplication artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: web-${{ needs.versions.outputs.web_ui }}
+          path: |
+            dist/packages/web-*.zip
+            dist/metadata/web-app.metadata.json
+            dist/metadata/SHA256SUMS-web.txt
+            dist/metadata/versions.json
+          retention-days: 90
+          if-no-files-found: error
+
+      - name: Upload webShell artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: webshell-${{ needs.versions.outputs.web_ui }}
+          path: |
+            dist/packages/webshell-*.zip
+            dist/metadata/web-shell.metadata.json
+            dist/metadata/SHA256SUMS-webshell.txt
+          retention-days: 90
+          if-no-files-found: error
+
+  jvm-windows:
+    name: JVM build (Windows)
+    needs:
+      - checks
+      - versions
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup JDK 21
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v6
+        with:
+          cache-read-only: true
+
+      - name: Build JVM package
+        shell: bash
+        run: ./gradlew build-jvm-app writeJvmMetadata
+
+      - name: Upload JVM artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: jvm-windows-${{ needs.versions.outputs.jvm_tech }}
+          path: |
+            dist/packages/helpdesk-jvm-windows-*.zip
+            dist/metadata/jvm-windows.metadata.json
+            dist/metadata/SHA256SUMS-jvm-windows.txt
+            dist/metadata/versions.json
+          retention-days: 90
+          if-no-files-found: error
+
+  jvm-macos:
+    name: JVM build (macOS)
+    needs:
+      - checks
+      - versions
+    runs-on: macos-14
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup JDK 21
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v6
+        with:
+          cache-read-only: true
+
+      - name: Build JVM package
+        run: ./gradlew build-jvm-app writeJvmMetadata
+
+      - name: Upload JVM artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: jvm-macos-${{ needs.versions.outputs.jvm_tech }}
+          path: |
+            dist/packages/helpdesk-jvm-macos-*.zip
+            dist/metadata/jvm-macos.metadata.json
+            dist/metadata/SHA256SUMS-jvm-macos.txt
+            dist/metadata/versions.json
+          retention-days: 90
+          if-no-files-found: error

@@ -4,7 +4,7 @@ Web-приложение для управления задачами и сер�
 
 Проект построен на Kotlin Multiplatform с Compose Multiplatform (UI), Koin (DI) и Navigation3 (навигация). Целевая платформа — Web (JS), дополнительно есть JVM-таргет для превью и тестов.
 
-[![PR Check](https://github.com/oniksen/helpdesk-platform/actions/workflows/pr-check.yml/badge.svg)](https://github.com/oniksen/helpdesk-platform/actions/workflows/pr-check.yml)
+[![PR to main](https://github.com/oniksen/helpdesk-platform/actions/workflows/pr-main.yml/badge.svg)](https://github.com/oniksen/helpdesk-platform/actions/workflows/pr-main.yml)
 [![License](https://img.shields.io/badge/License-LPMTI%20Proprietary-lightgrey.svg)](LICENSE)
 ![Coverage](coverage-badge.svg)
 

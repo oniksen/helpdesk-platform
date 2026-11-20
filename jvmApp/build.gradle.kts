@@ -48,6 +48,8 @@ compose.desktop {
         mainClass = "org.lpmti.helpdeskplatform.MainKt"
 
         nativeDistributions {
+            // Все сборочные результаты проекта живут в корневой папке dist/
+            outputBaseDir.set(rootProject.layout.projectDirectory.dir("dist/jvm"))
             targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb, TargetFormat.Exe)
             packageName = "com.lpmti.helpdesk"
             packageVersion = jvmSystemVersion

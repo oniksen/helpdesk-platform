@@ -1,8 +1,8 @@
 # Helpdesk Platform
 
-Web-приложение для управления задачами и сервисными обращениями. Объединяет обработку обращений, управление парковочными местами и отслеживание задач в одном интерфейсе, чтобы сервисные команды работали в едином процессе вместо разрозненных инструментов.
+Kotlin Multiplatform-приложение для управления задачами и сервисными обращениями: веб-версия и desktop-приложение (JVM). Объединяет обработку обращений, управление парковочными местами и отслеживание задач в одном интерфейсе, чтобы сервисные команды работали в едином процессе вместо разрозненных инструментов.
 
-Проект построен на Kotlin Multiplatform с Compose Multiplatform (UI), Koin (DI) и Navigation3 (навигация). Целевая платформа — Web (JS), дополнительно есть JVM-таргет для превью и тестов.
+Проект построен на Kotlin Multiplatform с Compose Multiplatform (UI), Koin (DI) и Navigation3 (навигация). Целевые платформы — Web (JS) и Desktop (JVM); общий код фич и UI живёт в `commonMain`.
 
 [![PR to main](https://github.com/oniksen/helpdesk-platform/actions/workflows/pr-main.yml/badge.svg)](https://github.com/oniksen/helpdesk-platform/actions/workflows/pr-main.yml)
 [![License](https://img.shields.io/badge/License-LPMTI%20Proprietary-lightgrey.svg)](LICENSE)
@@ -20,7 +20,7 @@ Web-приложение для управления задачами и сер�
 
 ## Контрибьюция
 
-Требуется JDK 21. Перед отправкой PR: `./gradlew detekt && ./gradlew allTests`. Правила оформления кода, коммитов и PR — в разделе [Конвенции](https://github.com/oniksen/helpdesk-platform/wiki/Конвенции).
+Требуется JDK 21. Перед отправкой PR: `./gradlew generateCoverageBadge`, затем `./gradlew detekt && ./gradlew allTests`. Обновлённый `coverage-badge.svg` коммитится вместе с изменениями. Правила оформления кода, коммитов и PR — в разделе [Конвенции](https://github.com/oniksen/helpdesk-platform/wiki/Конвенции).
 
 ## Лицензия
 

@@ -255,7 +255,7 @@ Epic'а → Task с `parent_issue_number` = номер User Story. Параме�
 
 ## Обзор проекта
 
-Kotlin Multiplatform (KMP) проект — Web-приложение (JS) с JVM-таргетом для превью и тестов. UI на Compose Multiplatform, DI через Koin, навигация через Navigation3.
+Kotlin Multiplatform (KMP) проект с двумя целевыми платформами: Web (JS) и Desktop (JVM). Общий код фич и UI живёт в `commonMain`; UI на Compose Multiplatform, DI через Koin, навигация через Navigation3.
 
 ## Модули
 

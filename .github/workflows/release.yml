@@ -79,28 +79,91 @@ jobs:
           WEB_TAG: ${{ needs.versions.outputs.web_tag }}
           WEB_UI: ${{ needs.versions.outputs.web_ui }}
           WEB_TECH: ${{ needs.versions.outputs.web_tech }}
+          WEB_STAGE: ${{ needs.versions.outputs.web_stage }}
           WEB_CHANNEL: ${{ needs.versions.outputs.web_channel }}
           JVM_TAG: ${{ needs.versions.outputs.jvm_tag }}
           JVM_UI: ${{ needs.versions.outputs.jvm_ui }}
           JVM_TECH: ${{ needs.versions.outputs.jvm_tech }}
+          JVM_STAGE: ${{ needs.versions.outputs.jvm_stage }}
           JVM_CHANNEL: ${{ needs.versions.outputs.jvm_channel }}
         run: |
           set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
+          # Проверки делаем до создания тэгов: в описание каждого попадёт совместная поставка.
+          tag_exists() {
+            git rev-parse -q --verify "refs/tags/$1" > /dev/null
+          }
+
+          web_new=0
+          jvm_new=0
+          tag_exists "$WEB_TAG" || web_new=1
+          tag_exists "$JVM_TAG" || jvm_new=1
+
+          # Краткий список изменений: по строке на коммит с предыдущего тэга компонента.
+          commit_bullets() {
+            sed -e 's/[[:space:]]*$//' -e 's/\.$//' -e 's/$/./' | awk '!seen[$0]++'
+          }
+
+          change_list() {
+            local prefix="$1"
+            local previous
+            previous=$(git tag --list "${prefix}-v*" --sort=-creatordate | head -n 1 || true)
+            if [ -n "$previous" ]; then
+              git log --no-merges --pretty=format:'- %s' "$previous..HEAD" | commit_bullets
+            else
+              git log --no-merges -n 20 --pretty=format:'- %s' HEAD | commit_bullets
+              printf '%s\n' '- ...и предыдущие коммиты.'
+            fi
+          }
+
+          joint_line() {
+            local other_tag="$1" other_new="$2"
+            if [ "$other_new" -eq 1 ]; then
+              printf '\nСовместная поставка: %s\n' "$other_tag"
+            fi
+          }
+
+          # Для alpha/beta релиза нет, поэтому всё описание поставки живёт в тэге.
+          full_message() {
+            local component="$1" ui="$2" technical="$3" stage="$4" channel="$5" prefix="$6" other_tag="$7" other_new="$8"
+            printf '%s %s\n\n' "$prefix" "$ui"
+            printf 'Компонент: %s\n' "$component"
+            printf 'Версия: %s · техническая %s\n' "$ui" "$technical"
+            printf 'Стадия: %s · канал: %s\n\n' "$stage" "$channel"
+            change_list "$prefix"
+            joint_line "$other_tag" "$other_new"
+          }
+
+          is_alpha_beta() {
+            [ "$1" = "alpha" ] || [ "$1" = "beta" ]
+          }
+
           create_tag() {
-            local tag="$1" name="$2" technical="$3" channel="$4"
-            if git rev-parse -q --verify "refs/tags/$tag" > /dev/null; then
+            local tag="$1" message="$2"
+            if tag_exists "$tag"; then
               echo "Тэг $tag уже существует — пропускаем"
               return 0
             fi
-            git tag -a "$tag" -m "$name, техническая $technical, канал $channel"
+            git tag -a "$tag" -m "$message"
             git push origin "$tag"
           }
 
-          create_tag "$WEB_TAG" "web $WEB_UI" "$WEB_TECH" "$WEB_CHANNEL"
-          create_tag "$JVM_TAG" "jvm $JVM_UI" "$JVM_TECH" "$JVM_CHANNEL"
+          if is_alpha_beta "$WEB_STAGE"; then
+            web_message=$(full_message "web (webApp + webShell)" "$WEB_UI" "$WEB_TECH" "$WEB_STAGE" "$WEB_CHANNEL" web "$JVM_TAG" "$jvm_new")
+          else
+            web_message="web $WEB_UI, техническая $WEB_TECH, канал $WEB_CHANNEL"
+          fi
+
+          if is_alpha_beta "$JVM_STAGE"; then
+            jvm_message=$(full_message "jvm" "$JVM_UI" "$JVM_TECH" "$JVM_STAGE" "$JVM_CHANNEL" jvm "$WEB_TAG" "$web_new")
+          else
+            jvm_message="jvm $JVM_UI, техническая $JVM_TECH, канал $JVM_CHANNEL"
+          fi
+
+          create_tag "$WEB_TAG" "$web_message"
+          create_tag "$JVM_TAG" "$jvm_message"
 
   drafts:
     name: Draft releases

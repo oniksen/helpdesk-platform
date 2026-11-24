@@ -13,7 +13,7 @@ import presentation.screen.LocalTasksPageActions
 internal fun PreviewWrapper(dark: Boolean = false, content: @Composable () -> Unit) {
     val actions = TasksPageActions(
         openDetailsPage = { },
-        changeFirstVisibleIndex = { },
+        changeLastVisibleIndex = { },
         cancelJobs = { }
     )
     CompositionLocalProvider(LocalTasksPageActions provides actions) {

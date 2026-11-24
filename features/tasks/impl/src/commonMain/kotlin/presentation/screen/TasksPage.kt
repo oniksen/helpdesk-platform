@@ -9,7 +9,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.staticCompositionLocalOf
 import domain.intent.TasksPageIntent
-import domain.model.TasksPage
 import kotlinx.coroutines.flow.SharedFlow
 import presentation.actions.TasksPageActions
 import presentation.effect.TasksPageEffect
@@ -30,7 +29,7 @@ internal fun TasksPage(
     val actions = remember {
         TasksPageActions(
             openDetailsPage = { tasksPageViewModel.sendIntent(TasksPageIntent.OpenDetailsPage(it)) },
-            changeFirstVisibleIndex = { tasksPageViewModel.sendIntent(TasksPageIntent.FirstVisibleIndexChanged(it)) },
+            changeLastVisibleIndex = { tasksPageViewModel.sendIntent(TasksPageIntent.LastVisibleIndexChanged(it)) },
             cancelJobs = { tasksPageViewModel.sendIntent(TasksPageIntent.CancelJobs) }
         )
     }

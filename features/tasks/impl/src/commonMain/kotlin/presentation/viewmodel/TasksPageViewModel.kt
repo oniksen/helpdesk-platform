@@ -57,15 +57,17 @@ internal class TasksPageViewModel(
     fun sendIntent(intent: TasksPageIntent) {
         when (intent) {
             is TasksPageIntent.OpenDetailsPage -> TODO()
-            is TasksPageIntent.FirstVisibleIndexChanged -> emitNewPage(intent.index)
             TasksPageIntent.CancelJobs -> cancelScope()
+            is TasksPageIntent.LastVisibleIndexChanged -> emitNewPage(intent.index)
         }
     }
 
-    private fun emitNewPage(index: Int) {
+    private fun emitNewPage(lastIndex: Int) {
         // Если индекс на текущей странице < порогового значения, не должны подгружать следующую страницу. Иначе должны.
-        val nextPageIndex = if (index % 10 < 3) 0 else 1
-        val currentPage = index / 10 + 1 + nextPageIndex
+        val nextPageIndex = if (
+            (lastIndex % TasksRepository.DEFAULT_PAGE_SIZE) < (TasksRepository.DEFAULT_PAGE_SIZE - PAGE_THRESHOLD)
+        ) 0 else 1
+        val currentPage = lastIndex / 10 + 1 + nextPageIndex
 
         _currentPage.value = currentPage
     }
@@ -129,5 +131,9 @@ internal class TasksPageViewModel(
 
     private fun cancelScope() {
         scope.cancel()
+    }
+
+    private companion object {
+        const val PAGE_THRESHOLD = 3
     }
 }

@@ -15,7 +15,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.TextUnit
@@ -30,6 +30,9 @@ import presentation.effect.TasksPageEffect
 import presentation.screen.LocalTasksPageActions
 import presentation.screen.shared.AnimatedTabBar
 import presentation.state.TasksPageState
+
+/** Тег списка для Compose UI-тестов пагинации. */
+internal const val TASKS_LIST_TEST_TAG = "tasks_list"
 
 private enum class ListPosition {
     First, Middle, Last
@@ -95,7 +98,7 @@ internal fun TasksPageContentCompact(
                                 .padding(horizontal = 16.dp),
                             list = state.currentList,
                             hasNextPage = state.hasNextPage,
-                            onFirstVisibleIndexChange = { index -> actions.changeFirstVisibleIndex(index) }
+                            onLastVisibleIndexChange = { index -> actions.changeLastVisibleIndex(index) }
                         )
                         else -> {
                             Text(
@@ -128,20 +131,20 @@ private fun TasksList(
     modifier: Modifier = Modifier,
     list: List<TaskModel>,
     hasNextPage: Boolean,
-    onFirstVisibleIndexChange: (Int) -> Unit,
+    onLastVisibleIndexChange: (Int) -> Unit,
 ) {
     val listState = rememberLazyListState()
 
     LaunchedEffect(listState) {
-        snapshotFlow { listState.firstVisibleItemIndex }
+        snapshotFlow { listState.layoutInfo.visibleItemsInfo.last().index }
             .distinctUntilChanged()
             .collect { index ->
-                onFirstVisibleIndexChange(index)
+                onLastVisibleIndexChange(index)
             }
     }
 
     LazyColumn(
-        modifier = modifier,
+        modifier = modifier.testTag(TASKS_LIST_TEST_TAG),
         verticalArrangement = Arrangement.spacedBy(2.dp),
         state = listState,
     ) {

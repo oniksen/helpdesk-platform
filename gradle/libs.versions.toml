@@ -8,7 +8,7 @@ kotlin-wrappers = "2026.8.4"
 kover = "0.9.9"
 detekt = "2.0.0-alpha.6"
 material3 = "1.12.0-alpha03"
-koin = "4.0.2"
+koin = "4.2.2"
 multiplatform-nav3-ui = "1.1.1"
 jb-compose-material-icons = "1.7.3"
 ktor = "3.5.2"
@@ -26,6 +26,7 @@ compose-ui = { module = "org.jetbrains.compose.ui:ui", version.ref = "composeMul
 compose-components-resources = { module = "org.jetbrains.compose.components:components-resources", version.ref = "composeMultiplatform" }
 compose-uiToolingPreview = { module = "org.jetbrains.compose.ui:ui-tooling-preview", version.ref = "composeMultiplatform" }
 compose-uiTooling = { module = "org.jetbrains.compose.ui:ui-tooling", version.ref = "composeMultiplatform" }
+compose-uiTest = { module = "org.jetbrains.compose.ui:ui-test", version.ref = "composeMultiplatform" }
 jb-compose-material-icons-extended = { module = "org.jetbrains.compose.material:material-icons-extended", version.ref = "jb-compose-material-icons" }
 
 # Compose adaptive
@@ -62,6 +63,7 @@ kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotl
 kotlin-testJunit = { module = "org.jetbrains.kotlin:kotlin-test-junit", version.ref = "kotlin" }
 kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "kotlinx-coroutines" }
 junit = { module = "junit:junit", version.ref = "junit" }
+koin-test = { module = "io.insert-koin:koin-test", version.ref = "koin" }
 
 [bundles]
 # Только те библиотеки, что действительно используются вместе
@@ -84,6 +86,12 @@ composePreview = [
     "compose-uiTooling",
     "compose-uiToolingPreview",
     "compose-ui"
+]
+composeUiTest = [
+    "koin-test",
+    "compose-uiTest",
+    "kotlin-test",
+    "kotlinx-coroutines-test",
 ]
 koin = [
     "koin-core",

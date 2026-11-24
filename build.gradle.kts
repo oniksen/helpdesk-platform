@@ -5,8 +5,8 @@ import java.io.File
 import java.security.MessageDigest
 import javax.xml.parsers.DocumentBuilderFactory
 
-val webVersion = WebVersion(1, 3, 0, AppVersion.Stage.Alpha, 7)
-val jvmVersion = JVMVersion(1, 1, 0, AppVersion.Stage.Alpha, 2)
+val webVersion = WebVersion(1, 3, 0, AppVersion.Stage.Alpha, 8)
+val jvmVersion = JVMVersion(1, 1, 0, AppVersion.Stage.Alpha, 3)
 
 // Техническая версия JVM-приложения для упаковки (nativeDistributions.packageVersion).
 extra["jvmSystemVersion"] = jvmVersion.createSystemVersion()

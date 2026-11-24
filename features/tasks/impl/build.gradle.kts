@@ -4,6 +4,7 @@ plugins {
     alias(libs.plugins.composeMultiplatform)
     alias(libs.plugins.kotlinSerialization)
     alias(libs.plugins.kotlinx.kover)
+    alias(libs.plugins.mokkery)
 }
 
 kotlin {
@@ -31,6 +32,14 @@ kotlin {
         }
         jvmMain.dependencies {
             implementation(libs.bundles.composePreview)
+        }
+        commonTest.dependencies {
+            implementation(libs.bundles.composeUiTest)
+        }
+        jvmTest.dependencies {
+            // Desktop-рантайм нужен для запуска Compose UI-тестов на JVM.
+            implementation(compose.desktop.currentOs)
+            implementation(libs.junit)
         }
     }
 }

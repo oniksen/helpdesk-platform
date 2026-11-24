@@ -4,7 +4,7 @@ import AppNavigator
 import FeatureNavModule
 import androidx.navigation3.runtime.NavEntry
 import androidx.navigation3.runtime.NavKey
-import data.repository.TasksRepository
+import data.repository.TasksRepositoryImpl
 import kotlinx.serialization.modules.SerializersModule
 import kotlinx.serialization.modules.polymorphic
 import org.koin.compose.koinInject
@@ -24,7 +24,7 @@ class TasksPageModule : FeatureNavModule {
     ): NavEntry<out NavKey> = NavEntry(key = key as TasksPageRoute) {
         val tasksPageViewModel = TasksPageViewModel(
             navigator = navigator,
-            tasksRepository = TasksRepository(
+            tasksRepository = TasksRepositoryImpl(
                 client = koinInject()
             ),
         )

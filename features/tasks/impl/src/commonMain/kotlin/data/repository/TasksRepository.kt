@@ -16,8 +16,12 @@ internal interface TasksRepository {
      */
     suspend fun loadPage(
         page: Int,
-        pageSize: Int = 10,
+        pageSize: Int = DEFAULT_PAGE_SIZE,
         filters: Filters,
         sort: Sort,
     ): NetworkResult<TasksPage>
+
+    companion object {
+        const val DEFAULT_PAGE_SIZE = 10
+    }
 }

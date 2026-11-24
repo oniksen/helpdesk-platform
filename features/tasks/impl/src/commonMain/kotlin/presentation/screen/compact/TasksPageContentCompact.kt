@@ -15,7 +15,6 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -99,7 +98,7 @@ internal fun TasksPageContentCompact(
                                 .padding(horizontal = 16.dp),
                             list = state.currentList,
                             hasNextPage = state.hasNextPage,
-                            onFirstVisibleIndexChange = { index -> actions.changeFirstVisibleIndex(index) }
+                            onLastVisibleIndexChange = { index -> actions.changeLastVisibleIndex(index) }
                         )
                         else -> {
                             Text(
@@ -132,15 +131,15 @@ private fun TasksList(
     modifier: Modifier = Modifier,
     list: List<TaskModel>,
     hasNextPage: Boolean,
-    onFirstVisibleIndexChange: (Int) -> Unit,
+    onLastVisibleIndexChange: (Int) -> Unit,
 ) {
     val listState = rememberLazyListState()
 
     LaunchedEffect(listState) {
-        snapshotFlow { listState.firstVisibleItemIndex }
+        snapshotFlow { listState.layoutInfo.visibleItemsInfo.last().index }
             .distinctUntilChanged()
             .collect { index ->
-                onFirstVisibleIndexChange(index)
+                onLastVisibleIndexChange(index)
             }
     }
 

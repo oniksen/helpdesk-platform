@@ -46,9 +46,11 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 
 /**
- * Сквозной тест пагинации: реальный экран, реальная [TasksPageViewModel] и замоканный
- * [TasksRepository]. Проверяет, что скролл к концу первой страницы заставляет ViewModel
- * запросить вторую, а её данные доезжают до UI.
+ * Сквозной тест загрузки следующей страницы: реальный экран, реальная [TasksPageViewModel]
+ * и замоканный [TasksRepository]. Проверяет, что после достижения порога подгружается
+ * следующая страница и её задачи появляются в списке. На маленьких экранах для этого
+ * нужен явный скролл; на больших стартовая композиция вправе загрузить сразу несколько
+ * страниц, поэтому количество запрошенных страниц жёстко не фиксируется.
  */
 class TasksPaginationUiTest : KoinTest {
 
@@ -68,7 +70,7 @@ class TasksPaginationUiTest : KoinTest {
         // а виртуальное время не даёт сработать повторному опросу раз в 5 секунд.
         Dispatchers.setMain(UnconfinedTestDispatcher())
         requested = MutableStateFlow(emptyList())
-        mockRepository = mock<TasksRepository> {
+        mockRepository = mock {
             everySuspend { loadPage(any(), any(), any(), any()) } calls { args ->
                 val page = args.arg<Int>(0)
                 requested.update { it + page }
@@ -95,19 +97,19 @@ class TasksPaginationUiTest : KoinTest {
     }
 
     @Test
-    fun `requests the second page when scrolling to the end on a small phone screen`(): TestResult =
+    fun `loads the next page on a small phone screen`(): TestResult =
         runPaginationScenario(SMALL_PHONE)
 
     @Test
-    fun `requests the second page when scrolling to the end on a compact phone screen`(): TestResult =
+    fun `loads the next page on a compact phone screen`(): TestResult =
         runPaginationScenario(COMPACT_PHONE)
 
     @Test
-    fun `requests the second page when scrolling to the end on a tall phone screen`(): TestResult =
+    fun `loads the next page on a tall phone screen`(): TestResult =
         runPaginationScenario(TALL_PHONE)
 
     @Test
-    fun `requests the second page when scrolling to the end on a tablet screen`(): TestResult =
+    fun `loads the next page on a tablet screen`(): TestResult =
         runPaginationScenario(TABLET_PORTRAIT)
 
     @OptIn(ExperimentalTestApi::class)
@@ -118,43 +120,43 @@ class TasksPaginationUiTest : KoinTest {
             }
         }
 
-        // 1. ViewModel загрузила первую страницу (задачи #0..#9).
+        // 1. Первая страница отрисовалась. На большом экране к этому моменту уже
+        //    могло загрузиться несколько страниц — это допустимо и ниже не отвергается.
         waitUntilAtLeastOneExists(hasText(title(0)), timeoutMillis = 3_000L)
         assertEquals(
-            listOf(1),
-            requestedPages,
-            "Первая страница должна запроситься ровно один раз при разрешении $screenSize",
+            1,
+            requestedPages.firstOrNull(),
+            "Первой должна загружаться страница 1 при разрешении $screenSize",
         )
 
-        // 2. Скролл к концу первой страницы: UI отдаёт firstVisibleItemIndex,
-        //    ViewModel обязана запросить страницу 2. performScrollToNode скроллит
-        //    постепенно, как реальный пользователь, а не прыжком к индексу.
+        // 2. Явный скролл до «последний элемент первой страницы минус порог».
+        //    На маленьких экранах это необходимое предусловие подгрузки; на больших
+        //    скролл может быть избыточным, потому что порог уже пройден при старте.
         onNodeWithTag(TASKS_LIST_TEST_TAG)
-            .performScrollToNode(hasText(title(9)))
+            .performScrollToNode(hasText(title(SCROLL_TARGET_INDEX)))
 
-        // Фиксируем запросы до второго скролла: дальнейший проход по 20 элементам
-        // способен спровоцировать запрос следующей страницы и зашуметь проверку.
+        // 3. Следующая страница загружена. Страницы идут подряд от 1 без пропусков
+        //    и повторов; сколько их будет на большом экране — заранее не фиксируем.
         waitUntil(
-            conditionDescription = "Страница 2 не запрошена при $screenSize: " +
-                "запрошено $requestedPages. Скролл к концу первой страницы " +
-                "не преодолел порог emitNewPage (firstVisibleItemIndex < 3)",
+            conditionDescription = "Следующая страница не загрузилась при $screenSize: " +
+                "запрошено $requestedPages",
             timeoutMillis = 3_000L,
         ) { requestedPages.contains(2) }
         assertEquals(
-            listOf(1, 2),
+            (1..requestedPages.max()).toList(),
             requestedPages,
-            "Пагинация должна запросить ровно страницы 1 и 2 при разрешении $screenSize",
+            "Страницы должны запрашиваться подряд от 1 без пропусков и повторов при разрешении $screenSize",
         )
 
-        // 3. Данные второй страницы доехали до UI и отрисовались.
+        // 4. Данные второй страницы доехали до UI и отрисовались.
         waitUntil(
-            conditionDescription = "Вторая страница не попала в состояние при $screenSize",
+            conditionDescription = "Задачи второй страницы не попали в состояние при $screenSize",
             timeoutMillis = 3_000L,
         ) { viewModel.uiState.value.currentList.size >= 20 }
         waitForIdle()
         onNodeWithTag(TASKS_LIST_TEST_TAG)
-            .performScrollToNode(hasText(title(15)))
-        onNodeWithText(title(15)).assertIsDisplayed()
+            .performScrollToNode(hasText(title(SECOND_PAGE_ITEM_INDEX)))
+        onNodeWithText(title(SECOND_PAGE_ITEM_INDEX)).assertIsDisplayed()
     }
 
     /** Эмуляция ответа сервера: pageSize совпадает с контрактом репозитория. */
@@ -197,13 +199,21 @@ class TasksPaginationUiTest : KoinTest {
     }
 
     private companion object {
-        const val PAGE_SIZE = 10
+        const val PAGE_SIZE = TasksRepository.DEFAULT_PAGE_SIZE
         const val LAST_PAGE = 2
+
+        /** Порог из TasksPageViewModel: подгрузка начинается за 3 элемента до конца страницы. */
+        const val PAGE_THRESHOLD = 3
+
+        /** Последний элемент первой страницы минус порог: 9 - 3 = 6. */
+        const val SCROLL_TARGET_INDEX = PAGE_SIZE - 1 - PAGE_THRESHOLD
+
+        /** Элемент второй страницы, по которому проверяем, что данные доехали до UI. */
+        const val SECOND_PAGE_ITEM_INDEX = PAGE_SIZE + 5
 
         fun title(id: Int): String = "Задача #$id"
 
         /** Каждое разрешение — отдельный тест: на JS один @Test должен вернуть ровно один TestResult. */
-        // Контроль: на коротком экране список прокручивается далеко, индекс >= 3 и триггер срабатывает.
         val SMALL_PHONE = DpSize(320.dp, 420.dp)
         val COMPACT_PHONE = DpSize(360.dp, 640.dp)
         val TALL_PHONE = DpSize(411.dp, 731.dp)

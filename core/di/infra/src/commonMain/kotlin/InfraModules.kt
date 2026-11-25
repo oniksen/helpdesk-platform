@@ -1,3 +1,4 @@
+import MaxAuthorization
 import data.TokenProviderImpl
 import data.repository.AuthorizationImpl
 import data.storage.createAuthStateStorage
@@ -22,7 +23,7 @@ object InfraModules {
     private val authorizationModule = module {
         single<Authorization> {
             AuthorizationImpl(
-                maxAuthorization = get(),
+                maxAuthorization = runCatching { get<MaxAuthorization>() }.getOrNull(),
                 client = get(),
                 storage = createAuthStateStorage(),
             )

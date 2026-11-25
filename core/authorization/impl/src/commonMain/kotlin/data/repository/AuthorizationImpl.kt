@@ -6,7 +6,8 @@ import KtorClient
 import MaxAuthorization
 import MaxAuthorizationResult
 import auth.AuthData
-import data.dto.auth.AuthBody
+import data.dto.auth.AuthBodyByMax
+import data.dto.auth.AuthBodyStandard
 import data.dto.auth.response.AuthResponseDto
 import data.dto.authstate.AuthStateDto
 import data.dto.user.UserDataDto
@@ -18,13 +19,11 @@ import io.ktor.client.call.*
 import io.ktor.client.request.*
 import io.ktor.client.statement.*
 import io.ktor.http.*
-import kotlinx.serialization.decodeFromString
-import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import user.UserData
 
 class AuthorizationImpl(
-    private val maxAuthorization: MaxAuthorization,
+    private val maxAuthorization: MaxAuthorization? = null,
     client: KtorClient,
     private val storage: AuthStateStorage,
 ): Authorization {
@@ -36,19 +35,31 @@ class AuthorizationImpl(
         val authStateJson = Json { ignoreUnknownKeys = true }
     }
 
-    override suspend fun getMaxInitData(): MaxAuthorizationResult
-        = maxAuthorization.getInitUserData()
+    override suspend fun getMaxInitData(): MaxAuthorizationResult =
+        maxAuthorization?.getInitUserData() ?: MaxAuthorizationResult.Unavailable
 
     override suspend fun helpdeskAuth(maxInitData: String): AuthResponse {
         val response = baseClient.post("https://helpdesk.lpmti.ru/max-app/v1/authorization") {
             contentType(ContentType.Application.Json)
-            setBody(AuthBody(maxInitData))
+            setBody(AuthBodyByMax(maxInitData))
         }
 
         if (!response.status.isSuccess())
             error(response.bodyAsText().ifBlank { "Неизвестный ответ" })
 
         return response.body<AuthResponseDto>().toDomain()
+    }
+
+    override suspend fun helpdeskAuth(email: String, password: String): AuthResponse {
+        val response = baseClient.post("https://helpdesk.lpmti.ru/help-desk/v3/auth") {
+            contentType(ContentType.Application.Json)
+            setBody(AuthBodyStandard("helpdesk_desktop_app", email, password))
+        }
+
+        if (!response.status.isSuccess())
+            error(response.bodyAsText().ifBlank { "Неизвестный ответ" })
+
+        return response.body<AuthResponseDto>().toDomain(false)
     }
 
     override suspend fun fetchUserData(email: String): UserData {

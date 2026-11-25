@@ -12,6 +12,11 @@ interface Authorization {
      * */
     suspend fun helpdeskAuth(maxInitData: String): AuthResponse
 
+    /**
+     * Стандартная авторизация на *Helpdesk*.
+     * */
+    suspend fun helpdeskAuth(email: String, password: String): AuthResponse
+
     /** Получить от сервера авторизационные данные пользователя */
     suspend fun fetchUserData(email: String): UserData
 

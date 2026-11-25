@@ -4,6 +4,6 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 @Serializable
-data class AuthBody(
+data class AuthBodyByMax(
     @SerialName("init_data") val initData: String
 )

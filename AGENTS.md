@@ -235,6 +235,9 @@ Epic'а → Task с `parent_issue_number` = номер User Story. Параме�
   SP и размер есть только у Task.
 - `Labels`, `Priority`, `Size`, `Estimate` проставляются только в полях issue/доски; блок
   «Метаданные» в описание Task не добавляется.
+- Описание milestone содержит только то, что планируется сделать, добавить или исправить.
+  Не указывай в нём User Story, Task, Epic и планируемые даты — для этого есть отдельные
+  поля и механизмы назначения milestone каждой задаче.
 - Иерархия оформляется через GitHub sub-issues. Для готовых issue используй `sub_issue_write`
   с `method: add`; для переноса под другого родителя — `method: add` и `replace_parent: true`;
   порядок подзадач меняет `method: reprioritize` с `after_id` или `before_id`.

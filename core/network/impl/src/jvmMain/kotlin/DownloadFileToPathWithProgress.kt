@@ -1,4 +1,3 @@
-import DownloadStatus
 import io.ktor.client.HttpClient
 import io.ktor.client.request.prepareGet
 import io.ktor.client.statement.bodyAsChannel
@@ -21,7 +20,7 @@ import java.io.IOException
  * считается по Content-Length, неполная загрузка считается ошибкой.
  * */
 @OptIn(InternalIoApi::class)
-internal suspend fun downloadToPathWithProgress(
+actual suspend fun downloadFileToPathWithProgress(
     httpClient: HttpClient,
     url: String,
     destinationFilePath: String,

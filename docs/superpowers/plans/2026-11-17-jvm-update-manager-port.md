@@ -47,7 +47,7 @@
 - Modify: `gradle/libs.versions.toml`
 - Modify: `core/network/impl/src/commonMain/kotlin/KtorClientImpl.kt`
 - Create: `core/network/impl/src/jvmMain/kotlin/JvmKtorClient.kt`
-- Create: `core/network/impl/src/jvmMain/kotlin/DownloadFileWithProgress.jvm.kt`
+- Create: `../../../core/network/impl/src/jvmMain/kotlin/DownloadFileToPathWithProgress.kt`
 - Create: `core/network/impl/src/jvmMain/kotlin/CreateKtorClient.jvm.kt`
 - Delete: `core/network/impl/src/jvmMain/kotlin/CreateKtorClient.js.kt`
 
@@ -98,7 +98,7 @@ suspend fun downloadFileWithProgress(url: String, destinationFilePath: String): 
 
 `baseInstance()` возвращает тот же экземпляр.
 
-- [x] **Step 6: Потоковая загрузка `DownloadFileWithProgress.jvm.kt`**
+- [x] **Step 6: Потоковая загрузка `DownloadFileToPathWithProgress.kt`**
 
 Дословный порт донорского `PlatformDownload.jvm.kt` как internal-функции:
 `httpClient.prepareGet(url).execute { response -> ... }`, проверка `status.value in 200..299` (иначе `IOException`), `response.bodyAsChannel()`, `contentLength()`, удаление существующего файла, `FileSystem.SYSTEM.sink(path.toOkioPath()).buffer()`, цикл `channel.readRemaining(8 * 1024L)`, запись через `packet.buffer.readByteArray()`, эмиссия `Progress(loadedBytes.toFloat() / totalBytes)`, проверка `loadedBytes != totalBytes` при известном `Content-Length`, затем `Success(destinationFilePath)`. Нужны `@OptIn(InternalIoApi::class)` и константа `DEFAULT_BUFFER_SIZE = 1024 * 8`.

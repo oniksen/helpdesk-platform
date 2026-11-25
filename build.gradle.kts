@@ -44,9 +44,28 @@ subprojects {
         extensions.configure<BuildKonfigExtension> {
             packageName = "helpdesk-platform.config"
 
+            val releaseTasks = setOf(
+                "build-jvm-app",
+                "build-web-app",
+                "build-web-shell",
+                "packageWebApp",
+                "packageWebShell",
+                "writeWebAppMetadata",
+                "writeWebShellMetadata",
+                "writeJvmMetadata",
+                "createReleaseDistributable",
+            )
+            val isReleaseBuild = gradle.startParameter.taskNames
+                .any { it.substringAfterLast(':') in releaseTasks }
+
             defaultConfigs {
                 buildConfigField(FieldSpec.Type.STRING, "PROJECT_TECHNICAL_VERSION_WEB", webVersion.createSystemVersion())
                 buildConfigField(FieldSpec.Type.STRING, "PROJECT_TECHNICAL_VERSION_JVM", jvmVersion.createSystemVersion())
+                buildConfigField(
+                    FieldSpec.Type.BOOLEAN,
+                    "NETWORK_DEBUG_LOGGING",
+                    (!isReleaseBuild).toString()
+                )
             }
         }
     }

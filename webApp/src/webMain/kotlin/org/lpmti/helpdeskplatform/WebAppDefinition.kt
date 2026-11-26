@@ -34,18 +34,12 @@ class WebAppDefinition : AppDefinition {
         single { SettingsModule() } bind FeatureNavModule::class
     }
 
-    /** Модуль MAX-моста (инициализация Mini App, авторизация MAX). */
-    private val maxMiniAppModule = module {
-        single<QrCodeScanner> { createQrCodeScanner() }
-        single<MaxAuthorization> { createAuthorizationObject() }
-    }
-
     // Модуль рутовой навигации (экраны корня приложения)
     private val rootNavModule = module {
         single { HomePageContainerModule() } bind RootNavModule::class
     }
 
-    override val koinModules: List<Module> = listOf(featuresNavModule, rootNavModule, maxMiniAppModule)
+    override val koinModules: List<Module> = listOf(featuresNavModule, rootNavModule, WebAuthModules.login, WebAuthModules.maxBridge)
 
     override fun startRoute(koin: Koin): NavKey = TasksPageRoute
 }

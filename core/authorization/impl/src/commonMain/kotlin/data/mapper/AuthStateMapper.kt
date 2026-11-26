@@ -7,10 +7,8 @@ import user.UserData
 import user.UserRole
 
 internal fun AuthStateDto.toAuthData(): AuthData? {
-    val maxInitData = this.maxInitData ?: return null
     val token = this.token ?: return null
     return AuthData(
-        maxInitData = maxInitData,
         token = token,
         cookies = cookies,
     )

@@ -41,7 +41,7 @@ class JvmAppDefinition : AppDefinition {
         single { HomePageContainerModule() } bind RootNavModule::class
     }
 
-    private val updaterModule = module {
+    private val jvmUpdaterModule = module {
         single { UpdateDataSource(get()) }
         single<UpdateDownloader> { UpdateDownloaderImpl(get(), get()) }
         single<ZipExtractor> { ZipExtractorImpl() }
@@ -60,7 +60,7 @@ class JvmAppDefinition : AppDefinition {
         }
     }
 
-    override val koinModules = listOf(featuresNavModule, rootNavModule, updaterModule)
+    override val koinModules = listOf(featuresNavModule, rootNavModule, jvmUpdaterModule, JvmAuthModules.login)
 
     override fun startRoute(koin: Koin): NavKey = TasksPageRoute
 

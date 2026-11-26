@@ -14,6 +14,7 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.browser.window
+import login.LoginStrategy
 
 /**
  * Гейт запуска (web-таргет): авторизация → канал пользователя → манифест →
@@ -28,6 +29,7 @@ internal class GateApp(
     private val dataSource: UpdateDataSource,
     private val storage: GateStorage,
     private val ui: GateUi,
+    private val strategy: LoginStrategy,
 ) {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
 
@@ -74,22 +76,14 @@ internal class GateApp(
     private suspend fun ensureAuthorized() {
         if (authorization.restoreAuthState()) return
 
-        val maxInitData = when (val result = authorization.getMaxInitData()) {
-            MaxAuthorizationResult.Unavailable -> error("MAX авторизация недоступна")
-            is MaxAuthorizationResult.Error ->
-                error(result.error.message ?: "Ошибка авторизации MAX")
-            is MaxAuthorizationResult.Success -> result.initData
-        }
-
         ui.showStatus("Авторизация на сервере")
-        val authResponse = authorization.helpdeskAuth(maxInitData)
+        val authResponse = strategy.authorize()
 
         ui.showStatus("Получение данных пользователя")
         val userData = authorization.fetchUserData(authResponse.email)
 
         authorization.saveAuthData(
             AuthData(
-                maxInitData = maxInitData,
                 token = authResponse.bearerToken,
                 cookies = authResponse.cookies,
             )

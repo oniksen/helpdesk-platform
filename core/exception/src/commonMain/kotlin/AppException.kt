@@ -109,6 +109,26 @@ sealed class AppException(
         ) : UpdateError(message, userMessageId, cause)
     }
 
+    sealed class LoginError(
+        message: String? = null,
+        userMessageId: Int? = null,
+        cause: Throwable? = null
+    ) : AppException(message, userMessageId, cause) {
+
+        /** Оболочка MAX сервиса по какой-то причине недоступна. */
+        class MaxLoginUnavailable(
+            message: String? = "MAX авторизация недоступна.",
+            userMessageId: Int? = null,
+            cause: Throwable? = null
+        ) : LoginError(message, userMessageId, cause)
+
+        /** Пользователь указал неправильный логин или пароль. */
+        class IncorrectCredentials(
+            message: String? = "Неверный логин или пароль",
+            userMessageId: Int? = null,
+            cause: Throwable? = null
+        ) : LoginError(message, userMessageId, cause)
+    }
 
     class Unknown(cause: Throwable?) : AppException(message = cause?.message, cause = cause)
 }

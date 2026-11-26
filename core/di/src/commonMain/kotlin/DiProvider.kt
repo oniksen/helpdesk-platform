@@ -2,7 +2,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import org.koin.core.KoinApplication
 import org.koin.core.context.startKoin as startKoinContext
-import org.koin.core.module.Module
 import org.koin.dsl.module
 
 /**
@@ -19,7 +18,7 @@ class DiProvider(
     private val definition: AppDefinition,
 ) {
     // Модуль версии приложения (отображение в настройках).
-    private val updateModule = module {
+    private val updateManifestModule = module {
         single<AppVersionProvider> { AppVersionProviderImpl() }
         single<CurrentChannelProvider> { CurrentChannelProviderImpl() }
     }
@@ -31,7 +30,7 @@ class DiProvider(
     fun startKoin(): KoinApplication = startKoinContext {
         modules(
             *InfraModules.all.toTypedArray(),
-            updateModule,
+            updateManifestModule,
             *definition.koinModules.toTypedArray(),
         )
     }

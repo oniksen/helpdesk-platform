@@ -8,7 +8,7 @@ import kotlinx.serialization.Serializable
  * */
 @Serializable
 internal data class AuthStateDto(
-    val maxInitData: String? = null,
+    /*val maxInitData: String? = null,*/
     val token: String? = null,
     val cookies: String? = null,
     val userId: Int? = null,

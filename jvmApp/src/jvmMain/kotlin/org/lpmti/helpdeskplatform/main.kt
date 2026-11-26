@@ -34,10 +34,6 @@ fun main() = application {
 
     val appVersion = BuildKonfig.PROJECT_TECHNICAL_VERSION_JVM.normalizeFromTechnical().toString()
     LaunchedEffect(Unit) {
-        // Проверка при старте: результат публикуется в checkUpdateState
-        // до возврата из checkUpdate, поэтому его можно прочитать сразу.
-        updateManager.checkUpdate(email = "bardakov.roman99@gmail.com")
-
         if (updateManager.checkUpdateState.value is CheckUpdateState.Available) {
             updateManager.startUpdate()
         }
@@ -81,7 +77,6 @@ fun main() = application {
                             val userData = auth.fetchUserData(response.email)
                             auth.saveAuthData(
                                 AuthData(
-                                    maxInitData = "",
                                     token = response.bearerToken,
                                     cookies = response.cookies,
                                 )

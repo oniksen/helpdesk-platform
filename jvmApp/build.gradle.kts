@@ -17,6 +17,7 @@ kotlin {
     sourceSets {
         commonMain.dependencies {
             implementation(projects.core.di)
+            implementation(projects.core.di.infra)
             implementation(projects.core.network.api)
 
             implementation(projects.core.authorization.api)

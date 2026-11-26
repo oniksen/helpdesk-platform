@@ -9,6 +9,7 @@ kotlin {
     sourceSets {
         commonMain.dependencies {
             api(projects.maxminiappapi.api)
+            api(projects.core.exception)
         }
     }
 }

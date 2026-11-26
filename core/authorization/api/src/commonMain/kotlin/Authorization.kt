@@ -5,7 +5,7 @@ interface Authorization {
     /**
      * Получение текущих данных пользователя из платформы MAX.
      * */
-    suspend fun getMaxInitData(): MaxAuthorizationResult
+    /*suspend fun getMaxInitData(): MaxAuthorizationResult*/
 
     /**
      * Авторизация на *Helpdesk* через данные платформы *MAX*.

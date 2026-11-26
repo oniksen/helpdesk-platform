@@ -13,17 +13,11 @@ import org.koin.dsl.module
  * у которого собственная точка входа без Compose.
  */
 object InfraModules {
-    /** Модуль MAX-моста (инициализация Mini App, авторизация MAX). */
-    /*private val maxMiniAppModule = module {
-        single<QrCodeScanner> { createQrCodeScanner() }
-        single<MaxAuthorization> { createAuthorizationObject() }
-    }*/
 
     /** Модуль кор-авторизации. */
     private val authorizationModule = module {
         single<Authorization> {
             AuthorizationImpl(
-                maxAuthorization = runCatching { get<MaxAuthorization>() }.getOrNull(),
                 client = get(),
                 storage = createAuthStateStorage(),
             )

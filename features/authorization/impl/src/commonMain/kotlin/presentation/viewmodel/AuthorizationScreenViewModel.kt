@@ -48,20 +48,30 @@ internal class AuthorizationScreenViewModel(
     }
 
     private fun authorize(credentials: LoginCredentials? = null) {
-        scope.launch(Dispatchers.Default) {
+        scope.launch {
             try {
                 val authResponse = loginStrategy.authorize(credentials)
-                val userData = authorizer.fetchUserData(authResponse.email)
+
+                val email = when (loginStrategy.mode) {
+                    LoginMode.Silent -> authResponse.email
+                    LoginMode.Credentials -> credentials?.email
+                } ?: throw AppException.LoginError.IncorrectCredentials(message = "Внутренняя ошибка получения Email")
+
+                val userData = authorizer.fetchUserData(email)
                 updateState { copy(
                     inProgress = true,
                     authResultMessage = "Сохранение полученных данных",
                 ) }
-                authorizer.saveAuthData(AuthData(
-                    token = authResponse.bearerToken,
-                    cookies = authResponse.cookies,
-                ))
-                authorizer.saveUser(userData)
-                authorizer.persistAuthState()
+
+                // TODO("Подключить сохранение данных для JVM")
+                if (loginStrategy.mode == LoginMode.Silent) {
+                    authorizer.saveAuthData(AuthData(
+                        token = authResponse.bearerToken,
+                        cookies = authResponse.cookies,
+                    ))
+                    authorizer.saveUser(userData)
+                    authorizer.persistAuthState()
+                }
 
                 delay(1_000.milliseconds)
                 openHomeScreen()

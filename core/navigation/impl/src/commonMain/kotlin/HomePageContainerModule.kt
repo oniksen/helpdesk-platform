@@ -15,6 +15,6 @@ class HomePageContainerModule : RootNavModule {
 
     override fun resolve(key: NavKey, navigator: AppNavigator): NavEntry<*> =
         NavEntry(key = key as TasksPageRoute) {
-            MainNavigation(startRoute = AppDestination.PARKING.route)
+            MainNavigation(startRoute = AppDestination.TASKS.route)
         }
 }

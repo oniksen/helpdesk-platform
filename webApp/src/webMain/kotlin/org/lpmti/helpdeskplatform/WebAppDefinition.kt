@@ -9,7 +9,7 @@ import QrCodeScanner
 import androidx.navigation3.runtime.NavKey
 import createAuthorizationObject
 import createQrCodeScanner
-import navigation.ParkingModule
+
 import navigation.SettingsModule
 import navigation.TasksPageModule
 import navigation.TasksPageRoute
@@ -29,7 +29,6 @@ import org.koin.dsl.module
 class WebAppDefinition : AppDefinition {
     // Модуль фич-навигации (внутренняя навигация MainNavigation)
     private val featuresNavModule = module {
-        single { ParkingModule() } bind FeatureNavModule::class
         single { TasksPageModule() } bind FeatureNavModule::class
         single { SettingsModule() } bind FeatureNavModule::class
     }

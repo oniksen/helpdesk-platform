@@ -29,7 +29,6 @@ fun MainNavigation(startRoute: NavKey) {
             SavedStateConfiguration { serializersModule = combinedSerializer }
         }
 
-        val parkingBackStack = rememberNavBackStack(appNavConfig, AppDestination.PARKING.route)
         val tasksBackStack = rememberNavBackStack(appNavConfig, AppDestination.TASKS.route)
         val settingsBackStack = rememberNavBackStack(appNavConfig, AppDestination.SETTINGS.route)
 
@@ -39,7 +38,6 @@ fun MainNavigation(startRoute: NavKey) {
         var currentTab by remember { mutableStateOf(initialTab) }
 
         val activeBackStack = when (currentTab) {
-            AppDestination.PARKING -> parkingBackStack
             AppDestination.TASKS -> tasksBackStack
             AppDestination.SETTINGS -> settingsBackStack
         }

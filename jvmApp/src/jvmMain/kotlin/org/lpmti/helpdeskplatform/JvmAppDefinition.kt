@@ -18,7 +18,7 @@ import domain.port.ZipExtractor
 import Authorization
 import AuthorizationScreenRoute
 import navigation.AuthorizationScreenModule
-import navigation.ParkingModule
+
 import navigation.SettingsModule
 import navigation.TasksPageModule
 import navigation.TasksPageRoute
@@ -35,7 +35,6 @@ import java.util.Locale
 
 class JvmAppDefinition : AppDefinition {
     private val featuresNavModule = module {
-        single { ParkingModule() } bind FeatureNavModule::class
         single { TasksPageModule() } bind FeatureNavModule::class
         single { SettingsModule() } bind FeatureNavModule::class
     }
@@ -66,9 +65,12 @@ class JvmAppDefinition : AppDefinition {
 
     override val koinModules = listOf(featuresNavModule, rootNavModule, jvmUpdaterModule, JvmAuthModules.login)
 
-    override fun startRoute(koin: Koin): NavKey =
+    /*
+        После интеграции сохранения сессии:
         if (koin.get<Authorization>().restoreAuthState()) TasksPageRoute
         else AuthorizationScreenRoute
+    * */
+    override fun startRoute(koin: Koin): NavKey = AuthorizationScreenRoute
 
     /**
      * Перезапуск приложения после установки обновления — по ОС процесса.

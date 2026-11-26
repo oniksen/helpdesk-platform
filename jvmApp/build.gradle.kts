@@ -29,6 +29,8 @@ kotlin {
             implementation(projects.features.tasks.impl)
             implementation(projects.features.settings.api)
             implementation(projects.features.settings.impl)
+            implementation(projects.features.authorization.api)
+            implementation(projects.features.authorization.impl)
 
             implementation(libs.koin.core)
             implementation(libs.compose.ui)

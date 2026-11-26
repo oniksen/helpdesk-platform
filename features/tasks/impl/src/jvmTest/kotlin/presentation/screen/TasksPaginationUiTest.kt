@@ -200,6 +200,7 @@ class TasksPaginationUiTest : KoinTest {
     private object NoopAppNavigator : AppNavigator {
         override fun navigate(route: NavKey) = Unit
         override fun popBackStack() = Unit
+        override fun navigateAndClearBackStack(route: NavKey) = Unit
     }
 
     private companion object {

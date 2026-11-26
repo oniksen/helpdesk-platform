@@ -24,7 +24,12 @@ internal class AuthorizationScreenViewModel(
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
 
     val state: StateFlow<AuthorizationState>
-        field = MutableStateFlow(AuthorizationState(loginMode = loginStrategy.mode))
+        field = MutableStateFlow(
+            AuthorizationState(
+                loginMode = loginStrategy.mode,
+                inProgress = loginStrategy.mode == LoginMode.Silent,
+            )
+        )
     val effect: SharedFlow<AuthorizationScreenEffect>
         field = MutableSharedFlow<AuthorizationScreenEffect>(
             replay = 1,
@@ -76,7 +81,7 @@ internal class AuthorizationScreenViewModel(
 
         scope.launch {
             delay(1_000.milliseconds)
-            navigator.navigate(TasksPageRoute)
+            navigator.navigateAndClearBackStack(TasksPageRoute)
         }
     }
     private fun showAuthorizationError(message: String) {

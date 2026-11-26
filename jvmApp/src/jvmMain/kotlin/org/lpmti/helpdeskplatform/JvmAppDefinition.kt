@@ -15,6 +15,9 @@ import domain.AppUpdateManagerImpl
 import domain.port.ChannelAccessStore
 import domain.port.UpdateDownloader
 import domain.port.ZipExtractor
+import Authorization
+import AuthorizationScreenRoute
+import navigation.AuthorizationScreenModule
 import navigation.ParkingModule
 import navigation.SettingsModule
 import navigation.TasksPageModule
@@ -39,6 +42,7 @@ class JvmAppDefinition : AppDefinition {
 
     private val rootNavModule = module {
         single { HomePageContainerModule() } bind RootNavModule::class
+        single { AuthorizationScreenModule() } bind RootNavModule::class
     }
 
     private val jvmUpdaterModule = module {
@@ -62,7 +66,9 @@ class JvmAppDefinition : AppDefinition {
 
     override val koinModules = listOf(featuresNavModule, rootNavModule, jvmUpdaterModule, JvmAuthModules.login)
 
-    override fun startRoute(koin: Koin): NavKey = TasksPageRoute
+    override fun startRoute(koin: Koin): NavKey =
+        if (koin.get<Authorization>().restoreAuthState()) TasksPageRoute
+        else AuthorizationScreenRoute
 
     /**
      * Перезапуск приложения после установки обновления — по ОС процесса.

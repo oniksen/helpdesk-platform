@@ -53,6 +53,10 @@ fun MainNavigation(startRoute: NavKey) {
                 override fun popBackStack() {
                     if (activeBackStack.size > 1) activeBackStack.removeLast()
                 }
+                override fun navigateAndClearBackStack(route: NavKey) {
+                    activeBackStack.clear()
+                    activeBackStack.add(route)
+                }
             }
         }
 

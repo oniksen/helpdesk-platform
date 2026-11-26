@@ -40,6 +40,10 @@ fun RootNavigation(startRoute: NavKey) {
                 override fun popBackStack() {
                     if (navBackStack.size > 1) navBackStack.removeLast()
                 }
+                override fun navigateAndClearBackStack(route: NavKey) {
+                    navBackStack.clear()
+                    navBackStack.add(route)
+                }
             }
         }
 

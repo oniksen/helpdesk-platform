@@ -42,6 +42,7 @@ kotlin {
             implementation(projects.core.update.api)
             implementation(projects.core.update.impl)
             implementation(projects.core.di.infra)
+            implementation(libs.bundles.coroutinesJvm)
         }
     }
 }

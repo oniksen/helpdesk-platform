@@ -1,5 +1,7 @@
 package domain.intent
 
+import login.LoginCredentials
+
 sealed class AuthorizationScreenIntent {
-    object Authorize : AuthorizationScreenIntent()
+    data class Authorize(val credentials: LoginCredentials? = null) : AuthorizationScreenIntent()
 }

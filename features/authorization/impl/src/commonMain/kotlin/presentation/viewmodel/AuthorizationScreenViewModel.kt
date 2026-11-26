@@ -1,32 +1,30 @@
 package presentation.viewmodel
 
+import AppException
 import AppNavigator
-import AuthResult
 import Authorization
-import MaxAuthorizationResult
 import auth.AuthData
 import domain.intent.AuthorizationScreenIntent
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.BufferOverflow
-import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharedFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.flow.*
+import login.LoginCredentials
+import login.LoginMode
+import login.LoginStrategy
 import navigation.TasksPageRoute
 import presentation.effect.AuthorizationScreenEffect
 import presentation.state.AuthorizationState
-import user.UserData
 import kotlin.time.Duration.Companion.milliseconds
 
 internal class AuthorizationScreenViewModel(
     private val navigator: AppNavigator,
     private val authorizer: Authorization,
+    private val loginStrategy: LoginStrategy,
 ) {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
 
     val state: StateFlow<AuthorizationState>
-        field = MutableStateFlow(AuthorizationState())
+        field = MutableStateFlow(AuthorizationState(loginMode = loginStrategy.mode))
     val effect: SharedFlow<AuthorizationScreenEffect>
         field = MutableSharedFlow<AuthorizationScreenEffect>(
             replay = 1,
@@ -36,57 +34,40 @@ internal class AuthorizationScreenViewModel(
 
     fun sendIntent(intent: AuthorizationScreenIntent) {
         when(intent) {
-            AuthorizationScreenIntent.Authorize -> authorization()
+            is AuthorizationScreenIntent.Authorize -> authorize(intent.credentials)
         }
     }
 
     init {
-        authorization()
+        if (loginStrategy.mode == LoginMode.Silent) authorize()
     }
 
-    private fun authorization() {
-        updateState { copy(
-            inProgress = true,
-            authResultMessage = null,
-        ) }
-
+    private fun authorize(credentials: LoginCredentials? = null) {
         scope.launch(Dispatchers.Default) {
             try {
-                getMaxInitDataOrShowError()?.let { maxInitData ->
-                    val authResponse = authorizer.helpdeskAuth(maxInitData)
-                    val userData = authorizer.fetchUserData(authResponse.email)
-                    updateState { copy(
-                        inProgress = true,
-                        authResultMessage = "Сохранение полученных данных",
-                    ) }
-                    authorizer.saveAuthData(AuthData(
-                        maxInitData = maxInitData,
-                        token = authResponse.bearerToken,
-                        cookies = authResponse.cookies,
-                    ))
-                    authorizer.saveUser(userData)
-                    authorizer.persistAuthState()
+                val authResponse = loginStrategy.authorize(credentials)
+                val userData = authorizer.fetchUserData(authResponse.email)
+                updateState { copy(
+                    inProgress = true,
+                    authResultMessage = "Сохранение полученных данных",
+                ) }
+                authorizer.saveAuthData(AuthData(
+                    token = authResponse.bearerToken,
+                    cookies = authResponse.cookies,
+                ))
+                authorizer.saveUser(userData)
+                authorizer.persistAuthState()
 
-                    delay(1_000.milliseconds)
-                    openHomeScreen()
-                }
+                delay(1_000.milliseconds)
+                openHomeScreen()
             } catch (e: CancellationException) {
                 throw e
-            } catch (e: Throwable) {
-                showAuthorizationError(e.message ?: "Ошибка авторизации")
+            } catch (e: AppException.LoginError) {
+                showAuthorizationError(message = e.message ?: "Неизвестная ошибка")
             }
         }
     }
 
-    private suspend fun getMaxInitDataOrShowError(): String? {
-        when(val result = authorizer.getMaxInitData()) {
-            MaxAuthorizationResult.Unavailable -> notifyMaxAuthNotAvailable()
-            is MaxAuthorizationResult.Success -> return result.initData
-            is MaxAuthorizationResult.Error ->
-                showAuthorizationError(message = result.error.message ?: "Ошибка авторизации")
-        }
-        return null
-    }
     private fun openHomeScreen() {
         updateState { copy(
             authResultMessage = "Успешная авторизация",
@@ -106,17 +87,8 @@ internal class AuthorizationScreenViewModel(
             inProgress = false,
         ) }
     }
-    private fun notifyMaxAuthNotAvailable() {
-        effect.tryEmit(AuthorizationScreenEffect.ShowSnackBar("MAX авторизация не доступна"))
-
-        updateState { copy(
-            authResultMessage = null,
-            inProgress = false,
-        )}
-    }
 
     private fun updateState(block: AuthorizationState.() -> AuthorizationState) {
-
         state.update { state -> block(state) }
     }
 }

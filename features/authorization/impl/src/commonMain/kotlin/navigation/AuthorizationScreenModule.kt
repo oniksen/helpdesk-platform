@@ -26,7 +26,8 @@ class AuthorizationScreenModule : RootNavModule {
     ): NavEntry<*> = NavEntry(key = key as AuthorizationScreenRoute) {
         val viewModel = AuthorizationScreenViewModel(
             navigator = navigator,
-            authorizer = koinInject()
+            authorizer = koinInject(),
+            loginStrategy = koinInject(),
         )
 
         AuthorizationScreen(

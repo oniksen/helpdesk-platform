@@ -2,7 +2,6 @@ package presentation.screen.compact
 
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.foundation.gestures.scrollable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.selection.SelectionContainer
@@ -10,7 +9,10 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -18,6 +20,8 @@ import kotlinx.coroutines.flow.SharedFlow
 import helpdesk_platform.features.authorization.impl.generated.resources.Res
 import helpdesk_platform.features.authorization.impl.generated.resources.auth_repeat_action
 import helpdesk_platform.features.authorization.impl.generated.resources.auth_screen_title
+import login.LoginCredentials
+import login.LoginMode
 import org.jetbrains.compose.resources.getString
 import org.jetbrains.compose.resources.stringResource
 import presentation.effect.AuthorizationScreenEffect
@@ -32,6 +36,10 @@ internal fun AuthorizationScreenCompact(
     val actions = LocalAuthorizationActions.current
     val snackbarHostState = remember { SnackbarHostState() }
 
+    var login by remember { mutableStateOf("") }
+    var password by remember { mutableStateOf("") }
+    var rememberMe by remember { mutableStateOf(false) }
+
     LaunchedEffect(effect) {
         effect.collect { effect ->
             snackbarHostState.currentSnackbarData?.dismiss()
@@ -45,7 +53,7 @@ internal fun AuthorizationScreenCompact(
                     )
                     when (result) {
                         SnackbarResult.Dismissed -> { }
-                        SnackbarResult.ActionPerformed -> actions.authorize()
+                        SnackbarResult.ActionPerformed -> actions.authorize(null)
                     }
                 }
             }
@@ -89,6 +97,39 @@ internal fun AuthorizationScreenCompact(
                         )
                     }
                     Spacer(modifier = Modifier.height(4.dp))
+                }
+                AnimatedVisibility(
+                    visible = currentState.loginMode == LoginMode.Credentials,
+                ) {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        TextField(
+                            value = login,
+                            onValueChange = { login = it },
+                            label = { Text("Логин") },
+                        )
+                        TextField(
+                            value = password,
+                            onValueChange = { password = it },
+                            label = { Text("Пароль") },
+                        )
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Checkbox(
+                                checked = rememberMe,
+                                onCheckedChange = { rememberMe = it },
+                            )
+                            Text("Запомнить")
+                        }
+                        Button(onClick = {
+                            actions.authorize(LoginCredentials(login, password))
+                        }) {
+                            Text("Войти")
+                        }
+                    }
                 }
             }
         }

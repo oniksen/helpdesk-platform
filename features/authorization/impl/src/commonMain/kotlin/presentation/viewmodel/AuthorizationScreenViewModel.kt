@@ -48,6 +48,7 @@ internal class AuthorizationScreenViewModel(
     }
 
     private fun authorize(credentials: LoginCredentials? = null) {
+        updateState { copy(inProgress = true, authResultMessage = null) }
         scope.launch {
             try {
                 val authResponse = loginStrategy.authorize(credentials)
@@ -77,7 +78,7 @@ internal class AuthorizationScreenViewModel(
                 openHomeScreen()
             } catch (e: CancellationException) {
                 throw e
-            } catch (e: AppException.LoginError) {
+            } catch (e: Throwable) {
                 showAuthorizationError(message = e.message ?: "Неизвестная ошибка")
             }
         }

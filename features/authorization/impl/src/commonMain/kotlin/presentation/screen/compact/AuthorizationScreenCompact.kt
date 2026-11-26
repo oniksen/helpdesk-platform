@@ -99,7 +99,7 @@ internal fun AuthorizationScreenCompact(
                     Spacer(modifier = Modifier.height(4.dp))
                 }
                 AnimatedVisibility(
-                    visible = currentState.loginMode == LoginMode.Credentials,
+                    visible = currentState.loginMode == LoginMode.Credentials && !currentState.inProgress,
                 ) {
                     Column(
                         horizontalAlignment = Alignment.CenterHorizontally,
@@ -126,6 +126,7 @@ internal fun AuthorizationScreenCompact(
                         }
                         Button(onClick = {
                             actions.authorize(LoginCredentials(login, password))
+                            password = ""
                         }) {
                             Text("Войти")
                         }

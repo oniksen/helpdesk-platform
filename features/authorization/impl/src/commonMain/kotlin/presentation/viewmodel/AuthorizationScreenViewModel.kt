@@ -48,6 +48,15 @@ internal class AuthorizationScreenViewModel(
     }
 
     private fun authorize(credentials: LoginCredentials? = null) {
+        if (loginStrategy.mode == LoginMode.Credentials) {
+            val email = credentials?.email?.trim().orEmpty()
+            val password = credentials?.password.orEmpty()
+            if (email.isEmpty() || !email.contains("@") || password.isEmpty()) {
+                showAuthorizationError(message = "Введите корректный email и пароль")
+                return
+            }
+        }
+
         updateState { copy(inProgress = true, authResultMessage = null) }
         scope.launch {
             try {

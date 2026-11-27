@@ -2,6 +2,12 @@ package data.storage
 
 import data.storage.JvmAuthStateStorage.Companion.APP_NAME
 import java.io.File
+import java.io.IOException
+import java.nio.file.AtomicMoveNotSupportedException
+import java.nio.file.Files
+import java.nio.file.Path
+import java.nio.file.StandardCopyOption
+import java.nio.file.attribute.PosixFilePermission
 
 actual fun createAuthStateStorage(): AuthStateStorage = JvmAuthStateStorage()
 
@@ -12,17 +18,57 @@ internal class JvmAuthStateStorage(
      * Записать параметры в файл настроек.
      *
      * При повторном вызове новые параметры перепишут старые: файл целиком
-     * заменяется переданным значением.
+     * заменяется переданным значением. Запись идёт через временный файл,
+     * чтобы сбой не оставил повреждённый файл сессии.
      * */
-    override fun save(stateJson: String) = file.writeText(stateJson)
+    override fun save(stateJson: String) {
+        val directory = file.parentFile.toPath()
+        Files.createDirectories(directory)
 
-    override fun load(): String? = if (file.exists()) file.readText() else null
+        val temp = Files.createTempFile(directory, "auth-state-", ".tmp")
+        try {
+            Files.writeString(temp, stateJson, Charsets.UTF_8)
+            restrictPermissions(temp)
+            try {
+                Files.move(
+                    temp,
+                    file.toPath(),
+                    StandardCopyOption.REPLACE_EXISTING,
+                    StandardCopyOption.ATOMIC_MOVE,
+                )
+            } catch (_: AtomicMoveNotSupportedException) {
+                Files.move(temp, file.toPath(), StandardCopyOption.REPLACE_EXISTING)
+            }
+        } finally {
+            Files.deleteIfExists(temp)
+        }
+    }
 
-    override fun clear() { file.delete() }
+    override fun load(): String? = try {
+        if (file.exists()) Files.readString(file.toPath(), Charsets.UTF_8) else null
+    } catch (_: IOException) {
+        null
+    }
 
-    internal companion object {
+    override fun clear() {
+        if (file.exists() && !file.delete()) {
+            error("Не удалось удалить файл сессии: ${file.absolutePath}")
+        }
+    }
+
+    companion object {
         const val AUTH_STORAGE_FILE_NAME = "auth_storage.json"
         const val APP_NAME = "com.lpmti.helpdesk"
+    }
+}
+
+/** Ограничить доступ к файлу только владельцем на системах с POSIX-правами. */
+private fun restrictPermissions(path: Path) {
+    runCatching {
+        Files.setPosixFilePermissions(
+            path,
+            setOf(PosixFilePermission.OWNER_READ, PosixFilePermission.OWNER_WRITE),
+        )
     }
 }
 
@@ -57,9 +103,9 @@ private fun getAppDataDirectory(appName: String = APP_NAME): File {
         }
     }
 
-    val appDir =  File(baseUrl, appName)
-    if (!appDir.exists()) {
-        appDir.mkdirs()
+    val appDir = File(baseUrl, appName)
+    if (!appDir.exists() && !appDir.mkdirs()) {
+        error("Не удалось создать каталог приложения: ${appDir.absolutePath}")
     }
     return appDir
 }

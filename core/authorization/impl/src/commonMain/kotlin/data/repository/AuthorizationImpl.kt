@@ -4,7 +4,6 @@ import AuthResponse
 import Authorization
 import KtorClient
 import auth.AuthData
-import data.AuthStateCleaner
 import data.dto.auth.AuthBodyByMax
 import data.dto.auth.AuthBodyStandard
 import data.dto.auth.response.AuthResponseDto
@@ -12,7 +11,6 @@ import data.dto.authstate.AuthStateDto
 import data.dto.user.UserDataDto
 import data.mapper.toAuthData
 import data.mapper.toDomain
-import data.mapper.toUserData
 import data.storage.AuthStateStorage
 import io.ktor.client.call.*
 import io.ktor.client.request.*
@@ -26,7 +24,6 @@ class AuthorizationImpl(
     private val storage: AuthStateStorage,
 ): Authorization {
     private val baseClient = client.baseInstance()
-    private val cleaner = AuthStateCleaner(storage)
     private var userData: UserData? = null
     private var authData: AuthData? = null
     private var autoLogin: Boolean = false
@@ -88,7 +85,7 @@ class AuthorizationImpl(
         userData ?: error("Не найдена информация об авторизованном пользователе")
 
     override fun getAutoLogin(): Boolean {
-        val stateJson = storage.load() ?: return false
+        val stateJson = runCatching { storage.load() }.getOrNull() ?: return false
         val stateDto = runCatching { authStateJson.decodeFromString<AuthStateDto>(stateJson) }
             .getOrNull() ?: return false
 
@@ -102,36 +99,47 @@ class AuthorizationImpl(
         val stateDto = AuthStateDto(
             autoLogin = this.autoLogin,
             token = authData.token,
-            cookies = authData.cookies,
-            userId = userData.id,
-            userName = userData.name,
-            userLastName = userData.lastName,
-            userPatronymic = userData.patronymic,
             userEmail = userData.email,
-            accessLevel = userData.accessLevel.name,
-            userRole = userData.role.name,
-            buildings = userData.buildings,
-            services = userData.services,
         )
 
         storage.save(authStateJson.encodeToString(stateDto))
     }
 
-    override fun restoreAuthState(): Boolean {
-        val stateJson = storage.load() ?: return false
+    override suspend fun restoreAuthState(): Boolean {
+        val stateJson = runCatching { storage.load() }.getOrNull() ?: return false
         val stateDto = runCatching { authStateJson.decodeFromString<AuthStateDto>(stateJson) }
-            .getOrNull() ?: return false
-
-        val restoredAuthData = stateDto.toAuthData()
-        val restoredUserData = stateDto.toUserData()
-        if (restoredAuthData == null || restoredUserData == null) {
+            .getOrNull()
+        val email = stateDto?.userEmail
+        val restoredAuthData = stateDto?.toAuthData()
+        val autoLoginFromState = stateDto?.autoLogin ?: false
+        if (email == null || restoredAuthData == null) {
+            clearFailedSession()
             return false
         }
 
+        // Токен нужен до запроса данных: HTTP-клиент берёт его из текущего состояния.
         authData = restoredAuthData
+        autoLogin = autoLoginFromState
+
+        val restoredUserData = runCatching { fetchUserData(email) }.getOrNull()
+        if (restoredUserData == null) {
+            clearFailedSession()
+            return false
+        }
+
         userData = restoredUserData
         return true
     }
 
-    override fun clearAuthStateOnExit() = cleaner.clearIfAutoLoginDisabled()
+    override fun clearAuthState() {
+        storage.clear()
+    }
+
+    /** Неудачная сессия не должна оставаться на диске и в памяти. */
+    private fun clearFailedSession() {
+        runCatching { clearAuthState() }
+        authData = null
+        userData = null
+        autoLogin = false
+    }
 }

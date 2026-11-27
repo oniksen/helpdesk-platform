@@ -14,7 +14,13 @@ fun main() {
     val authorization = koinApplication.koin.get<Authorization>()
 
     Runtime.getRuntime().addShutdownHook(Thread(
-        { authorization.clearAuthStateOnExit() },
+        {
+            runCatching {
+                if (!authorization.getAutoLogin()) {
+                    authorization.clearAuthState()
+                }
+            }
+        },
         "auth-state-cleanup",
     ))
 

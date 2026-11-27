@@ -27,5 +27,13 @@ kotlin {
         jvmMain.dependencies {
             implementation(libs.bundles.composePreview)
         }
+        commonTest.dependencies {
+            implementation(libs.kotlin.test)
+        }
+        jvmTest.dependencies {
+            implementation(libs.junit)
+            implementation(libs.kotlinx.coroutines.test)
+            implementation(libs.kotlinx.coroutines.swing)
+        }
     }
 }

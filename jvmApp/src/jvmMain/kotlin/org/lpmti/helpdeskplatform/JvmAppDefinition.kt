@@ -15,13 +15,11 @@ import domain.AppUpdateManagerImpl
 import domain.port.ChannelAccessStore
 import domain.port.UpdateDownloader
 import domain.port.ZipExtractor
-import Authorization
 import AuthorizationScreenRoute
 import navigation.AuthorizationScreenModule
 
 import navigation.SettingsModule
 import navigation.TasksPageModule
-import navigation.TasksPageRoute
 import org.koin.core.Koin
 import org.koin.dsl.bind
 import org.koin.dsl.module
@@ -65,11 +63,7 @@ class JvmAppDefinition : AppDefinition {
 
     override val koinModules = listOf(featuresNavModule, rootNavModule, jvmUpdaterModule, JvmAuthModules.login)
 
-    /*
-        После интеграции сохранения сессии:
-        if (koin.get<Authorization>().restoreAuthState()) TasksPageRoute
-        else AuthorizationScreenRoute
-    * */
+    // Сессия восстанавливается на экране входа, см. AuthorizationScreenViewModel.
     override fun startRoute(koin: Koin): NavKey = AuthorizationScreenRoute
 
     /**

@@ -7,7 +7,7 @@ import androidx.compose.ui.window.ComposeViewport
 import kotlinx.browser.window
 
 @OptIn(ExperimentalComposeUiApi::class)
-fun main() {
+suspend fun main() {
     val di = DiProvider(WebAppDefinition())
     val koinApplication = di.startKoin()
 

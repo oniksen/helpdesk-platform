@@ -22,7 +22,7 @@ internal fun AuthorizationScreen(
     val effect = viewModel.effect
     val actions = AuthorizationScreenActions(
         authorize = { cred, autoLogin ->
-            viewModel.sendIntent(AuthorizationScreenIntent.Authorize(cred, autoLogin == true))
+            viewModel.sendIntent(AuthorizationScreenIntent.Authorize(cred, autoLogin))
         }
     )
 

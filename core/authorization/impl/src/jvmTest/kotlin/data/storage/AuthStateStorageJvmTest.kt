@@ -2,6 +2,7 @@ package data.storage
 
 import java.io.File
 import java.nio.file.Files
+import java.nio.file.attribute.PosixFilePermission
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -65,6 +66,19 @@ class AuthStateStorageJvmTest {
         storage.clear()
 
         assertNull(storage.load(), "Повторное удаление не должно нарушать работу хранилища")
+    }
+
+    @Test
+    fun `allows only owner to access the state file on unix`() {
+        if (System.getProperty("os.name").lowercase().contains("win")) return
+
+        storage.save(STATE_JSON)
+
+        assertEquals(
+            setOf(PosixFilePermission.OWNER_READ, PosixFilePermission.OWNER_WRITE),
+            Files.getPosixFilePermissions(stateFile.toPath()),
+            "Файл сессии должен быть доступен только владельцу: $stateFile",
+        )
     }
 
     private companion object {

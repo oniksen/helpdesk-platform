@@ -51,11 +51,15 @@ internal class AuthorizationScreenViewModel(
                     scope.launch {
                         updateState { copy(inProgress = true, authResultMessage = "Восстановление сессии") }
 
-                        val dataRestored = authorizer.restoreAuthState()
+                        val dataRestored = runCatching {
+                            withTimeout(RESTORE_TIMEOUT_MS) { authorizer.restoreAuthState() }
+                        }.getOrDefault(false)
                         if (dataRestored) {
                             updateState { copy(inProgress = true, authResultMessage = "Сессия восстановлена") }
                             delay(1_000.milliseconds)
                             openHomeScreen()
+                        } else {
+                            showAuthorizationError(message = "Не удалось восстановить сессию")
                         }
                     }
             }
@@ -95,7 +99,11 @@ internal class AuthorizationScreenViewModel(
                     ))
                     saveAutoLogin(autoLogin)
                     saveUser(userData)
-                    persistAuthState()
+                    if (autoLogin) {
+                        persistAuthState()
+                    } else {
+                        clearAuthState()
+                    }
                 }
 
                 delay(1_000.milliseconds)
@@ -109,13 +117,10 @@ internal class AuthorizationScreenViewModel(
     }
 
     private fun openHomeScreen() {
-        updateState { copy(
-            authResultMessage = "Успешная авторизация",
-            inProgress = false,
-        ) }
+        // Индикатор держим до самого перехода, иначе на кадр появляется пустая форма входа.
+        updateState { copy(authResultMessage = "Успешная авторизация") }
 
         scope.launch {
-            delay(1_000.milliseconds)
             navigator.navigateAndClearBackStack(TasksPageRoute)
         }
     }
@@ -130,5 +135,9 @@ internal class AuthorizationScreenViewModel(
 
     private fun updateState(block: AuthorizationState.() -> AuthorizationState) {
         state.update { state -> block(state) }
+    }
+
+    private companion object {
+        const val RESTORE_TIMEOUT_MS = 10_000L
     }
 }

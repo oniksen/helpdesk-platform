@@ -3,9 +3,8 @@ package data.repository
 import AuthResponse
 import Authorization
 import KtorClient
-import MaxAuthorization
-import MaxAuthorizationResult
 import auth.AuthData
+import data.AuthStateCleaner
 import data.dto.auth.AuthBodyByMax
 import data.dto.auth.AuthBodyStandard
 import data.dto.auth.response.AuthResponseDto
@@ -23,20 +22,18 @@ import kotlinx.serialization.json.Json
 import user.UserData
 
 class AuthorizationImpl(
-   /* private val maxAuthorization: MaxAuthorization? = null,*/
     client: KtorClient,
     private val storage: AuthStateStorage,
 ): Authorization {
     private val baseClient = client.baseInstance()
+    private val cleaner = AuthStateCleaner(storage)
     private var userData: UserData? = null
     private var authData: AuthData? = null
+    private var autoLogin: Boolean = false
 
     private companion object {
         val authStateJson = Json { ignoreUnknownKeys = true }
     }
-
-    /*override suspend fun getMaxInitData(): MaxAuthorizationResult =
-        maxAuthorization?.getInitUserData() ?: MaxAuthorizationResult.Unavailable*/
 
     override suspend fun helpdeskAuth(maxInitData: String): AuthResponse {
         val response = baseClient.post("https://helpdesk.lpmti.ru/max-app/v1/authorization") {
@@ -80,18 +77,30 @@ class AuthorizationImpl(
         this.authData = authData
     }
 
+    override fun saveAutoLogin(value: Boolean) {
+        this.autoLogin = value
+    }
+
     override fun getToken(): String =
         authData?.token ?: error("Токена не существует")
 
     override fun getUserData(): UserData =
         userData ?: error("Не найдена информация об авторизованном пользователе")
 
+    override fun getAutoLogin(): Boolean {
+        val stateJson = storage.load() ?: return false
+        val stateDto = runCatching { authStateJson.decodeFromString<AuthStateDto>(stateJson) }
+            .getOrNull() ?: return false
+
+        return stateDto.autoLogin
+    }
+
     override fun persistAuthState() {
         val authData = this.authData ?: return
         val userData = this.userData ?: return
 
         val stateDto = AuthStateDto(
-            /*maxInitData = authData.maxInitData,*/
+            autoLogin = this.autoLogin,
             token = authData.token,
             cookies = authData.cookies,
             userId = userData.id,
@@ -123,4 +132,6 @@ class AuthorizationImpl(
         userData = restoredUserData
         return true
     }
+
+    override fun clearAuthStateOnExit() = cleaner.clearIfAutoLoginDisabled()
 }

@@ -1,7 +1,6 @@
 package data.storage
 
 import data.storage.JvmAuthStateStorage.Companion.APP_NAME
-import data.storage.JvmAuthStateStorage.Companion.AUTH_STORAGE_FILE_NAME
 import java.io.File
 
 actual fun createAuthStateStorage(): AuthStateStorage = JvmAuthStateStorage()

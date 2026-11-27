@@ -39,15 +39,30 @@ internal class AuthorizationScreenViewModel(
 
     fun sendIntent(intent: AuthorizationScreenIntent) {
         when(intent) {
-            is AuthorizationScreenIntent.Authorize -> authorize(intent.credentials)
+            is AuthorizationScreenIntent.Authorize -> authorize(intent.credentials, intent.autoLogin)
         }
     }
 
     init {
-        if (loginStrategy.mode == LoginMode.Silent) authorize()
+        when (loginStrategy.mode) {
+            LoginMode.Silent -> authorize()
+            LoginMode.Credentials -> {
+                if (authorizer.getAutoLogin())
+                    scope.launch {
+                        updateState { copy(inProgress = true, authResultMessage = "Восстановление сессии") }
+
+                        val dataRestored = authorizer.restoreAuthState()
+                        if (dataRestored) {
+                            updateState { copy(inProgress = true, authResultMessage = "Сессия восстановлена") }
+                            delay(1_000.milliseconds)
+                            openHomeScreen()
+                        }
+                    }
+            }
+        }
     }
 
-    private fun authorize(credentials: LoginCredentials? = null) {
+    private fun authorize(credentials: LoginCredentials? = null, autoLogin: Boolean = false) {
         if (loginStrategy.mode == LoginMode.Credentials) {
             val email = credentials?.email?.trim().orEmpty()
             val password = credentials?.password.orEmpty()
@@ -73,12 +88,15 @@ internal class AuthorizationScreenViewModel(
                     authResultMessage = "Сохранение полученных данных",
                 ) }
 
-                authorizer.saveAuthData(AuthData(
-                    token = authResponse.bearerToken,
-                    cookies = authResponse.cookies,
-                ))
-                authorizer.saveUser(userData)
-                authorizer.persistAuthState()
+                authorizer.run {
+                    saveAuthData(AuthData(
+                        token = authResponse.bearerToken,
+                        cookies = authResponse.cookies,
+                    ))
+                    saveAutoLogin(autoLogin)
+                    saveUser(userData)
+                    persistAuthState()
+                }
 
                 delay(1_000.milliseconds)
                 openHomeScreen()

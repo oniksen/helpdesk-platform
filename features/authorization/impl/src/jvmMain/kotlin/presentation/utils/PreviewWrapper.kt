@@ -15,7 +15,7 @@ internal fun PreviewWrapper(
     content: @Composable () -> Unit
 ) {
     val parkingScreenActions = AuthorizationScreenActions(
-        authorize = { }
+        authorize = { _, _ -> }
     )
 
     CompositionLocalProvider(LocalAuthorizationActions provides parkingScreenActions) {

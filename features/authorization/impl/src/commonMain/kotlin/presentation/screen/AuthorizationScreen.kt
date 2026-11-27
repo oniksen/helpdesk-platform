@@ -21,7 +21,9 @@ internal fun AuthorizationScreen(
     val state by viewModel.state.collectAsState()
     val effect = viewModel.effect
     val actions = AuthorizationScreenActions(
-        authorize = { viewModel.sendIntent(AuthorizationScreenIntent.Authorize(it)) }
+        authorize = { cred, autoLogin ->
+            viewModel.sendIntent(AuthorizationScreenIntent.Authorize(cred, autoLogin == true))
+        }
     )
 
     CompositionLocalProvider(LocalAuthorizationActions provides actions) {

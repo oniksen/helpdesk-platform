@@ -53,7 +53,7 @@ internal fun AuthorizationScreenCompact(
                     )
                     when (result) {
                         SnackbarResult.Dismissed -> { }
-                        SnackbarResult.ActionPerformed -> actions.authorize(null)
+                        SnackbarResult.ActionPerformed -> actions.authorize(null, false)
                     }
                 }
             }
@@ -125,7 +125,7 @@ internal fun AuthorizationScreenCompact(
                             Text("Запомнить")
                         }
                         Button(onClick = {
-                            actions.authorize(LoginCredentials(login, password))
+                            actions.authorize(LoginCredentials(login, password), rememberMe)
                             password = ""
                         }) {
                             Text("Войти")

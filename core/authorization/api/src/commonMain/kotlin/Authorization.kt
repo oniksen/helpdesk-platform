@@ -1,6 +1,8 @@
 import auth.AuthData
 import user.UserData
 
+// Контракт объединяет вход, восстановление сессии и очистку при выходе.
+@Suppress("TooManyFunctions")
 interface Authorization {
     /**
      * Получение текущих данных пользователя из платформы MAX.
@@ -27,6 +29,11 @@ interface Authorization {
     fun saveAuthData(authData: AuthData)
 
     /**
+     * Установить значение авто входа в приложение.
+     * */
+    fun saveAutoLogin(value: Boolean)
+
+    /**
     * Получить токен авторизации на платформе Helpdesk.
      *
      * @throws IllegalStateException Если токена не существует.
@@ -40,7 +47,10 @@ interface Authorization {
      * */
     fun getUserData(): UserData
 
-    /** Сохранить авторизационные данные для восстановления после перезагрузки страницы. */
+    /** Получить параметр автоматического входа в приложение */
+    fun getAutoLogin(): Boolean
+
+    /** Сохранить авторизационные данные для восстановления после перезапуска приложения. */
     fun persistAuthState()
 
     /**
@@ -49,4 +59,7 @@ interface Authorization {
      * @return true, если данные авторизации и пользователя восстановлены.
      * */
     fun restoreAuthState(): Boolean
+
+    /** Удалить сохранённую сессию при выходе, если авто-вход отключён. */
+    fun clearAuthStateOnExit()
 }

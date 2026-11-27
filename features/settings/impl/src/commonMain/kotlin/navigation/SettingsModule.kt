@@ -2,6 +2,7 @@ package navigation
 
 import AppNavigator
 import FeatureNavModule
+import LocalRootNavigator
 import androidx.navigation3.runtime.NavEntry
 import androidx.navigation3.runtime.NavKey
 import kotlinx.serialization.modules.SerializersModule
@@ -24,7 +25,7 @@ class SettingsModule: FeatureNavModule {
         val settingsScreenViewModel = SettingsScreenViewModel(
             appVersionProvider = koinInject(),
             currentChannelProvider = koinInject(),
-            navigator = navigator,
+            navigator = LocalRootNavigator.current,
             loginStrategy = koinInject(),
             authSession = koinInject(),
         )

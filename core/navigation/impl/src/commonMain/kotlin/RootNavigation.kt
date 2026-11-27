@@ -1,4 +1,5 @@
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.navigation3.runtime.NavEntry
@@ -54,13 +55,15 @@ fun RootNavigation(startRoute: NavKey) {
                 ?.let { route -> navigator.navigate(route) }
         }
 
-        NavDisplay(
-            backStack = navBackStack,
-        ) { key ->
-            val module = rootModules.firstOrNull { it.canResolve(key) }
-                ?: error("Не найден навигационный модуль для маршрута $key")
+        CompositionLocalProvider(LocalRootNavigator provides navigator) {
+            NavDisplay(
+                backStack = navBackStack,
+            ) { key ->
+                val module = rootModules.firstOrNull { it.canResolve(key) }
+                    ?: error("Не найден навигационный модуль для маршрута $key")
 
-            module.resolve(key = key, navigator = navigator) as NavEntry<NavKey>
+                module.resolve(key = key, navigator = navigator) as NavEntry<NavKey>
+            }
         }
     }
 }

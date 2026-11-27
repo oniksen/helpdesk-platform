@@ -24,6 +24,9 @@ class SettingsModule: FeatureNavModule {
         val settingsScreenViewModel = SettingsScreenViewModel(
             appVersionProvider = koinInject(),
             currentChannelProvider = koinInject(),
+            navigator = navigator,
+            loginStrategy = koinInject(),
+            authSession = koinInject(),
         )
 
         SettingsScreen(

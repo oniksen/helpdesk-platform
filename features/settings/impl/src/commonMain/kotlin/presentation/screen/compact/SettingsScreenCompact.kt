@@ -19,7 +19,9 @@ import helpdesk_platform.features.settings.impl.generated.resources.settings_und
 import kotlinx.coroutines.flow.SharedFlow
 import org.jetbrains.compose.resources.stringResource
 import presentation.effect.SettingsEffect
+import presentation.screen.LocalSettingsActions
 import presentation.screen.compact.components.appbar.AppBar
+import presentation.screen.shared.buttons.LogoutButton
 import presentation.screen.shared.version.VersionCard
 import presentation.state.SettingsUiState
 import presentation.utils.channelDisplayName
@@ -29,6 +31,7 @@ fun SettingsScreenCompact(
     state: SettingsUiState,
     effect: SharedFlow<SettingsEffect>,
 ) {
+    val settingsActions = LocalSettingsActions.current
     val snackBarHostState = remember { SnackbarHostState() }
 
     LaunchedEffect(effect) {
@@ -64,6 +67,9 @@ fun SettingsScreenCompact(
                 uiVersion = state.projectUiVersion ?: stringResource(resource = Res.string.settings_undefined),
                 channel = channelDisplayName(code = state.currentChannel),
             )
+            if (state.exitButtonAvailable) {
+                LogoutButton(settingsActions.logout)
+            }
         }
     }
 }

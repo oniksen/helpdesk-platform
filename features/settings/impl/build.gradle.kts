@@ -17,10 +17,12 @@ kotlin {
     sourceSets {
         commonMain.dependencies {
             implementation(projects.features.settings.api)
+            implementation(projects.features.authorization.api)
             implementation(projects.core.navigation.api)
             implementation(projects.core.uiadaptive)
             implementation(projects.core.update.api)
             implementation(projects.core.architecture)
+            implementation(projects.core.authorization.api)
 
             implementation(libs.bundles.compose)
             implementation(libs.bundles.composeResources)

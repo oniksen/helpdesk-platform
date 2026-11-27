@@ -1,3 +1,4 @@
+import AuthSession
 import MaxAuthorization
 import data.TokenProviderImpl
 import data.repository.AuthorizationImpl
@@ -22,6 +23,7 @@ object InfraModules {
                 storage = createAuthStateStorage(),
             )
         }
+        single<AuthSession> { get<Authorization>() }
         single<TokenProvider> {
             TokenProviderImpl(
                 authorization = get()

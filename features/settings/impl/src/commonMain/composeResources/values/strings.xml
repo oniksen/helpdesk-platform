@@ -5,4 +5,5 @@
     <string name="settings_channel_prod">Prod</string>
     <string name="settings_channel_canary">Canary</string>
     <string name="settings_channel_rc">RC</string>
+    <string name="settings_logout_btn">Выйти</string>
 </resources>

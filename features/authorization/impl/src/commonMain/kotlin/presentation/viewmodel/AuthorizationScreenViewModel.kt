@@ -73,15 +73,12 @@ internal class AuthorizationScreenViewModel(
                     authResultMessage = "Сохранение полученных данных",
                 ) }
 
-                // TODO("Подключить сохранение данных для JVM")
-                if (loginStrategy.mode == LoginMode.Silent) {
-                    authorizer.saveAuthData(AuthData(
-                        token = authResponse.bearerToken,
-                        cookies = authResponse.cookies,
-                    ))
-                    authorizer.saveUser(userData)
-                    authorizer.persistAuthState()
-                }
+                authorizer.saveAuthData(AuthData(
+                    token = authResponse.bearerToken,
+                    cookies = authResponse.cookies,
+                ))
+                authorizer.saveUser(userData)
+                authorizer.persistAuthState()
 
                 delay(1_000.milliseconds)
                 openHomeScreen()

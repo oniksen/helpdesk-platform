@@ -1,17 +1,60 @@
 package data.storage
 
-actual fun createAuthStateStorage(): AuthStateStorage = JvmAuthStateStorage
+import data.storage.JvmAuthStateStorage.Companion.APP_NAME
+import data.storage.JvmAuthStateStorage.Companion.AUTH_STORAGE_FILE_NAME
+import java.io.File
 
-private object JvmAuthStateStorage : AuthStateStorage {
-    override fun save(stateJson: String) {
-        TODO("Not yet implemented")
+actual fun createAuthStateStorage(): AuthStateStorage = JvmAuthStateStorage()
+
+private class JvmAuthStateStorage: AuthStateStorage {
+    override fun save(stateJson: String) = authStorageDirectory.writeText(stateJson)
+
+    override fun load(): String? = if (authStorageDirectory.exists()) authStorageDirectory.readText() else null
+
+    override fun clear() { authStorageDirectory.delete() }
+
+    companion object {
+        const val AUTH_STORAGE_FILE_NAME = "auth_storage.json"
+        const val APP_NAME = "com.lpmti.helpdesk"
+    }
+}
+
+private val authStorageDirectory: File = File(getAppDataDirectory(), AUTH_STORAGE_FILE_NAME)
+
+/**
+ * Получить корневую папку приложения.
+ *
+ * Для Windows вернёт *AppData/Local* с fallback на *Roaming*.
+ * Для MacOS вернёт *~/Application Support*.
+ * Для Linux и Unix-систем вернёт путь по *XDG_CONFIG_HOME* с fallback на *.config*.
+ *
+ * Если папки для приложения не будет при обращении, то она создастся автоматически.
+ * */
+private fun getAppDataDirectory(appName: String = APP_NAME): File {
+    val os = System.getProperty("os.name").lowercase()
+    val userHome = System.getProperty("user.home")
+
+    val baseUrl = when {
+        os.contains("win") -> {
+            // Вернём AppData\Local с fallback на AppData/Roaming
+            System.getenv("LOCALAPPDATA")
+                ?.let { path -> File(path) }
+                ?: File(userHome, "AppData/Roaming")
+        }
+        os.contains("mac") -> {
+            File(userHome, "Library/Application Support")
+        }
+        else -> {
+            // Linux или Unix
+            System.getenv("XDG_CONFIG_HOME")
+                ?.let { path -> File(path) }
+                ?: File(userHome, ".config")
+        }
     }
 
-    override fun load(): String? {
-        TODO("Not yet implemented")
+    val appDir =  File(baseUrl, appName)
+    if (!appDir.exists()) {
+        appDir.mkdirs()
     }
-
-    override fun clear() {
-        TODO("Not yet implemented")
-    }
+    return appDir
 }

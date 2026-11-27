@@ -6,20 +6,26 @@ import java.io.File
 
 actual fun createAuthStateStorage(): AuthStateStorage = JvmAuthStateStorage()
 
-private class JvmAuthStateStorage: AuthStateStorage {
-    override fun save(stateJson: String) = authStorageDirectory.writeText(stateJson)
+internal class JvmAuthStateStorage(
+    private val file: File = File(getAppDataDirectory(), AUTH_STORAGE_FILE_NAME),
+) : AuthStateStorage {
+    /**
+     * Записать параметры в файл настроек.
+     *
+     * При повторном вызове новые параметры перепишут старые: файл целиком
+     * заменяется переданным значением.
+     * */
+    override fun save(stateJson: String) = file.writeText(stateJson)
 
-    override fun load(): String? = if (authStorageDirectory.exists()) authStorageDirectory.readText() else null
+    override fun load(): String? = if (file.exists()) file.readText() else null
 
-    override fun clear() { authStorageDirectory.delete() }
+    override fun clear() { file.delete() }
 
-    companion object {
+    internal companion object {
         const val AUTH_STORAGE_FILE_NAME = "auth_storage.json"
         const val APP_NAME = "com.lpmti.helpdesk"
     }
 }
-
-private val authStorageDirectory: File = File(getAppDataDirectory(), AUTH_STORAGE_FILE_NAME)
 
 /**
  * Получить корневую папку приложения.

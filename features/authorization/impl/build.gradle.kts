@@ -29,8 +29,11 @@ kotlin {
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
+            implementation(libs.bundles.composeUiTest)
         }
         jvmTest.dependencies {
+            // Desktop-рантайм нужен для запуска Compose UI-тестов на JVM.
+            implementation(compose.desktop.currentOs)
             implementation(libs.junit)
             implementation(libs.kotlinx.coroutines.test)
             implementation(libs.kotlinx.coroutines.swing)

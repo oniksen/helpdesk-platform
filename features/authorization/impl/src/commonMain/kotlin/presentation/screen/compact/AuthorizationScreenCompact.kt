@@ -15,6 +15,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.flow.SharedFlow
 import helpdesk_platform.features.authorization.impl.generated.resources.Res
@@ -28,6 +29,8 @@ import presentation.effect.AuthorizationScreenEffect
 import presentation.screen.LocalAuthorizationActions
 import presentation.state.AuthorizationState
 
+internal const val REMEMBER_ME_TEST_TAG = "remember_me_checkbox"
+
 @Composable
 internal fun AuthorizationScreenCompact(
     state: AuthorizationState,
@@ -39,6 +42,7 @@ internal fun AuthorizationScreenCompact(
     var login by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var rememberMe by remember { mutableStateOf(false) }
+    var showRememberWarning by remember { mutableStateOf(false) }
 
     LaunchedEffect(effect) {
         effect.collect { effect ->
@@ -119,8 +123,15 @@ internal fun AuthorizationScreenCompact(
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
                             Checkbox(
+                                modifier = Modifier.testTag(REMEMBER_ME_TEST_TAG),
                                 checked = rememberMe,
-                                onCheckedChange = { rememberMe = it },
+                                onCheckedChange = { checked ->
+                                    if (checked) {
+                                        showRememberWarning = true
+                                    } else {
+                                        rememberMe = false
+                                    }
+                                },
                             )
                             Text("Запомнить")
                         }
@@ -134,5 +145,28 @@ internal fun AuthorizationScreenCompact(
                 }
             }
         }
+    }
+
+    if (showRememberWarning) {
+        AlertDialog(
+            onDismissRequest = { showRememberWarning = false },
+            title = { Text("Внимание") },
+            text = {
+                Text("В текущей версии токен авторизации хранится в открытом виде на устройстве.")
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    rememberMe = true
+                    showRememberWarning = false
+                }) {
+                    Text("Продолжить")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showRememberWarning = false }) {
+                    Text("Отмена")
+                }
+            },
+        )
     }
 }
